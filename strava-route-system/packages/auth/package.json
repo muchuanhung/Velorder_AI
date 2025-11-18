@@ -1,0 +1,23 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --emitDeclarationOnly false",
+    "check-types": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.1.6",
+    "openid-client": "^5.7.0"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.39.1",
+    "typescript": "5.9.2"
+  }
+}
+
