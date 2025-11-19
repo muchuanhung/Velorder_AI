@@ -52,6 +52,60 @@ export const athleteFields: AthleteField[] = [
   }
 ];
 
+export type ActivityFieldKey = "name" | "distance" | "moving_time";
+
+export type ActivityField = {
+  key: ActivityFieldKey;
+  label: string;
+  formatter?: (value: unknown) => string;
+};
+
+export type ActivityState = {
+  id: number | string;
+  name: string;
+  distance: number | null;
+  moving_time: number | null;
+};
+
+export const activityFields: ActivityField[] = [
+  {
+    key: "name",
+    label: "名稱"
+  },
+  {
+    key: "distance",
+    label: "距離",
+    formatter: (value) => {
+      const distance =
+        typeof value === "number"
+          ? value
+          : value == null
+          ? null
+          : Number(value);
+      if (distance == null || Number.isNaN(distance)) {
+        return "未提供";
+      }
+      return `${(distance / 1000).toFixed(2)} km`;
+    }
+  },
+  {
+    key: "moving_time",
+    label: "移動時間",
+    formatter: (value) => {
+      const seconds =
+        typeof value === "number"
+          ? value
+          : value == null
+          ? null
+          : Number(value);
+      if (seconds == null || Number.isNaN(seconds)) {
+        return "未提供";
+      }
+      return `${Math.round(seconds / 60)} 分鐘`;
+    }
+  }
+];
+
 export function mapSearchParamsToAthlete(
   userId: string,
   searchParams: Record<string, string | string[] | undefined>

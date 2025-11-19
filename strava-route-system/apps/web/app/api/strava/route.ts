@@ -67,6 +67,30 @@ export async function GET(request: Request) {
     //   console.error('Error saving token:', error);
     // }
 
+    // 嘗試取得最新活動 ID
+    let latestActivityId: number | null = null;
+    try {
+      const activitiesResp = await fetch(
+        'https://www.strava.com/api/v3/athlete/activities?per_page=1',
+        {
+          headers: {
+            Authorization: `Bearer ${tokenData.access_token}`
+          },
+          cache: 'no-store'
+        }
+      );
+      if (activitiesResp.ok) {
+        const activitiesData = await activitiesResp.json();
+        if (Array.isArray(activitiesData) && activitiesData.length > 0) {
+          latestActivityId = activitiesData[0].id;
+        }
+      } else {
+        console.warn('Failed to load latest activities', activitiesResp.status);
+      }
+    } catch (activityError) {
+      console.error('Error fetching latest activities', activityError);
+    }
+
     // 將使用者資料編碼到 URL 參數中，導向 Strava 詳細頁
     const redirectUrl = new URL(`/zh-tw/strava/${athlete.id}`, request.url);
     redirectUrl.searchParams.set('athlete_name', `${athlete.firstname} ${athlete.lastname}`);
@@ -75,7 +99,11 @@ export async function GET(request: Request) {
     redirectUrl.searchParams.set('athlete_country', athlete.country || '');
     redirectUrl.searchParams.set('athlete_premium', athlete.premium ? 'true' : 'false');
     redirectUrl.searchParams.set('athlete_profile', athlete.profile || '');
-    
+    redirectUrl.searchParams.set('access_token', tokenData.access_token);
+    if (latestActivityId) {
+      redirectUrl.searchParams.set('activity_id', latestActivityId.toString());
+    }
+
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error('Strava callback error', error);

@@ -40,11 +40,13 @@ export async function GET() {
     );
   }
 
+  const scopes = ['read', 'activity:read_all'];
+
   const url = new URL('https://www.strava.com/oauth/authorize');
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'read');
+  url.searchParams.set('scope', scopes.join(','));
 
   console.log('Generated OAuth URL:', url.toString().replace(clientId, '***'));
 
