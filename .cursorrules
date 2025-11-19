@@ -1,0 +1,13 @@
+# Cursor 編輯器規則
+
+## Commit Message 規則
+- 所有 commit message 必須使用繁體中文
+- Commit message 格式：`<類型>: <簡短描述>`
+- 類型包括：新增、修改、修復、重構、文件、樣式、測試、配置等
+
+## 程式碼風格
+- 使用繁體中文註解
+- 變數和函數名稱使用英文
+- 錯誤訊息和日誌使用繁體中文
+- 樣式一律使用 Tailwind CSS，禁止 inline style
+

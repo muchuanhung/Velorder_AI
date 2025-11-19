@@ -1,102 +1,151 @@
-import Image, { type ImageProps } from "next/image";
+"use client";
+
+import Image from "next/image";
 import { Button } from "@repo/ui/button";
 import styles from "./page.module.css";
-
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
-
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
-
-  return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const [athleteData, setAthleteData] = useState<{
+    id: string;
+    name: string;
+    username: string;
+    city: string;
+    country: string;
+    premium: boolean;
+    profile: string;
+  } | null>(null);
+  const [oauthUrl, setOauthUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/strava/oauth-url')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.oauthUrl) {
+          setOauthUrl(data.oauthUrl);
+        } else {
+          console.error('❌ Failed to get OAuth URL:', data.error, data.details);
+        }
+      })
+      .catch((err) => {
+        console.error('❌ Error fetching OAuth URL:', err);
+        alert(`取得 OAuth URL 時發生錯誤: ${err.message}`);
+      });
+  }, []);
+
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const error = searchParams.get('error');
+
+    if (success === 'strava_connected') {
+      const data = {
+        id: searchParams.get('athlete_id') || '',
+        name: searchParams.get('athlete_name') || '',
+        username: searchParams.get('athlete_username') || '',
+        city: searchParams.get('athlete_city') || '',
+        country: searchParams.get('athlete_country') || '',
+        premium: searchParams.get('athlete_premium') === 'true',
+        profile: searchParams.get('athlete_profile') || ''
+      };
+
+      setAthleteData(data);
+
+      // 在瀏覽器 console 顯示使用者資料
+      console.log('✅ Strava 授權成功！使用者資料：', {
+        '使用者 ID': data.id,
+        '姓名': data.name,
+        '使用者名稱': data.username || '未設定',
+        '城市': data.city || '未設定',
+        '國家': data.country || '未設定',
+        'Premium': data.premium ? '是' : '否',
+        '大頭照': data.profile
+      });
+    }
+
+    if (error) {
+      console.error('❌ Strava 授權失敗：', error);
+    }
+  }, [searchParams]);
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <ThemeImage
-          className={styles.logo}
-          srcLight="turborepo-dark.svg"
-          srcDark="turborepo-light.svg"
-          alt="Turborepo logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>apps/web/app/page.tsx</code>
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-            target="_blank"
-            rel="noopener noreferrer"
+        {athleteData ? (
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-semibold mb-4">
+              ✅ Strava 授權成功！
+            </h1>
+            {athleteData.profile && (
+              <Image
+                src={athleteData.profile}
+                alt="Profile"
+                width={100}
+                height={100}
+                className="mx-auto mb-4 rounded-full"
+                unoptimized
+              />
+            )}
+            <div className="space-y-2 mb-4">
+              <p>
+                <strong>姓名：</strong>
+                {athleteData.name}
+              </p>
+              {athleteData.username && (
+                <p>
+                  <strong>使用者名稱：</strong>
+                  {athleteData.username}
+                </p>
+              )}
+              {athleteData.city && (
+                <p>
+                  <strong>城市：</strong>
+                  {athleteData.city}
+                </p>
+              )}
+              {athleteData.country && (
+                <p>
+                  <strong>國家：</strong>
+                  {athleteData.country}
+                </p>
+              )}
+              <p>
+                <strong>Premium：</strong>
+                {athleteData.premium ? "是" : "否"}
+              </p>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              請查看瀏覽器 console 查看完整資料
+            </p>
+            <form action="/" method="post" className="mx-auto">
+              <Button type="submit" className={styles.secondary}>
+                登出
+              </Button>
+            </form>
+          </div>
+        ) : oauthUrl ? (
+          <div className="text-center">
+            <div className="text-2xl mb-4">連結 Strava</div>
+            <p className="text-gray-500">
+              點擊下方按鈕開始 Strava 授權流程
+            </p>
+            <Link href={oauthUrl}>
+              <Button appName="web" className={styles.secondary}>
+                連結 Strava
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <button
+            className={`${styles.secondary} cursor-not-allowed opacity-60`}
+            disabled
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://turborepo.com/docs?utm_source"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-        <Button appName="web" className={styles.secondary}>
-          Open alert
-        </Button>
+            載入中...
+          </button>
+        )}
       </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://turborepo.com?utm_source=create-turbo"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to turborepo.com →
-        </a>
-      </footer>
     </div>
   );
 }
