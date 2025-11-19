@@ -67,9 +67,8 @@ export async function GET(request: Request) {
     //   console.error('Error saving token:', error);
     // }
 
-    // 將使用者資料編碼到 URL 參數中（用於前端顯示）
-    const redirectUrl = new URL('/?success=strava_connected', request.url);
-    redirectUrl.searchParams.set('athlete_id', athlete.id.toString());
+    // 將使用者資料編碼到 URL 參數中，導向 Strava 詳細頁
+    const redirectUrl = new URL(`/zh-tw/strava/${athlete.id}`, request.url);
     redirectUrl.searchParams.set('athlete_name', `${athlete.firstname} ${athlete.lastname}`);
     redirectUrl.searchParams.set('athlete_username', athlete.username || '');
     redirectUrl.searchParams.set('athlete_city', athlete.city || '');
@@ -80,12 +79,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error('Strava callback error', error);
-    return NextResponse.redirect(
-      new URL(
-        `/?error=${error instanceof Error ? error.message : 'unknown'}`,
-        request.url
-      )
-    );
+    const errorMessage = error instanceof Error ? error.message : 'unknown';
+    const errorUrl = new URL(`/zh-tw?error=${encodeURIComponent(errorMessage)}`, request.url);
+    return NextResponse.redirect(errorUrl);
   }
 }
 
