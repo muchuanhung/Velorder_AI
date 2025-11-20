@@ -1,0 +1,194 @@
+.btn {
+    --color: #{$default};
+    --hover-bg-color: #{$gray-100};
+    --hover-color: #{$default};
+    --bg-color: #{$white};
+    display: inline-flex;
+    justify-content: center;
+    flex-flow: row nowrap;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: 1px #ccc solid;
+    color: var(--color);
+    transition:
+        transform 0.3s,
+        opacity 0.3s,
+        background 0.3s,
+        color 0.3s;
+    background-color: var(--bg-color);
+    cursor: pointer;
+
+    @media (hover: hover) {
+        /* &:not(.act):hover,
+        &:not(.act).focus-visible:focus {
+            opacity: 0.8;
+        } */
+        &:is(:hover, :focus-visible:focus) {
+            background-color: var(--hover-bg-color);
+            color: var(--hover-color);
+        }
+    }
+
+    &:is([disabled], .disabled) {
+        background: #eee !important;
+        color: #aaa;
+        pointer-events: none;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    &:focus-visible:focus {
+        box-shadow: $focus-hint-outside;
+    }
+}
+
+$arr: (
+    'primary': $primary,
+    'secondary': $secondary,
+    'danger': $danger,
+    'light': $light
+);
+
+@each $name, $color in $arr {
+    .btn-#{$name} {
+        @if ($name == 'light') {
+            --color: #{$default};
+            --hover-color: #{$default};
+            --hover-bg-color: #eee;
+        } @else {
+            --color: #{$white};
+            --hover-color: #{$white};
+            --hover-bg-color: #{lighten($color, 5)};
+        }
+
+        --bg-color: #{$color};
+        //background-color: var(--color);
+        border-color: transparent;
+    }
+
+    .btn-outline-#{$name} {
+        --color: #{$color};
+        --hover-bg-color: var(--color);
+        --hover-color: #{$white};
+        color: var(--color);
+        border-color: var(--color) !important;
+
+        &.act {
+            color: #fff !important;
+            background-color: $color;
+        }
+    }
+}
+.btn-outline-white {
+    --color: white;
+    --hover-bg-color: #{rgba(#000, 0.5)};
+    --hover-color: #{$white};
+    color: #fff;
+    background-color: transparent;
+    border-color: white !important;
+}
+
+.btn-open-menu {
+    --button-color: #{$white};
+    .line {
+        transition:
+            y 0.3s ease-in 0.3s,
+            transform 0.3s ease-in,
+            opacity 0ms 0.3s;
+        transform-origin: center;
+    }
+    &[aria-expanded='true'] {
+        --button-color: #{$default};
+        .line {
+            transition:
+                y 0.3s ease-in,
+                transform 0.3s ease-in 0.3s,
+                opacity 0s 0.3s;
+        }
+        :is(.top, .bottom) {
+            y: 45;
+        }
+        .top {
+            transform: rotate(42deg);
+        }
+        .middle {
+            opacity: 0;
+        }
+        .bottom {
+            transform: rotate(-42deg);
+        }
+    }
+    .white & {
+        --button-color: #{$default};
+    }
+}
+
+.btn-ghost {
+    background-color: transparent;
+    border-color: transparent;
+    --hover-bg-color: #{rgba($white, 0.5)};
+}
+
+.btn-select {
+    &:before {
+        content: '';
+        display: block;
+        border: 1px #d7d7d7 solid;
+        border-radius: $border-radius;
+        margin-right: 8px;
+        background: #fff;
+        flex-shrink: 0;
+        @include size(18px, 18px);
+    }
+
+    &.radio:before {
+        border-radius: 50%;
+    }
+
+    &.act,
+    .hide-switch:checked + & {
+        border-color: $primary;
+
+        &:before {
+            border-color: $primary;
+            background: $primary;
+            box-shadow: 0 0 0 3px #fff inset;
+        }
+    }
+
+    @include media-breakpoint-up(xl) {
+        &:hover,
+        &:focus-visible:focus,
+        .hide-switch:focus + & {
+            background-color: rgba($primary, 0.5) !important;
+        }
+    }
+}
+.btn-ask-me {
+    .icon {
+        color: #78b700;
+    }
+    &.act {
+        .icon {
+            color: #fff;
+        }
+        --color: #{$white};
+        --hover-bg-color: #{lighten(#78b700, 3)};
+        --hover-color: #{$white};
+        --bg-color: #78b700;
+        border-color: transparent;
+        /*  color: #fff;
+        background-color: #78b700 !important;
+        border-color: #78b700;
+        .icon {
+            color: #fff !important;
+        } */
+    }
+    /*  @include media-breakpoint-up(xl) {
+        &:is(:hover, :focus-visible:focus) {
+            background-color: rgba(#78b700, 0.1);
+            border-color: #78b700;
+        }
+    } */
+}

@@ -1,0 +1,307 @@
+.bg-placeholder {
+    background-image: linear-gradient(135deg, #f3f0eb 0%, #e6dfd4 100%);
+
+    &.white {
+        background-color: white !important;
+        background-image: none !important;
+    }
+}
+
+.bg-cyan-80 {
+    background-color: rgba(#315c6c, 0.85);
+}
+
+.bg-warning-20 {
+    background-color: rgba($warning, 0.2);
+}
+
+.bg-light-50 {
+    background-color: rgba($light, 0.5);
+}
+
+.bg-cyan {
+    background-color: #8bb8b6;
+}
+
+.bg-black-10 {
+    background-color: rgba(#000, 0.1);
+}
+
+.bg-black-20 {
+    background-color: rgba(#000, 0.2);
+}
+
+.bg-black-50 {
+    background-color: rgba(#000, 0.5);
+}
+
+.bg-black-60 {
+    background-color: rgba(#000, 0.6);
+}
+
+.bg-black-70 {
+    background-color: rgba(#000, 0.7);
+}
+
+.bg-gray-200 {
+    background-color: $gray-200 !important;
+}
+
+.bg-gray-300 {
+    background-color: $gray-300 !important;
+}
+
+.bg-gray-700 {
+    background-color: $gray-700 !important;
+}
+
+.bg-gradient-bottom-black-80 {
+    background: linear-gradient(
+        to bottom,
+        rgba(#000, 0.8) 0%,
+        rgba(#000, 0) 100%
+    );
+}
+
+.bg-gradient-bottom-white-50 {
+    background-image: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.95) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+}
+
+.bg-gradient-top-black-80 {
+    background: linear-gradient(to top, rgba(#000, 0.8) 0%, rgba(#000, 0) 100%);
+}
+
+.bg-gradient-top-black-50 {
+    background: linear-gradient(to top, rgba(#000, 0.5) 0%, rgba(#000, 0) 100%);
+}
+
+.bg-gradient-deco {
+    background: linear-gradient(
+        to right,
+        rgba(#e68275, 0.85) 0%,
+        rgba(#23acdd, 0.85) 100%
+    );
+}
+
+.bg-hero {
+    background: center center no-repeat;
+    background-size: cover;
+    height: 400px;
+}
+
+.bg-hero-center {
+    background: center center no-repeat;
+    background-size: cover;
+}
+
+.bg-gradient-top-black-80 {
+    background: linear-gradient(to top, rgba(#000, 0.8) 0%, rgba(#000, 0) 100%);
+}
+
+.bg-white-30 {
+    background-color: rgba(#fff, 0.3);
+}
+
+.bg-white-75 {
+    background-color: rgba(#fff, 0.75);
+}
+
+.bg-apply {
+    background: center center no-repeat fixed;
+}
+
+.bg-none {
+    background: transparent !important;
+}
+
+.bg-primary-90 {
+    background-color: rgba($primary, 0.9);
+}
+
+.bg-primary-10 {
+    background-color: rgba($primary, 0.1);
+}
+
+.bg-f5f5f5 {
+    background-color: #f5f5f5;
+}
+
+.bg-danger-10 {
+    background-color: rgba($danger, 0.1);
+}
+
+.bg-hero-content {
+    background: linear-gradient(
+        to right,
+        rgba(#e68275, 0.85) 0%,
+        rgba(#23acdd, 0.85) 100%
+    );
+    background-size: cover;
+    z-index: 0;
+    min-height: calc(100vh - 56px - 160px);
+
+    &:before {
+        content: '';
+        display: block;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: -1;
+        // opacity: 0.5;
+        min-height: 200px;
+        @include size(100%, 100%);
+        @include scrimGradient(#000, 'to top');
+    }
+}
+
+.bg-event-act {
+    background: linear-gradient(to bottom, #23acdd 30%, #135eab 100%);
+}
+
+.bg-gradient-primary-right {
+    background: linear-gradient(to right, #3173ca 0%, #163f9a 100%);
+}
+
+.bg-yellow {
+    background-color: #ffd8a3;
+}
+
+.bg-light-yellow {
+    background-color: #f8f5f1;
+}
+.bg-light-green {
+    background-color: #f0f5e3;
+}
+.bg-dotted {
+    background: url(/images/global/dot.png) repeat;
+}
+
+.bg-octagon-01 {
+    background: url(/images/global/deco-octagon-01.svg) top center repeat;
+    background-size: 28px;
+    @include media-breakpoint-up(xl) {
+        background-size: 40px;
+    }
+}
+
+.bg-octagon-02 {
+    background: url(/images/global/deco-octagon-02.svg) top center repeat;
+    background-size: auto 60px;
+    @include media-breakpoint-up(xl) {
+        background-size: auto 100px;
+    }
+}
+
+.bg-octagon-03 {
+    background: url(/images/global/deco-octagon-03.svg) top center repeat;
+    background-size: auto 60px;
+    @include media-breakpoint-up(md) {
+        background-size: auto 88px;
+    }
+    @include media-breakpoint-up(xl) {
+        background-size: auto 100px;
+    }
+}
+
+.bg-octagon-04 {
+    background: url(/images/global/deco-octagon-01.svg) top center repeat;
+    background-size: 28px;
+    @include media-breakpoint-up(md) {
+        background-size: 40px;
+    }
+    @include media-breakpoint-up(xl) {
+        background-size: 48px;
+    }
+}
+.bg-octagon-05 {
+    background: url(/images/global/deco-octagon-04.svg) top center repeat;
+    background-size: 28px;
+    @include media-breakpoint-up(xl) {
+        background-size: 40px;
+    }
+}
+
+.bg-light-yellow {
+    background-color: #f9f7f3;
+}
+.bg-chat {
+    background-color: #9fddff;
+}
+.bg-district {
+    background-image: url(/images/district/district-deco-top.png);
+    background-position: top -40px left;
+    background-repeat: no-repeat;
+    background-size: auto 226px;
+    @include media-breakpoint-up(md) {
+        background-position: top -64px center;
+        background-size: auto 363px;
+    }
+    background-size: auto 226px;
+    @include media-breakpoint-up(xl) {
+        background-image: url(/images/district/district-deco-top.png),
+            linear-gradient(
+                to right,
+                rgba(#1c3d8e, 0) 520px,
+                rgba(#1c3d8e, 0.6) 520px,
+                #1c3d8e 50%
+            );
+        background-position:
+            top -120px left 30%,
+            top left;
+        background-size:
+            auto 440px,
+            100%;
+    }
+}
+.bg-bevel-mask {
+    background: linear-gradient(
+        160deg,
+        transparent 150px,
+        white 150px,
+        white 100%
+    );
+    @include media-breakpoint-up(md) {
+        background: linear-gradient(
+            160deg,
+            transparent 220px,
+            white 220px,
+            white 100%
+        );
+    }
+    @include media-breakpoint-up(xl) {
+        background: linear-gradient(
+            160deg,
+            transparent 300px,
+            white 300px,
+            white 100%
+        );
+    }
+}
+.bg-bevel-mask-reverse {
+    background: linear-gradient(
+        160deg,
+        white 220px,
+        transparent 220px,
+        transparent 100%
+    );
+    @include media-breakpoint-up(md) {
+        background: linear-gradient(
+            160deg,
+            white 360px,
+            transparent 360px,
+            transparent 100%
+        );
+    }
+    @include media-breakpoint-up(xl) {
+        background: linear-gradient(
+            160deg,
+            white 34vw,
+            transparent 34vw,
+            transparent 100%
+        );
+    }
+}

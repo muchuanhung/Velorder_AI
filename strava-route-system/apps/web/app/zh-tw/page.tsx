@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
 import { Button } from "@repo/ui/button";
 import Spinner from "../../components/Spinner";
-import styles from "../page.module.css";
+import StravaConnectSection from "../../components/strava/StravaConnectSection";
 
 export default function ZHTWHome() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -33,11 +32,10 @@ export default function ZHTWHome() {
       });
   }, [isSignedIn]);
 
-  // 如果未登入，顯示 Clerk 登入介面
   if (!isLoaded) {
     return (
-      <div className={styles.page}>
-        <main className={styles.main}>
+      <div className="flex min-h-[100svh] w-full items-center justify-center px-6 py-10 md:px-16">
+        <main className="flex w-full max-w-3xl flex-col items-center gap-8">
           <Spinner size={40} />
         </main>
       </div>
@@ -46,51 +44,58 @@ export default function ZHTWHome() {
 
   if (!isSignedIn) {
     return (
-      <div className={styles.page}>
-        <main className={styles.main}>
-          <div className="flex flex-col items-center text-center space-y-4">
-            <h1 className="text-2xl font-semibold">請先登入</h1>
-            <p className="text-gray-500">
-              您需要先登入才能使用 Strava 功能
-            </p>
-            <SignInButton mode="modal">
-              <Button appName="web" className={styles.secondary}>
-                登入
-              </Button>
-            </SignInButton>
-          </div>
-        </main>
+      <div className="flex min-h-screen w-full items-center justify-center px-6 py-10 md:px-16">
+        <div className="flex w-full max-w-md flex-col items-center space-y-4 text-center">
+          <h1 className="text-2xl font-semibold">請先登入</h1>
+          <p className="text-[40px]">您需要先登入才能使用 Strava 功能</p>
+          <SignInButton mode="modal">
+            <Button
+              appName="web"
+              className="btn btn-secondary px-6"
+            >
+              登入
+            </Button>
+          </SignInButton>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <div className="flex flex-col items-center text-center space-y-4">
-          <div className="flex items-center gap-4 w-full justify-end mb-4">
-            <SignOutButton redirectUrl="/zh-tw">
-              <Button appName="web" className={styles.secondary}>
-                登出
-              </Button>
-            </SignOutButton>
-          </div>
-          <h1 className="text-2xl font-semibold">連結 Strava</h1>
-          <p className="text-gray-500">
-            點擊下方按鈕開始 Strava 授權流程，完成後即可查看使用者資料。
-          </p>
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {oauthUrl ? (
-            <Link href={oauthUrl}>
-              <Button appName="web" className={styles.secondary}>
-                連結 Strava
-              </Button>
-            </Link>
-          ) : (
-            <Spinner size={40} />
-          )}
-        </div>
+    <div className="flex min-h-[100svh] w-full items-center justify-center px-6 py-10 md:px-16">
+      <main className="flex w-full max-w-3xl flex-col items-center gap-8">
+        <StravaAuthContent
+          oauthUrl={oauthUrl}
+          error={error}
+        />
       </main>
+    </div>
+  );
+}
+
+interface StravaAuthContentProps {
+  oauthUrl: string | null;
+  error: string | null;
+}
+
+function StravaAuthContent({ oauthUrl, error }: StravaAuthContentProps) {
+  return (
+    <div className="flex flex-col items-center text-center space-y-4">
+      <div className="flex items-center gap-4">
+        <SignOutButton redirectUrl="/zh-tw">
+          <Button
+            appName="web"
+            className="inline-flex h-12 min-w-[180px] items-center justify-center rounded-full border border-black/10 bg-transparent px-5 text-base font-medium text-black transition hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-black/40 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            登出
+          </Button>
+        </SignOutButton>
+        <StravaConnectSection oauthUrl={oauthUrl} error={error} />
+      </div>
+      <h1 className="text-2xl font-semibold">連結 Strava</h1>
+      <p className="text-gray-500">
+        點擊下方按鈕開始 Strava 授權流程，完成後即可查看使用者資料。
+      </p>
     </div>
   );
 }

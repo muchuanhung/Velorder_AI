@@ -1,0 +1,22 @@
+@import './bootstrap/functions';
+@import './bootstrap/variables';
+@import './bootstrap/mixins';
+@import './iconfont';
+@import './mixin';
+
+.drag-helper {
+	z-index: 3000;
+	box-shadow: 0 0 10px 2px #666;
+	list-style: none;
+	pointer-events: auto !important;
+}
+.map-spot {
+	transform: translate(-50%, -100%);
+	.name {
+		position: absolute;
+		bottom: -24px;
+		left: 50%;
+		transform: translateX(-50%);
+		max-width: 120px;
+	}
+}

@@ -1,0 +1,115 @@
+.font-noto-tc {
+    font-family: 'Noto Serif TC', serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+.text-gray-300 {
+    color: $gray-300;
+}
+
+.text-gray-400 {
+    color: $gray-400;
+}
+
+.text-shadow-title {
+    text-shadow: 0 0 10px rgba(#000, 0.6);
+}
+
+.text-shadow {
+    text-shadow: 0 0 5px rgba(#000, 0.2);
+}
+.font-arial {
+    font-family: arial;
+}
+.font-weight-xl-bold {
+    @include media-breakpoint-up(xl) {
+        font-weight: bold;
+    }
+}
+
+.text-star {
+    color: #f09300;
+}
+
+.text-facebook {
+    color: #3d5a9a !important;
+}
+
+.text-youtube {
+    color: #e62117;
+}
+
+.text-flickr:before {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+    background-image: linear-gradient(
+        to right,
+        #1e5bd4 0%,
+        #1e5bd4 50%,
+        #fe117f 50%,
+        #fe117f 100%
+    );
+}
+
+.text-instagram:before {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+    background-image: radial-gradient(
+        circle at 30% 107%,
+        #fdf497 0%,
+        #fdf497 5%,
+        #fd5949 45%,
+        #d6249f 60%,
+        #285aeb 90%
+    );
+}
+
+.text-vertical-rl {
+    writing-mode: vertical-rl;
+    -ms-writing-mode: tb-rl;
+}
+
+.letter-spacing-8px {
+    letter-spacing: 8px;
+}
+
+.text-shadow-white {
+    text-shadow:
+        -1px -1px 1px #fff,
+        1px -1px 1px #fff,
+        -1px 1px 1px #fff,
+        1px 1px 1px #fff;
+}
+
+.lh-250 {
+    line-height: 250%;
+}
+
+.text-coralred {
+    color: #e6625e;
+}
+
+.text-bw-yellow {
+    color: #ffa20a;
+}
+
+.text-bw-green {
+    color: #10bc9c;
+}
+
+.text-keep-all {
+    word-break: keep-all !important;
+}
+.text-header-switch {
+    --color: #{$white};
+    color: var(--color);
+    .white & {
+        --color: #{$primary};
+    }
+}
+
+.text-inherit {
+    color: inherit;
+}

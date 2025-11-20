@@ -1,0 +1,52 @@
+.condition-search-blk {
+	.react-datepicker-wrapper {
+		width: 100%;
+	}
+	@include media-breakpoint-up(md) {
+		position: relative !important;
+
+		&.show {
+			filter: drop-shadow(0 0 10px rgba(#000, 0.25));
+			overflow: visible !important;
+			padding: 0 !important;
+			z-index: 201 !important;
+
+			.condition-blk {
+				position: absolute;
+				width: 100%;
+				//border: 1px #eee solid;
+				border-top: 0;
+
+				&:before {
+					content: '';
+					display: block;
+					position: absolute;
+					z-index: -1;
+					background: white;
+					top: -62px;
+					left: -12px;
+					width: calc(100% + 24px);
+					height: calc(100% + 60px);
+					border-radius: 8px;
+				}
+			}
+
+			.button-blk {
+				position: static !important;
+				bottom: 0 !important;
+			}
+		}
+
+		.condition-scroll-blk {
+			max-height: 320px;
+			overflow: hidden;
+			overflow-y: scroll;
+		}
+
+		.close-blk {
+			position: absolute !important;
+			left: auto;
+			top: 0;
+		}
+	}
+}

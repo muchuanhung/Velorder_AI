@@ -1,0 +1,242 @@
+i.icon {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: center;
+
+    &:before {
+        line-height: 1 !important;
+        @extend %iconfont-base !optional;
+    }
+}
+
+$list: (
+    'back-top',
+    'wifi',
+    'ask',
+    'coupon',
+    'bug',
+    'language-tw',
+    'language-en',
+    'audio',
+    'triangle',
+    'fax',
+    'sitemap',
+    'parent-child',
+    'navigation',
+    'ok',
+    'location-outline',
+    'temperature',
+    'uv',
+    'guide-square',
+    'clock-square',
+    'alert-square',
+    'bell-square',
+    'star-sm',
+    'tel-square',
+    'spot-square',
+    'moon',
+    'sunrise',
+    'service-center',
+    'file',
+    'surprise',
+    'glasses',
+    'hook',
+    'warn-circle',
+    'question',
+    'exclamation',
+    'flickr',
+    'live-camera',
+    'warn-square',
+    'sitemap',
+    'triangle-up',
+    'youtube',
+    'tick',
+    'fork',
+    'anchor',
+    'drone',
+    'clapperboard',
+    'document',
+    'faq',
+    'debug',
+    'double-arrow',
+    'instagram',
+    'facebook-circle',
+    'expand',
+    'shrink',
+    'gas',
+    'day-range',
+    'add-list',
+    'add-list-check',
+    'triangle-right',
+    'dollar',
+    'album',
+    'arrow-go',
+    'arrow-back',
+    'distance',
+    'twitter',
+    'webio',
+    'line',
+    'rain',
+    'time',
+    'street',
+    'pano',
+    'arrow-up',
+    'longarrow-right',
+    'back-all',
+    'camera',
+    'upload',
+    'share',
+    'calendar',
+    'duplicate',
+    'more',
+    'list',
+    'location-add',
+    'location-remove',
+    'day-add',
+    'day-remove',
+    'delete',
+    'save',
+    'quest',
+    'add',
+    'minus',
+    'remove',
+    'heart-fill',
+    'heart-stroke',
+    'lock',
+    'password',
+    'facebook',
+    'bus',
+    'bus-stop',
+    'info',
+    'locate',
+    'adv',
+    'taxi',
+    'rent',
+    'store',
+    'bike',
+    'toilet',
+    'parking',
+    'doc',
+    'drop',
+    'info-center',
+    'airplane',
+    'stopwatch',
+    'between',
+    'link-out',
+    'take-off',
+    'landing',
+    'reload',
+    'download',
+    'photo',
+    'video',
+    'audio',
+    'map',
+    'thumb',
+    'umbrella',
+    'mail',
+    'clock',
+    'checked',
+    'pause',
+    'speaker',
+    'tel',
+    'navigate',
+    'view',
+    'location',
+    'check',
+    'close',
+    'warn',
+    'link',
+    'global',
+    'dialog',
+    'arrow-left',
+    'arrow-right',
+    'arrow-down',
+    'logout',
+    'avatar',
+    'pencil',
+    'heart',
+    'earth',
+    'bell',
+    'hamburger',
+    'star',
+    'home',
+    'magnifier',
+    'dm',
+    'car',
+    'service'
+);
+
+@each $var in $list {
+    .icon-#{$var}:before {
+        content: iconfont-char('#{$var}');
+    }
+}
+
+//天氣
+.icon-weather {
+    &:before {
+        content: iconfont-char('wt-01');
+    }
+}
+.icon-construction:before {
+    content: '';
+    width: 24px;
+    height: 24px;
+    background: url(/images/global/icon-construction.gif) no-repeat;
+    background-size: contain;
+}
+
+@function padding-zero($num) {
+    @if ($num < 10) {
+        $num: '0#{$num}';
+    }
+    @return $num;
+}
+
+@for $i from 1 through 42 {
+    $num: padding-zero($i);
+    .wt-#{$num}:before {
+        content: iconfont-char('wt-#{$num}');
+    }
+}
+
+//紫外線
+$uv-colors: (#39b54a, #fbb03b, #f15a24, #db001b, #ae31ff);
+
+.icon-uv {
+    @for $i from 1 through 5 {
+        &.lv-#{$i} {
+            &:before,
+            ~ .status {
+                color: nth($uv-colors, $i);
+            }
+        }
+    }
+}
+
+.icon-air {
+    position: relative;
+
+    &:before {
+        content: '';
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: url(/images/global/air-lv-1.svg) no-repeat center;
+        background-size: 100% auto;
+    }
+
+    @for $i from 1 through 5 {
+        &.lv-#{$i}:before {
+            background-image: url(/images/global/air-lv-#{$i}.svg);
+        }
+    }
+}
+
+.day-icon {
+    position: relative;
+    z-index: 1;
+    background: url(/images/map/marker.png) no-repeat;
+    background-size: contain;
+}

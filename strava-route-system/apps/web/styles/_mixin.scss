@@ -1,0 +1,89 @@
+$base-font-size: 16px;
+
+@mixin collapse-border($width: 1px, $color: skyblue) {
+    box-shadow: $width 0 0 0 $color, 0 $width 0 0 $color,
+        $width $width 0 0 $color, $width 0 0 0 $color inset,
+        0 $width 0 0 $color inset;
+}
+
+@mixin ellipsis() {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@mixin rb() {
+    border: 1px red solid;
+}
+
+@mixin size($width, $height) {
+    width: $width;
+    height: $height;
+}
+
+@mixin scrimGradient(
+    $startColor: $color-black,
+    $direction: 'to bottom',
+    $startAlpha: 1
+) {
+    $scrimCoordinates: (
+        0: 1 * $startAlpha,
+        19: 0.738 * $startAlpha,
+        34: 0.541 * $startAlpha,
+        47: 0.382 * $startAlpha,
+        56.5: 0.278 * $startAlpha,
+        65: 0.194 * $startAlpha,
+        73: 0.126 * $startAlpha,
+        80.2: 0.075 * $startAlpha,
+        86.1: 0.042 * $startAlpha,
+        91: 0.021 * $startAlpha,
+        95.2: 0.008 * $startAlpha,
+        98.2: 0.002 * $startAlpha,
+        100: 0
+    );
+
+    $hue: hue($startColor);
+    $saturation: saturation($startColor);
+    $lightness: lightness($startColor);
+    $stops: ();
+
+    @each $colorStop, $alphaValue in $scrimCoordinates {
+        $stop: hsla($hue, $saturation, $lightness, $alphaValue)
+            percentage($colorStop/100);
+        $stops: append($stops, $stop, comma);
+    }
+
+    background: linear-gradient(unquote($direction), $stops);
+}
+
+@function px2Rem($px, $base: $base-font-size) {
+    @return ($px / $base) * 1rem;
+}
+
+@function padding-zero($num) {
+    @if ($num<10) {
+        $num: 0#{$num};
+    }
+
+    @return $num;
+}
+
+%custom-scroll {
+    position: relative;
+    overflow: hidden auto !important;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+        border-radius: 2px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+        border-radius: 2px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #777;
+        border-radius: 2px;
+    }
+}

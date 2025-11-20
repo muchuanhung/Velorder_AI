@@ -1,0 +1,40 @@
+@each $breakpoint in map-keys($grid-breakpoints) {
+    $infix: breakpoint-infix($breakpoint, $grid-breakpoints);
+
+    @include media-breakpoint-up($breakpoint, $grid-breakpoints) {
+        @for $i from 0 through 10 {
+            .g#{$infix}-#{$i},
+            .gx#{$infix}-#{$i} {
+                --csii-gutter-x: #{$i * 8px};
+            }
+            .g#{$infix}-#{$i},
+            .gy#{$infix}-#{$i} {
+                --csii-gutter-y: #{$i * 8px};
+            }
+        }
+        .g#{$infix}-4px,
+        .gx#{$infix}-4px {
+            --csii-gutter-x: #{4px};
+        }
+        .g#{$infix}-4px,
+        .gy#{$infix}-4px {
+            --csii-gutter-y: #{4px};
+        }
+        .g#{$infix}-12px,
+        .gx#{$infix}-12px {
+            --csii-gutter-x: #{12px};
+        }
+        .g#{$infix}-12px,
+        .gy#{$infix}-12px {
+            --csii-gutter-y: #{12px};
+        }
+        .g#{$infix}-20px,
+        .gx#{$infix}-20px {
+            --csii-gutter-x: #{20px};
+        }
+        .g#{$infix}-20px,
+        .gy#{$infix}-20px {
+            --csii-gutter-y: #{20px};
+        }
+    }
+}
