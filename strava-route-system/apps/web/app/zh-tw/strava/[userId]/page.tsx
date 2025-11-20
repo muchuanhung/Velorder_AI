@@ -7,6 +7,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
 import styles from "../../../page.module.css";
 import { Button } from "@repo/ui/button";
+import Spinner from "../../../../components/Spinner";
 import {
   athleteFields,
   AthleteState,
@@ -111,14 +112,11 @@ export default function StravaProfilePage() {
       .finally(() => setActivityLoading(false));
   }, [accessToken, activityId]);
 
-  // 載入中或未登入時顯示載入畫面或登入提示
   if (!isLoaded) {
     return (
       <div className={styles.page}>
         <main className={styles.main}>
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">載入中...</h1>
-          </div>
+          <Spinner size={40} />
         </main>
       </div>
     );
@@ -151,10 +149,7 @@ export default function StravaProfilePage() {
           </SignOutButton>
         </div>
         {athleteLoading ? (
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">Strava 資料載入中...</h1>
-            <p className="text-gray-500">請稍候，正在取得 Strava 使用者資料。</p>
-          </div>
+          <Spinner size={40} />
         ) : athleteError ? (
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-semibold text-red-500">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
 import { Button } from "@repo/ui/button";
+import Spinner from "../../components/Spinner";
 import styles from "../page.module.css";
 
 export default function ZHTWHome() {
@@ -37,9 +38,7 @@ export default function ZHTWHome() {
     return (
       <div className={styles.page}>
         <main className={styles.main}>
-          <div className="flex flex-col items-center text-center space-y-4">
-            <p className="text-gray-500">載入中...</p>
-          </div>
+          <Spinner size={40} />
         </main>
       </div>
     );
@@ -88,12 +87,7 @@ export default function ZHTWHome() {
               </Button>
             </Link>
           ) : (
-            <button
-              className={`${styles.secondary} cursor-not-allowed opacity-60`}
-              disabled
-            >
-              載入中...
-            </button>
+            <Spinner size={40} />
           )}
         </div>
       </main>
