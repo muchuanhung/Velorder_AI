@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
 import styles from "../../../page.module.css";
 import { Button } from "@repo/ui/button";
 import {
@@ -14,6 +15,8 @@ import {
 } from "../../../../constants";
 
 export default function StravaProfilePage() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
   const params = useParams<{ userId: string }>();
   const searchParams = useSearchParams();
   const userId = params?.userId ?? "";
@@ -28,6 +31,13 @@ export default function StravaProfilePage() {
   const [activity, setActivity] = useState<ActivityState | null>(null);
   const [activityError, setActivityError] = useState<string | null>(null);
   const [activityLoading, setActivityLoading] = useState(false);
+
+  // 如果未登入，重定向到登入頁面
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push("/zh-tw");
+    }
+  }, [isLoaded, isSignedIn, router]);
 
   useEffect(() => {
     if (!accessToken || !userId) {
@@ -101,9 +111,45 @@ export default function StravaProfilePage() {
       .finally(() => setActivityLoading(false));
   }, [accessToken, activityId]);
 
+  // 載入中或未登入時顯示載入畫面或登入提示
+  if (!isLoaded) {
+    return (
+      <div className={styles.page}>
+        <main className={styles.main}>
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl font-semibold">載入中...</h1>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className={styles.page}>
+        <main className={styles.main}>
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl font-semibold">請先登入</h1>
+            <p className="text-gray-500">
+              您需要先登入才能查看 Strava 資料
+            </p>
+            <SignInButton mode="modal">
+              <Button className={styles.secondary}>登入</Button>
+            </SignInButton>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
+        <div className="flex items-center gap-4 w-full justify-end mb-4">
+          <SignOutButton redirectUrl="/zh-tw">
+            <Button className={styles.secondary}>登出</Button>
+          </SignOutButton>
+        </div>
         {athleteLoading ? (
           <div className="text-center space-y-4">
             <h1 className="text-2xl font-semibold">Strava 資料載入中...</h1>
@@ -115,9 +161,6 @@ export default function StravaProfilePage() {
               無法取得 Strava 使用者資料
             </h1>
             <p className="text-gray-500">{athleteError}</p>
-            <Link href="/zh-tw">
-              <Button className={styles.secondary}>返回首頁</Button>
-            </Link>
           </div>
         ) : athleteData ? (
           <div className="text-center mb-8">
