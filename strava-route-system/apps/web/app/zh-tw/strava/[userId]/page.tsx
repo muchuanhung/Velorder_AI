@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useAuth, SignInButton, SignOutButton } from "@clerk/nextjs";
-import styles from "../../../page.module.css";
 import { Button } from "@repo/ui/button";
 import Spinner from "../../../../components/Spinner";
 import {
@@ -114,54 +113,76 @@ export default function StravaProfilePage() {
 
   if (!isLoaded) {
     return (
-      <div className={styles.page}>
-        <main className={styles.main}>
-          <Spinner size={40} />
-        </main>
-      </div>
+        <Spinner color="#aaa" size={20} />
     );
   }
 
   if (!isSignedIn) {
     return (
-      <div className={styles.page}>
-        <main className={styles.main}>
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">請先登入</h1>
-            <p className="text-gray-500">
-              您需要先登入才能查看 Strava 資料
-            </p>
-            <SignInButton mode="modal">
-              <Button className={styles.secondary}>登入</Button>
-            </SignInButton>
-          </div>
-        </main>
+      <div className="flex min-h-[100svh] w-full items-center justify-center px-6 py-10 md:px-16">
+        <section className="w-full max-w-md space-y-4 text-center">
+          <h1 className="text-2xl font-semibold text-[#00372e]">請先登入</h1>
+          <p className="text-gray-500">您需要先登入才能查看 Strava 資料</p>
+          <SignInButton mode="modal">
+            <Button className="btn btn-secondary">登入</Button>
+          </SignInButton>
+        </section>
       </div>
     );
   }
 
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <div className="flex items-center gap-4 w-full justify-end mb-4">
-          <SignOutButton redirectUrl="/zh-tw">
-            <Button className={styles.secondary}>登出</Button>
-          </SignOutButton>
+  const renderActivitySection = () => (
+    <section className="space-y-2">
+      <p className="text-sm font-semibold">最新活動</p>
+      {activityLoading && (
+        <p className="text-sm text-gray-500">活動資料載入中...</p>
+      )}
+      {activityError && (
+        <p className="text-sm text-red-500">{activityError}</p>
+      )}
+      {activity && (
+        <div className="inline-block space-y-1 text-left">
+          {activityFields.map(({ key, label, formatter }) => {
+            const value = activity[key as keyof ActivityState];
+            const displayValue =
+              formatter?.(value) ??
+              (value !== null && value !== undefined ? String(value) : "未提供");
+            return (
+              <p key={key}>
+                <strong>{label}：</strong>
+                {displayValue}
+              </p>
+            );
+          })}
         </div>
-        {athleteLoading ? (
-          <Spinner size={40} />
-        ) : athleteError ? (
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold text-red-500">
-              無法取得 Strava 使用者資料
-            </h1>
-            <p className="text-gray-500">{athleteError}</p>
-          </div>
-        ) : athleteData ? (
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold mb-4">
-              ✅ Strava 授權成功！
-            </h1>
+      )}
+      {!activityLoading && !activity && !activityError && (
+        <p className="text-sm text-gray-500">目前沒有活動資料</p>
+      )}
+    </section>
+  );
+
+  const renderAthleteSection = () => {
+    if (athleteLoading) {
+      return <Spinner size={40} />;
+    }
+
+    if (athleteError) {
+      return (
+        <section className="space-y-4 text-center">
+          <h1 className="text-2xl font-semibold text-red-500">
+            無法取得 Strava 使用者資料
+          </h1>
+          <p className="text-gray-500">{athleteError}</p>
+        </section>
+      );
+    }
+
+    if (athleteData) {
+      return (
+        <section className="space-y-6 text-center">
+          <header>
+            <h1 className="mb-4 text-2xl font-semibold">✅ Strava 授權成功！</h1>
             {athleteData.profile ? (
               <Image
                 src={athleteData.profile}
@@ -172,73 +193,58 @@ export default function StravaProfilePage() {
                 unoptimized
               />
             ) : (
-              <div className="w-[100px] h-[100px] mx-auto mb-4 rounded-full bg-gray-200" />
+              <div className="mx-auto mb-4 h-[100px] w-[100px] rounded-full bg-gray-200" />
             )}
+          </header>
 
-            <div className="mb-4">
-              <p className="text-sm font-semibold">最新活動</p>
-              {activityLoading && (
-                <p className="text-sm text-gray-500">活動資料載入中...</p>
-              )}
-              {activityError && (
-                <p className="text-sm text-red-500">{activityError}</p>
-              )}
-              {activity && (
-                <div className="space-y-1 text-left inline-block">
-                  {activityFields.map(({ key, label, formatter }) => {
-                    const value = activity[key as keyof ActivityState];
-                    const displayValue =
-                      formatter?.(value) ??
-                      (value !== null && value !== undefined
-                        ? String(value)
-                        : "未提供");
-                    return (
-                      <p key={key}>
-                        <strong>{label}：</strong>
-                        {displayValue}
-                      </p>
-                    );
-                  })}
-                </div>
-              )}
-              {!activityLoading && !activity && !activityError && (
-                <p className="text-sm text-gray-500">目前沒有活動資料</p>
-              )}
-            </div>
+          {renderActivitySection()}
 
-            <div className="space-y-2 mb-4">
-              {athleteFields.map(({ key, label, optional, formatter }) => {
-                const value = athleteData[key as keyof AthleteState];
-                if (optional && !value) {
-                  return null;
-                }
-                const displayValue =
-                  formatter?.(value) ?? (value ? String(value) : "未設定");
-                return (
-                  <p key={key}>
-                    <strong>{label}：</strong>
-                    {displayValue}
-                  </p>
-                );
-              })}
-            </div>
-            <Link href="/zh-tw" className="mx-auto">
-              <Button className={styles.secondary}>返回首頁</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="text-center space-y-4">
-            <h1 className="text-2xl font-semibold">尚未取得 Strava 資料</h1>
-            <p className="text-gray-500">
-              請重新回到首頁點擊「連結 Strava」按鈕以完成授權。
-            </p>
-            <Link href="/zh-tw">
-              <Button className={styles.secondary}>返回首頁</Button>
-            </Link>
-          </div>
-        )}
-      </main>
+          <section className="space-y-2">
+            {athleteFields.map(({ key, label, optional, formatter }) => {
+              const value = athleteData[key as keyof AthleteState];
+              if (optional && !value) {
+                return null;
+              }
+              const displayValue =
+                formatter?.(value) ?? (value ? String(value) : "未設定");
+              return (
+                <p key={key}>
+                  <strong>{label}：</strong>
+                  {displayValue}
+                </p>
+              );
+            })}
+          </section>
+        </section>
+      );
+    }
+
+    return (
+      <section className="space-y-4 text-center">
+        <h1 className="text-2xl font-semibold">尚未取得 Strava 資料</h1>
+        <p className="text-gray-500">
+          請重新回到首頁點擊「連結 Strava」按鈕以完成授權。
+        </p>
+        <Link href="/zh-tw">
+          <Button className="btn btn-secondary px-6">返回首頁</Button>
+        </Link>
+      </section>
+    );
+  };
+
+  return (
+    <div className="w-full min-h-[100svh]">
+      <div className="flex flex-col gap-8">
+        <div className="flex justify-end p-2 p-4 gap-2">
+          <Link href="/zh-tw">
+            <Button className="btn btn-secondary">返回 Dashboard</Button>
+          </Link>
+          <SignOutButton redirectUrl="/zh-tw">
+            <Button className="btn btn-default">登出</Button>
+          </SignOutButton>
+        </div>
+        {renderAthleteSection()}
+      </div>
     </div>
   );
 }
-

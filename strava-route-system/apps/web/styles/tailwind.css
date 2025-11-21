@@ -1,4 +1,5 @@
 /* tailwind */
+@config "../tailwind.config.cjs";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,6 +22,23 @@
   .btn:disabled {
     cursor: not-allowed;
     opacity: 0.5;
+  }
+
+  .btn-primary {
+    min-height: 48px;
+    min-width: 180px;
+    border-radius: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: #fc4c01;
+    color: #fff;
+    padding: 0 24px;
+    font-size: 16px;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background-color: #fc4c01;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   }
 
   .btn-secondary {
@@ -56,5 +74,22 @@
   .btn-secondary-dark:hover:not(:disabled) {
     border-color: rgba(255, 255, 255, 0.6);
     background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .btn-default {
+    min-height: 48px;
+    min-width: 180px;
+    border-radius: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    padding: 0 24px;
+    font-size: 16px;
+    color: #000;
+  }
+
+  .btn-default:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background-color: #f7f7f7;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   }
 }
