@@ -1,12 +1,12 @@
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@repo/ui/button";
+import { getCurrentUserId } from "@/lib/auth/server";
 import { getStravaToken } from "@/lib/background/strava-token-store";
 
 // RSC：取得初步資料（登入狀態、Strava 是否已連結）
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  const userId = await getCurrentUserId();
 
   if (!userId) {
     redirect("/login");

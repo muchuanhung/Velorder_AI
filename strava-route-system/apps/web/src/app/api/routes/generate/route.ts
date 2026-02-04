@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { getAuthFromRequest } from "@/lib/auth/server";
 import { inngest } from "@/inngest/client";
 
 type GeneratePayload = {
@@ -11,7 +11,8 @@ type GeneratePayload = {
 };
 
 export async function POST(request: Request) {
-  const { userId } = await auth();
+  const auth = await getAuthFromRequest(request);
+  const userId = auth?.uid;
 
   if (!userId) {
     return NextResponse.json({ error: "需要登入才能請求路線" }, { status: 401 });

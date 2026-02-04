@@ -1,12 +1,13 @@
-import { auth } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
-import { exchangeStravaToken, getStravaAthlete } from '@repo/auth';
-import { inngest } from '@/inngest/client';
-import { upsertStravaToken } from '@/lib/background/strava-token-store';
+import { NextResponse } from "next/server";
+import { exchangeStravaToken, getStravaAthlete } from "@repo/auth";
+import { getAuthFromRequest } from "@/lib/auth/server";
+import { inngest } from "@/inngest/client";
+import { upsertStravaToken } from "@/lib/background/strava-token-store";
 
 export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
+    const auth = await getAuthFromRequest(request);
+    const userId = auth?.uid;
 
     if (!userId) {
       console.warn('未登入使用者嘗試完成 Strava 授權');

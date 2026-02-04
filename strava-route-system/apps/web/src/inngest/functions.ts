@@ -81,7 +81,7 @@ export const syncAllUsers = inngest.createFunction(
     await step.run("dispatch-sync", async () => {
       await Promise.all(
         tokens.map((record: StravaTokenRecord) =>
-          step.sendEvent({
+          step.sendEvent(`sync-user-${record.userId}`, {
             name: "strava/sync-activities",
             data: {
               userId: record.userId,

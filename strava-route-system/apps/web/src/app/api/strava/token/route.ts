@@ -1,13 +1,14 @@
-import { auth } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { getAuthFromRequest } from "@/lib/auth/server";
 import {
   getStravaToken,
-  upsertStravaToken
-} from '@/lib/background/strava-token-store';
+  upsertStravaToken,
+} from "@/lib/background/strava-token-store";
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const auth = await getAuthFromRequest(request);
+    const userId = auth?.uid;
 
     if (!userId) {
       return NextResponse.json({ error: '未授權' }, { status: 401 });
@@ -44,9 +45,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
+    const auth = await getAuthFromRequest(request);
+    const userId = auth?.uid;
 
     if (!userId) {
       return NextResponse.json({ error: '未授權' }, { status: 401 });

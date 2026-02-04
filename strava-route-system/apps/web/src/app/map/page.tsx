@@ -1,23 +1,23 @@
 "use client";
 
 // Client Component：之後接 Mapbox 即時同步
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@repo/ui/button";
 
 export default function MapPage() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
+    if (!loading && !user) {
       router.push("/login");
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [loading, user, router]);
 
-  if (!isLoaded) {
+  if (loading) {
     return (
       <div className="flex min-h-[100svh] items-center justify-center">
         <p className="text-default">載入中...</p>
@@ -25,7 +25,7 @@ export default function MapPage() {
     );
   }
 
-  if (!isSignedIn) {
+  if (!user) {
     return null;
   }
 
