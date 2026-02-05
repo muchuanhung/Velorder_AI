@@ -6,6 +6,7 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { StravaTeaser } from "@/components/auth/strava-teaser";
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
@@ -20,6 +21,7 @@ export default function LoginPage() {
 
   const handleGoogleAuth = async () => {
     await signIn();
+    toast.success("登入成功", { duration: 2000 });
   };
 
   /** Email 登入／註冊：目前無後端，僅 UI 預留 */
