@@ -1,10 +1,9 @@
-// 登入後由 client 呼叫：驗證 idToken 並設定 httpOnly cookie
 
 import { NextResponse } from "next/server";
 import { getAuthAdmin } from "@/lib/firebase/admin";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/server";
 
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 5; // 5 天
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 5;
 
 export async function POST(request: Request) {
   try {

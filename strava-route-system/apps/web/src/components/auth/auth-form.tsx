@@ -45,9 +45,9 @@ const authFormConfig = {
     forgot: { prompt: "記得密碼嗎？ ", linkText: "返回登入" },
   },
   messages: {
-    forgotSuccess: "Password reset email sent! Check your inbox.",
-    authError: "Authentication failed",
-    googleError: "Google authentication failed",
+    forgotSuccess: "重設信已寄出，請檢查信箱",
+    authError: "登入失敗",
+    googleError: "Google 登入失敗",
   },
 } as const;
 

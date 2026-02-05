@@ -11,7 +11,9 @@ import { motion } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signIn } = useAuth();
+  const auth = useAuth();
+  const { user, loading: authLoading, signIn, signInWithEmail, signUpWithEmail, sendPasswordReset } =
+    auth;
 
   // 已登入則導向 dashboard
   useEffect(() => {
@@ -24,16 +26,27 @@ export default function LoginPage() {
     toast.success("登入成功", { duration: 2000 });
   };
 
-  /** Email 登入／註冊：目前無後端，僅 UI 預留 */
-  const handleEmailAuth = async (email: string, password: string, name?: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Email auth (placeholder):", { email, name: name || "login" });
+  /** Email 登入：有 name 為註冊，否則為登入 */
+  const handleEmailAuth = async (
+    email: string,
+    password: string,
+    name?: string
+  ) => {
+    if (name !== undefined && name.trim() !== "") {
+      await signUpWithEmail(email, password, name);
+    } else {
+      await signInWithEmail(email, password);
+    }
+    toast.success(name ? "註冊成功" : "登入成功", { duration: 2000 });
   };
 
-  /** 忘記密碼：目前無後端，僅 UI 預留 */
+  /** 忘記密碼：Firebase 寄出重設信；成功訊息由 AuthForm 的 setSuccess 顯示 */
   const handleForgotPassword = async (email: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log("Password reset (placeholder):", email);
+    if (typeof sendPasswordReset !== "function") {
+      toast.error("功能尚未載入，請重新整理頁面");
+      return;
+    }
+    await sendPasswordReset(email);
   };
 
   if (authLoading || user) {
