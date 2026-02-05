@@ -57,20 +57,29 @@ interface AuthFormProps {
   onForgotPassword: (email: string) => Promise<void>;
 }
 
+type FormData = { email: string; password: string; name: string };
+
 export function AuthForm({
   onGoogleAuth,
   onEmailAuth,
   onForgotPassword,
 }: AuthFormProps) {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [formData, setFormData] = useState<FormData>({
+    email: "",
+    password: "",
+    name: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,10 +89,14 @@ export function AuthForm({
 
     try {
       if (mode === "forgot") {
-        await onForgotPassword(email);
+        await onForgotPassword(formData.email);
         setSuccess(authFormConfig.messages.forgotSuccess);
       } else {
-        await onEmailAuth(email, password, mode === "signup" ? name : undefined);
+        await onEmailAuth(
+          formData.email,
+          formData.password,
+          mode === "signup" ? formData.name : undefined
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : authFormConfig.messages.authError);
@@ -211,8 +224,8 @@ export function AuthForm({
                     id="name"
                     type="text"
                     placeholder={authFormConfig.form.namePlaceholder}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={formData.name}
+                    onChange={onChange}
                     className="h-12 bg-card pl-10 text-foreground placeholder:text-muted-foreground"
                     required
                   />
@@ -230,8 +243,8 @@ export function AuthForm({
                   id="email"
                   type="email"
                   placeholder={authFormConfig.form.emailPlaceholder}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={onChange}
                   className="h-12 bg-card pl-10 text-foreground placeholder:text-muted-foreground"
                   required
                 />
@@ -264,8 +277,8 @@ export function AuthForm({
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder={authFormConfig.form.passwordPlaceholder}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={onChange}
                     className="h-12 bg-card pl-10 pr-10 text-foreground placeholder:text-muted-foreground"
                     required
                     minLength={6}

@@ -9,7 +9,7 @@ const teaserConfig = {
   hero: {
     icon: Activity,
     title: "StravaSync",
-    subtitle: "你的Strava數據，精彩呈現在你的眼前",
+    subtitle: "您的Strava數據，精彩呈現在您的眼前",
   },
   connectCard: {
     title: "Connect with Strava",

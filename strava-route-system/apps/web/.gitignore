@@ -28,6 +28,10 @@ yarn-error.log*
 # env files (can opt-in for commiting if needed)
 .env*
 
+# 金鑰與憑證
+private/*.json
+private/*.pem
+
 # vercel
 .vercel
 
