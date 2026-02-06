@@ -41,23 +41,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const authRef = useRef<ReturnType<typeof getAuthClient> | null>(null);
 
-  useEffect(() => {
-    authRef.current = getAuthClient();
-    return onAuthStateChanged(authRef.current, (u) => {
-      setUser(u ?? null);
-      setLoading(false);
-    });
-  }, []);
-
   const setSessionFromUser = useCallback(async (user: User) => {
     const idToken = await user.getIdToken();
     const res = await fetch("/api/auth/session", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: idToken }),
     });
     if (!res.ok) throw new Error("Session 設定失敗");
   }, []);
+
+  useEffect(() => {
+    authRef.current = getAuthClient();
+    let cancelled = false;
+    const unsub = onAuthStateChanged(authRef.current, async (u) => {
+      setUser(u ?? null);
+      // 必須先完成 session cookie 更新，再關閉 loading，否則 B 點 Sync 時可能仍帶 A 的 cookie 而撈到 A 的資料
+      if (u) {
+        try {
+          await setSessionFromUser(u);
+        } catch {
+          // 仍顯示使用者，後續 API 若 401 再處理
+        }
+      }
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+      unsub();
+    };
+  }, [setSessionFromUser]);
 
   const signIn = useCallback(async () => {
     const auth = authRef.current ?? getAuthClient();

@@ -125,3 +125,16 @@ export function mapSearchParamsToAthlete(
     profile: getString("athlete_profile")
   };
 }
+
+export function getInitials(
+  displayName: string | null,
+  email: string | null
+): string {
+  if (displayName?.trim()) {
+    const parts = displayName.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+    return displayName.slice(0, 2).toUpperCase();
+  }
+  if (email) return email.slice(0, 2).toUpperCase();
+  return "?";
+}

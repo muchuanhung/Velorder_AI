@@ -3,6 +3,9 @@ import { exchangeStravaToken, getStravaAthlete } from "@repo/auth";
 import { getAuthFromRequest } from "@/lib/auth/server";
 import { inngest } from "@/inngest/client";
 import { upsertStravaToken } from "@/lib/background/strava-token-store";
+import { upsertStravaTokenFirestore } from "@/lib/background/strava-token-store.firestore";
+import { pullRecentActivities } from "@/lib/background/strava-activities";
+import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
 
 export async function GET(request: Request) {
   try {
@@ -51,26 +54,22 @@ export async function GET(request: Request) {
       '完整資料': athlete
     });
 
-    upsertStravaToken({
+    const tokenRecord = {
       userId,
       athleteId: athlete.id,
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
-      expiresAt: tokenData.expires_at
-    });
+      expiresAt: tokenData.expires_at,
+    };
+    upsertStravaToken(tokenRecord);
+    await upsertStravaTokenFirestore(tokenRecord);
 
-    await inngest.send({
-      name: 'strava/sync-activities',
-      data: {
-        userId,
-        athleteId: athlete.id,
-        accessToken: tokenData.access_token
-      }
-    });
+    // 授權完成後立即同步活動，再導向 dashboard（一個動作完成授權＋同步）
+    const activities = await pullRecentActivities(tokenData.access_token);
+    await persistActivitiesFirestore({ userId, activities });
 
-    // 授權完成後導向 dashboard
-    const errorUrl = new URL('/dashboard', request.url);
-    return NextResponse.redirect(errorUrl);
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   } catch (error) {
     console.error('Strava 回呼流程失敗', error);
     const errorMessage = error instanceof Error ? error.message : '未知錯誤';

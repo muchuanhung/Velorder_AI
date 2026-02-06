@@ -1,12 +1,12 @@
 import { inngest } from "@/inngest/client";
 import {
-  persistActivities,
   pullRecentActivities,
 } from "@/lib/background/strava-activities";
+import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
 import {
-  listActiveStravaTokens,
+  listActiveStravaTokensFirestore,
   type StravaTokenRecord,
-} from "@/lib/background/strava-token-store";
+} from "@/lib/background/strava-token-store.firestore";
 import {
   buildRouteCandidates,
   cacheRouteRecommendation,
@@ -42,7 +42,7 @@ export const syncActivities = inngest.createFunction(
     );
 
     await step.run("persist-activities", () =>
-      persistActivities({
+      persistActivitiesFirestore({
         userId: event.data.userId,
         activities,
       })
@@ -75,7 +75,7 @@ export const syncAllUsers = inngest.createFunction(
   { cron: "0 * * * *" },
   async ({ step }) => {
     const tokens = await step.run("load-active-tokens", () =>
-      listActiveStravaTokens()
+      listActiveStravaTokensFirestore()
     );
 
     await step.run("dispatch-sync", async () => {
