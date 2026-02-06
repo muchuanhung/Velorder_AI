@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   const handleGoogleAuth = async () => {
     await signIn();
-    toast.success("登入成功", { duration: 2000 });
+    toast.success("登入成功", { duration: 1000 });
   };
 
   /** Email 登入：有 name 為註冊，否則為登入 */

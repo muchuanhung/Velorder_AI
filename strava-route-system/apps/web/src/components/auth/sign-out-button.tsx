@@ -1,11 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function SignOutButton() {
+/** 登出並導向 /login，供按鈕或 DropdownMenuItem onSelect 使用 */
+export function useSignOut() {
   const router = useRouter();
   const { signOut } = useAuth();
 
@@ -14,16 +13,5 @@ export function SignOutButton() {
     router.replace("/login");
   };
 
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      className="gap-2 text-muted-foreground hover:text-foreground"
-      onClick={handleSignOut}
-    >
-      <LogOut className="h-4 w-4" />
-      登出
-    </Button>
-  );
+  return handleSignOut;
 }

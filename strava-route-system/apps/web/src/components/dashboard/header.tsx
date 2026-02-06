@@ -13,8 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useSignOut } from "@/components/auth/sign-out-button";
 
 export function Header() {
+  const handleSignOut = useSignOut();
+
   return (
     <header className="flex items-center justify-between gap-4 pb-6">
       <div className="space-y-1">
@@ -89,11 +92,16 @@ export function Header() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="cursor-pointer text-foreground">Profile</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-foreground">Settings</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-foreground">Connected Apps</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground">個人資料</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground">設定</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground">連結的應用程式</DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="cursor-pointer text-destructive">Log out</DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive"
+              onSelect={handleSignOut}
+            >
+              登出
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
