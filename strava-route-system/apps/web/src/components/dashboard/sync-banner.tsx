@@ -1,20 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { X, RefreshCw, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { RefreshCw, CheckCircle2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { useSync } from "@/contexts/SyncContext";
 
-interface SyncBannerProps {
-  syncing?: boolean;
-  progress?: number;
+const SYNC_PROGRESS_DURATION_MS = 2000;
+const SYNC_PROGRESS_TICK_MS = 50;
+
+/**
+ * 集中管理 SyncBanner 的顯示與進度動畫：
+ * - 開始同步時重置 dismissed，讓 banner 再次顯示
+ * - 同步中時進度條 0→100% 循環動畫
+ * - 由使用者點擊 Dismiss 按鈕隱藏
+ */
+function useSyncBanner() {
+  const [dismissed, setDismissed] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { syncing, lastSyncCount } = useSync();
+
+  useEffect(() => {
+    if (syncing) setDismissed(false);
+  }, [syncing]);
+
+  useEffect(() => {
+    if (!syncing) {
+      setProgress(0);
+      return;
+    }
+    const step = (100 / SYNC_PROGRESS_DURATION_MS) * SYNC_PROGRESS_TICK_MS;
+    const t = setInterval(() => {
+      setProgress((p) => (p + step >= 100 ? 0 : p + step));
+    }, SYNC_PROGRESS_TICK_MS);
+    return () => clearInterval(t);
+  }, [syncing]);
+
+  return { dismissed, progress, syncing, lastSyncCount, setDismissed };
 }
 
-export function SyncBanner({ syncing = true, progress = 68 }: SyncBannerProps) {
-  const [dismissed, setDismissed] = useState(false);
+export function SyncBanner() {
+  const { dismissed, progress, syncing, lastSyncCount, setDismissed } = useSyncBanner();
 
   if (dismissed) return null;
+  if (!syncing && lastSyncCount === null) return null;
 
   return (
     <div
@@ -34,20 +64,18 @@ export function SyncBanner({ syncing = true, progress = 68 }: SyncBannerProps) {
           )}
           <div className="space-y-0.5">
             <p className="text-sm font-medium text-foreground">
-              {syncing
-                ? "Syncing historical Strava data..."
-                : "Sync complete!"}
+              {syncing ? "正在同步 Strava 活動..." : "同步完成！"}
             </p>
             <p className="text-xs text-muted-foreground">
               {syncing
-                ? `Inngest background job processing • ${progress}% complete`
-                : "All activities have been synced successfully"}
+                ? "請稍候..."
+                : `已同步 ${lastSyncCount ?? 0} 筆活動`}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {syncing && (
-            <div className="hidden sm:block w-32">
+            <div className="hidden sm:block w-32 shrink-0">
               <Progress value={progress} className="h-2 bg-secondary [&>div]:bg-strava" />
             </div>
           )}

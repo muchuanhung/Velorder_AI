@@ -138,3 +138,14 @@ export function getInitials(
   if (email) return email.slice(0, 2).toUpperCase();
   return "?";
 }
+
+export function getMonthRange(
+  year: number,
+  month: number
+): { after: number; before: number } {
+  const after = Math.floor(new Date(year, month - 1, 1).getTime() / 1000);
+  const before = Math.floor(
+    new Date(year, month, 0, 23, 59, 59, 999).getTime() / 1000
+  );
+  return { after, before };
+}

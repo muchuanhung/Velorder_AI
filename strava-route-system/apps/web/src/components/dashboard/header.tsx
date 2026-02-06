@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Bell, Search, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +15,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSync } from "@/contexts/SyncContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getInitials } from "@/constants";
 
 export function Header() {
   const { user } = useAuth();
+  const { syncing, setSyncing, setLastSyncCount } = useSync();
   const handleSignOut = useSignOut();
-  const [syncing, setSyncing] = useState(false);
 
   const handleSyncNow = async () => {
     if (!user?.uid) return;
@@ -61,10 +61,8 @@ export function Header() {
         }
         return;
       }
-      toast.success(`已同步 ${data.count ?? 0} 筆活動`);
-      console.log("Strava sync 回傳：", data);
-      console.log("同步活動筆數：", data.count);
-      console.log("活動列表：", data.activities);
+      const count = data.count ?? 0;
+      setLastSyncCount(count);
     } finally {
       setSyncing(false);
     }
@@ -98,16 +96,17 @@ export function Header() {
         <Button
           variant="outline"
           size="sm"
-          className="hidden sm:flex gap-2 border-border hover:bg-strava hover:text-primary-foreground hover:border-strava bg-transparent"
+          className="flex gap-2 border-border hover:bg-strava hover:text-primary-foreground hover:border-strava bg-transparent"
           onClick={handleSyncNow}
           disabled={syncing}
+          title="Sync Now"
         >
           {syncing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
           ) : (
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4 shrink-0" />
           )}
-          Sync Now
+          <span className="hidden sm:inline">Sync Now</span>
         </Button>
 
         {/* Notifications */}

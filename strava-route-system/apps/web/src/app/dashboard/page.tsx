@@ -4,20 +4,22 @@ import { StatsCards } from "@/components/dashboard/stats-cards";
 import { ActivityMap } from "@/components/dashboard/activity-map";
 import { ActivitiesTable } from "@/components/dashboard/activities-table";
 import { SyncBanner } from "@/components/dashboard/sync-banner";
+import { SyncProvider } from "@/contexts/SyncContext";
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      
-      {/* Main content */}
-      <main className="lg:pl-64 transition-all duration-300">
-        <div className="p-4 pt-16 lg:pt-4 lg:p-8 space-y-6">
-          {/* Header */}
-          <Header />
+    <SyncProvider>
+      <div className="min-h-screen bg-background">
+        <Sidebar />
 
-          {/* Sync Status Banner */}
-          <SyncBanner syncing={true} progress={68} />
+        {/* Main content */}
+        <main className="lg:pl-64 transition-all duration-300">
+          <div className="p-4 pt-16 lg:pt-4 lg:p-8 space-y-6">
+            {/* Header */}
+            <Header />
+
+            {/* Sync Status Banner：顯示與 Header Sync 按鈕一致的同步狀態 */}
+            <SyncBanner />
 
           {/* Stats Cards */}
           <StatsCards />
@@ -27,8 +29,9 @@ export default function Dashboard() {
             <ActivityMap />
             <ActivitiesTable />
           </div>
-        </div>
-      </main>
-    </div>
+          </div>
+        </main>
+      </div>
+    </SyncProvider>
   );
 }
