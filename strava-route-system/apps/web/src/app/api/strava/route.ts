@@ -18,6 +18,7 @@ import {
   getUserIdByAthleteIdFirestore,
   upsertStravaTokenFirestore,
 } from "@/lib/background/strava-token-store.firestore";
+import { getLastMonthYearMonth } from "@/constants";
 import { pullRecentActivities } from "@/lib/background/strava-activities";
 import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
 
@@ -57,8 +58,14 @@ export async function GET(request: Request) {
     upsertStravaToken(tokenRecord);
     await upsertStravaTokenFirestore(tokenRecord);
 
-    // 授權完成後立即同步活動，再導向 dashboard（一個動作完成授權＋同步）
-    const activities = await pullRecentActivities(tokenData.access_token);
+    // 授權完成後立即同步活動（當月＋上月），再導向 dashboard
+    const [thisMonthActivities, lastMonthActivities] = await Promise.all([
+      pullRecentActivities(tokenData.access_token),
+      pullRecentActivities(tokenData.access_token, { month: getLastMonthYearMonth() }),
+    ]);
+    const byId = new Map(thisMonthActivities.map((a) => [a.id, a]));
+    lastMonthActivities.forEach((a) => byId.set(a.id, a));
+    const activities = Array.from(byId.values());
     await persistActivitiesFirestore({ userId, activities });
 
     const dashboardUrl = new URL("/dashboard", request.url);

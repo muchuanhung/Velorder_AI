@@ -149,3 +149,28 @@ export function getMonthRange(
   );
   return { after, before };
 }
+
+/** 回傳某個 (year, month) 的 YYYY-MM 字串，month 為 1–12 */
+function toYYYYMM(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+export function getLastMonthYearMonth(): { year: number; month: number } {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
+
+/** 判斷是否為「當前日曆月」。Strava start_date_local 如 "2026-02-08T16:24:59Z"，取前 7 字元 YYYY-MM 比對 */
+export function isThisMonth(isoDateLocal: string): boolean {
+  const now = new Date();
+  const yyyyMm = isoDateLocal.slice(0, 7);
+  return yyyyMm === toYYYYMM(now.getFullYear(), now.getMonth() + 1);
+}
+
+/** 判斷是否為「上一個日曆月」。同上，只比對 YYYY-MM */
+export function isLastMonth(isoDateLocal: string): boolean {
+  const { year, month } = getLastMonthYearMonth();
+  return isoDateLocal.slice(0, 7) === toYYYYMM(year, month);
+}

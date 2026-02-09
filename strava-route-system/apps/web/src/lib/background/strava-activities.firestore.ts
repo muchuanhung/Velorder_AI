@@ -50,7 +50,7 @@ export async function persistActivitiesFirestore(params: {
   return params.activities.length;
 }
 
-/** 從 Firestore 讀取該使用者已同步的活動 */
+/** 從 Firestore 讀取該使用者已同步的活動（含當月＋上月，供 stats 比較用） */
 export async function getCachedActivitiesFirestore(
   userId: string
 ): Promise<StravaActivity[]> {
@@ -60,7 +60,7 @@ export async function getCachedActivitiesFirestore(
     .doc(userId)
     .collection(SUBCOLLECTION)
     .orderBy("start_date_local", "desc")
-    .limit(100)
+    .limit(250)
     .get();
   return snap.docs.map((d) => fromFirestore(d.data() as Record<string, unknown>));
 }

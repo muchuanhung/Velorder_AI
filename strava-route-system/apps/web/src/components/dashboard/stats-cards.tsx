@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react"
+import React, { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { useSync } from "@/contexts/SyncContext";
 import { Route, Mountain, Clock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,10 +43,12 @@ function StatCard({ title, value, subtitle, icon, trend, highlight }: StatCardPr
         </div>
         {trend && (
           <div className="mt-3 flex items-center gap-1 text-xs">
-            <span className={trend.positive ? "text-success" : "text-destructive"}>
-              {trend.positive ? "+" : ""}{trend.value}
+            <span className={
+              trend.value === "—" ? "text-muted-foreground" : trend.positive ? "text-success" : "text-destructive"
+            }>
+              {trend.value}
             </span>
-            <span className="text-muted-foreground">vs last month</span>
+            <span className="text-muted-foreground">vs. 上個月</span>
           </div>
         )}
       </CardContent>
@@ -55,7 +58,7 @@ function StatCard({ title, value, subtitle, icon, trend, highlight }: StatCardPr
 
 type JobStatus = "idle" | "running" | "completed" | "error";
 
-function JobStatusCard({ status }: { status: JobStatus }) {
+function JobStatusCard({ status, syncCount }: { status: JobStatus; syncCount: number | null }) {
   const statusConfig = {
     idle: { icon: <CheckCircle2 className="h-5 w-5" />, label: "Ready", color: "text-muted-foreground" },
     running: { icon: <Loader2 className="h-5 w-5 animate-spin" />, label: "Syncing...", color: "text-strava" },
@@ -64,17 +67,25 @@ function JobStatusCard({ status }: { status: JobStatus }) {
   };
 
   const config = statusConfig[status];
+  const subtitle =
+    status === "running"
+      ? "同步中…"
+      : status === "completed" && syncCount != null
+        ? `已同步 ${syncCount} 筆活動`
+        : status === "error"
+          ? "上次同步失敗，請再試一次"
+          : "點擊 Sync 開始同步";
 
   return (
     <Card className="bg-card border-border">
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Inngest Job Status</p>
+            <p className="text-sm font-medium text-muted-foreground">Sync 狀態</p>
             <p className={cn("text-2xl font-bold tracking-tight", config.color)}>
               {config.label}
             </p>
-            <p className="text-xs text-muted-foreground">Background sync process</p>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
           <div className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary",
@@ -83,41 +94,111 @@ function JobStatusCard({ status }: { status: JobStatus }) {
             {config.icon}
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="inline-block h-2 w-2 rounded-full bg-success animate-pulse" />
-          <span>Last sync: 2 minutes ago</span>
-        </div>
       </CardContent>
     </Card>
   );
 }
 
+type MonthStats = {
+  totalDistanceKm: number;
+  lastMonthDistanceKm: number;
+  totalElevationM: number;
+  lastMonthElevationM: number;
+  totalMovingTimeSec: number;
+  lastMonthMovingTimeSec: number;
+  activityCount: number;
+};
+
+function formatDistance(km: number): string {
+  if (km >= 1000) return `${(km / 1000).toFixed(1)}k km`;
+  return `${km.toLocaleString(undefined, { maximumFractionDigits: 1 })} km`;
+}
+
+function formatElevation(m: number): string {
+  return `${m.toLocaleString(undefined, { maximumFractionDigits: 0 })} m`;
+}
+
+function formatMovingTime(sec: number): string {
+  const hrs = sec / 3600;
+  if (hrs >= 1000) return `${(hrs / 1000).toFixed(1)}k hrs`;
+  return `${hrs.toLocaleString(undefined, { maximumFractionDigits: 1 })} hrs`;
+}
+
 export function StatsCards() {
+  const [stats, setStats] = useState<MonthStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { syncing, lastSyncCount, lastSyncStatus } = useSync();
+  const jobStatus: JobStatus = syncing ? "running" : lastSyncStatus;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/strava/stats", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: MonthStats | null) => {
+        if (!cancelled && data) setStats(data);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const prevSyncingRef = useRef(false);
+  useEffect(() => {
+    const wasSyncing = prevSyncingRef.current;
+    prevSyncingRef.current = syncing;
+    if (wasSyncing && !syncing && lastSyncStatus === "completed") {
+      fetch("/api/strava/stats", { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: MonthStats | null) => data && setStats(data));
+    }
+  }, [syncing, lastSyncStatus]);
+
+  const distanceValue = stats != null ? formatDistance(stats.totalDistanceKm) : (loading ? "—" : "0 km");
+  const elevationValue = stats != null ? formatElevation(stats.totalElevationM) : (loading ? "—" : "0 m");
+  const movingTimeValue = stats != null ? formatMovingTime(stats.totalMovingTimeSec) : (loading ? "—" : "0 hrs");
+
+  function trendFromPrev(current: number, prev: number): { value: string; positive: boolean } | undefined {
+    if (stats == null) return undefined;
+    if (prev <= 0) return { value: "—", positive: true };
+    const pct = ((current - prev) / prev) * 100;
+    return {
+      value: `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`,
+      positive: pct >= 0,
+    };
+  }
+  const distanceTrend = stats != null ? trendFromPrev(stats.totalDistanceKm, stats.lastMonthDistanceKm) : undefined;
+  const elevationTrend = stats != null ? trendFromPrev(stats.totalElevationM, stats.lastMonthElevationM) : undefined;
+  const movingTimeTrend = stats != null ? trendFromPrev(stats.totalMovingTimeSec, stats.lastMonthMovingTimeSec) : undefined;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatCard
-        title="Total Distance"
-        value="1,284 km"
-        subtitle="This month"
+        title="總距離"
+        value={distanceValue}
+        subtitle="這個月"
         icon={<Route className="h-5 w-5" />}
-        trend={{ value: "12.5%", positive: true }}
+        trend={distanceTrend}
         highlight
       />
       <StatCard
-        title="Elevation Gain"
-        value="24,892 m"
-        subtitle="This month"
+        title="總爬升高度"
+        value={elevationValue}
+        subtitle="這個月"
         icon={<Mountain className="h-5 w-5" />}
-        trend={{ value: "8.3%", positive: true }}
+        trend={elevationTrend}
       />
       <StatCard
-        title="Active Hours"
-        value="68.5 hrs"
-        subtitle="This month"
+        title="總活動時數"
+        value={movingTimeValue}
+        subtitle="這個月"
         icon={<Clock className="h-5 w-5" />}
-        trend={{ value: "2.1%", positive: false }}
+        trend={movingTimeTrend}
       />
-      <JobStatusCard status="completed" />
+      <JobStatusCard status={jobStatus} syncCount={lastSyncCount} />
     </div>
   );
 }

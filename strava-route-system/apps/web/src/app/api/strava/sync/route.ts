@@ -15,6 +15,7 @@ import { getAuthFromRequest } from "@/lib/auth/server";
 import { getStravaTokenFirestore } from "@/lib/background/strava-token-store.firestore";
 import { pullRecentActivities } from "@/lib/background/strava-activities";
 import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
+import { getLastMonthYearMonth } from "@/constants";
 
 /** 前端傳送的當前 Firebase UID，必須與 cookie 一致，避免 cookie 錯人時誤回他人資料 */
 const HEADER_CLIENT_UID = "x-client-uid";
@@ -49,7 +50,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const activities = await pullRecentActivities(tokenRecord.accessToken);
+    const [thisMonthActivities, lastMonthActivities] = await Promise.all([
+      pullRecentActivities(tokenRecord.accessToken),
+      pullRecentActivities(tokenRecord.accessToken, { month: getLastMonthYearMonth() }),
+    ]);
+    const byId = new Map(thisMonthActivities.map((a) => [a.id, a]));
+    lastMonthActivities.forEach((a) => byId.set(a.id, a));
+    const activities = Array.from(byId.values());
     const count = await persistActivitiesFirestore({
       userId: auth.uid,
       activities,

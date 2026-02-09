@@ -22,7 +22,7 @@ import { getInitials } from "@/constants";
 
 export function Header() {
   const { user } = useAuth();
-  const { syncing, setSyncing, setLastSyncCount } = useSync();
+  const { syncing, setSyncing, setLastSyncCount, setLastSyncStatus } = useSync();
   const handleSignOut = useSignOut();
   /** 取得授權網址後先不跳轉，顯示確認再導向（避免多人共用瀏覽器時誤用他人 Strava） */
   const [pendingStravaUrl, setPendingStravaUrl] = useState<string | null>(null);
@@ -37,8 +37,10 @@ export function Header() {
         headers: { "X-Client-UID": user.uid },
       });
       const data = await res.json();
+      console.log("[Strava sync] API 回傳:", data);
 
       if (data.needAuth) {
+        setLastSyncStatus("error");
         const urlRes = await fetch("/api/strava/oauth-url", {
           credentials: "include",
           headers: { "X-Client-UID": user.uid },
@@ -57,6 +59,7 @@ export function Header() {
       }
 
       if (!res.ok) {
+        setLastSyncStatus("error");
         if (res.status === 403) {
           toast.error("登入狀態與頁面不符，請重新整理頁面後再試");
           return;
@@ -74,6 +77,9 @@ export function Header() {
       }
       const count = data.count ?? 0;
       setLastSyncCount(count);
+      setLastSyncStatus("completed");
+    } catch {
+      setLastSyncStatus("error");
     } finally {
       setSyncing(false);
     }

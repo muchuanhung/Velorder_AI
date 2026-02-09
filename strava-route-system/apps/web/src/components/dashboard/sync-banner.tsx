@@ -66,11 +66,6 @@ export function SyncBanner() {
             <p className="text-sm font-medium text-foreground">
               {syncing ? "正在同步 Strava 活動..." : "同步完成！"}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {syncing
-                ? "請稍候..."
-                : `已同步 ${lastSyncCount ?? 0} 筆活動`}
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
