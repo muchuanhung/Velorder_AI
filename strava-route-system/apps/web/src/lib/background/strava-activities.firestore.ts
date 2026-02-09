@@ -12,6 +12,8 @@ export type StravaActivity = {
   moving_time: number;
   total_elevation_gain: number;
   start_date_local: string;
+  type?: string;
+  average_heartrate?: number | null;
 };
 
 const SUBCOLLECTION = "strava_activities";
@@ -31,10 +33,11 @@ function fromFirestore(data: Record<string, unknown>): StravaActivity {
     moving_time: data.moving_time as number,
     total_elevation_gain: data.total_elevation_gain as number,
     start_date_local: data.start_date_local as string,
+    type: data.type as string | undefined,
+    average_heartrate: (data.average_heartrate as number | null | undefined) ?? null,
   };
 }
 
-/** 將活動寫入 Firestore（以 activity.id 為 doc id，覆寫同 id） */
 export async function persistActivitiesFirestore(params: {
   userId: string;
   activities: StravaActivity[];
@@ -50,7 +53,6 @@ export async function persistActivitiesFirestore(params: {
   return params.activities.length;
 }
 
-/** 從 Firestore 讀取該使用者已同步的活動（含當月＋上月，供 stats 比較用） */
 export async function getCachedActivitiesFirestore(
   userId: string
 ): Promise<StravaActivity[]> {

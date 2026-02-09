@@ -174,3 +174,25 @@ export function isLastMonth(isoDateLocal: string): boolean {
   const { year, month } = getLastMonthYearMonth();
   return isoDateLocal.slice(0, 7) === toYYYYMM(year, month);
 }
+
+/** ISO 日期字串轉成相對顯示：Today/Yesterday + 時間，或 Short Date */
+export function formatActivityDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const today = now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dateStr = d.toDateString();
+  if (dateStr === today)
+    return `Today, ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+  if (dateStr === yesterday.toDateString())
+    return `Yesterday, ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+/** 公尺轉成距離顯示字串（km），≥1000 km 顯示為 "X.Xk km" */
+export function formatActivityDistance(meters: number): string {
+  const km = meters / 1000;
+  if (km >= 1000) return `${(km / 1000).toFixed(1)}k km`;
+  return `${km.toLocaleString(undefined, { maximumFractionDigits: 2 })} km`;
+}

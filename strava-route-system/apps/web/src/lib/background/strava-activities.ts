@@ -10,6 +10,8 @@ export type StravaActivity = {
   moving_time: number;
   total_elevation_gain: number;
   start_date_local: string;
+  type?: string;
+  average_heartrate?: number | null;
 };
 
 const activityStore = new Map<string, StravaActivity[]>();
@@ -46,7 +48,17 @@ export async function pullRecentActivities(
       throw new Error(`Strava 活動抓取失敗：${response.status} ${details}`);
     }
 
-    const chunk = (await response.json()) as StravaActivity[];
+    const raw = (await response.json()) as Array<Record<string, unknown>>;
+    const chunk: StravaActivity[] = raw.map((a) => ({
+      id: a.id as number,
+      name: (a.name as string) ?? "",
+      distance: (a.distance as number) ?? 0,
+      moving_time: (a.moving_time as number) ?? 0,
+      total_elevation_gain: (a.total_elevation_gain as number) ?? 0,
+      start_date_local: (a.start_date_local as string) ?? "",
+      type: a.type as string | undefined,
+      average_heartrate: (a.average_heartrate as number | null | undefined) ?? null,
+    }));
     all.push(...chunk);
     if (chunk.length < PER_PAGE) break;
     page += 1;
