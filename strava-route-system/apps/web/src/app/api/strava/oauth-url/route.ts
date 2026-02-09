@@ -1,15 +1,24 @@
 import { NextResponse } from 'next/server';
+import { getAuthFromRequest } from '@/lib/auth/server';
 
-export async function GET() {
+const HEADER_CLIENT_UID = 'x-client-uid';
+
+export async function GET(request: Request) {
+  const auth = await getAuthFromRequest(request);
+  if (!auth?.uid) {
+    return NextResponse.json({ error: '未登入' }, { status: 401 });
+  }
+
+  const clientUid = request.headers.get(HEADER_CLIENT_UID)?.trim();
+  if (!clientUid || clientUid !== auth.uid) {
+    return NextResponse.json(
+      { error: '登入狀態與目前頁面不符，請重新整理頁面後再試' },
+      { status: 403 }
+    );
+  }
+
   const clientId = process.env.STRAVA_CLIENT_ID;
   const redirectUri = process.env.STRAVA_REDIRECT_URI;
-
-  console.log('OAuth URL request - env check:', {
-    hasClientId: Boolean(clientId),
-    clientIdLength: clientId?.length || 0,
-    hasRedirectUri: Boolean(redirectUri),
-    redirectUri
-  });
 
   if (!clientId || !redirectUri) {
     console.error('Missing environment variables:', {
@@ -46,8 +55,8 @@ export async function GET() {
   url.searchParams.set('redirect_uri', redirectUri);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('scope', scopes.join(','));
-
-  console.log('Generated OAuth URL:', url.toString().replace(clientId, '***'));
+  url.searchParams.set('state', auth.uid);
+  url.searchParams.set('approval_prompt', 'force');
 
   return NextResponse.json({ oauthUrl: url.toString() });
 }

@@ -1,9 +1,23 @@
+/**
+ * Strava OAuth 回呼：GET /api/strava?code=xxx&state=uid
+ *
+ * 改動後邏輯（依序）：
+ * 1. 從 cookie 取得目前登入者 userId；未登入 → 導向 /login
+ * 2. 沒有 code（例如使用者手動打開此 URL）→ 導向 /dashboard
+ * 3. 用 code 向 Strava 換 access_token，取得 athlete 資料
+ * 4. 若此 Strava 帳號（athleteId）已連結到「別人」→ 刪除舊連結（改綁給目前授權者）
+ * 5. 將 token 寫入 memory + Firestore（以當前 userId 為 key）
+ * 6. 拉活動、寫入 Firestore，導向 /dashboard
+ */
 import { NextResponse } from "next/server";
 import { exchangeStravaToken, getStravaAthlete } from "@repo/auth";
 import { getAuthFromRequest } from "@/lib/auth/server";
-import { inngest } from "@/inngest/client";
 import { upsertStravaToken } from "@/lib/background/strava-token-store";
-import { upsertStravaTokenFirestore } from "@/lib/background/strava-token-store.firestore";
+import {
+  deleteStravaTokenFirestore,
+  getUserIdByAthleteIdFirestore,
+  upsertStravaTokenFirestore,
+} from "@/lib/background/strava-token-store.firestore";
 import { pullRecentActivities } from "@/lib/background/strava-activities";
 import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
 
@@ -19,40 +33,19 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
-    const state = searchParams.get('state');
 
     if (!code) {
-      console.log('Strava 回呼沒有帶入 code，導回首頁');
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-
-    console.log('收到 Strava 回呼參數', {
-      hasCode: Boolean(code),
-      state,
-      userId
-    });
 
     const tokenData = await exchangeStravaToken(code);
 
-    console.log('✅ Strava token 交換完成', {
-      expiresAt: new Date(tokenData.expires_at * 1000).toISOString(),
-      hasRefreshToken: Boolean(tokenData.refresh_token),
-      accessTokenLength: tokenData.access_token.length
-    });
-
     const athlete = await getStravaAthlete(tokenData.access_token);
 
-    console.log('✅ Strava 授權成功，使用者資料：', {
-      '使用者 ID': athlete.id,
-      '姓名': `${athlete.firstname} ${athlete.lastname}`,
-      '使用者名稱': athlete.username || '未設定',
-      '城市': athlete.city || '未設定',
-      '國家': athlete.country || '未設定',
-      '性別': athlete.sex || '未設定',
-      'Premium': athlete.premium ? '是' : '否',
-      '大頭照': athlete.profile,
-      '完整資料': athlete
-    });
+    const existingUserId = await getUserIdByAthleteIdFirestore(athlete.id);
+    if (existingUserId && existingUserId !== userId) {
+      await deleteStravaTokenFirestore(existingUserId);
+    }
 
     const tokenRecord = {
       userId,

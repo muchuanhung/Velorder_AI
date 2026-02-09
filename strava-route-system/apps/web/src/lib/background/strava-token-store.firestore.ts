@@ -64,3 +64,19 @@ export async function listActiveStravaTokensFirestore(): Promise<StravaTokenReco
     .get();
   return snap.docs.map((d) => fromFirestore(d.data() as Record<string, unknown>, d.id));
 }
+
+/**
+ * 查詢此 athleteId 是否已被某 userId 連結，回傳該 userId 或 null。
+ */
+export async function getUserIdByAthleteIdFirestore(athleteId: number): Promise<string | null> {
+  const db = getFirestoreAdmin();
+  const snap = await db.collection(COLLECTION).where("athleteId", "==", athleteId).limit(1).get();
+  const first = snap.docs[0];
+  return first?.id ?? null;
+}
+
+/** 刪除某使用者的 Strava token（用於「改綁」時移除前一個連結） */
+export async function deleteStravaTokenFirestore(userId: string): Promise<void> {
+  const db = getFirestoreAdmin();
+  await db.collection(COLLECTION).doc(userId).delete();
+}

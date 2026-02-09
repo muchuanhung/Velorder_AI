@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getCurrentUserId } from "@/lib/auth/server";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { StatsCards } from "@/components/dashboard/stats-cards";
@@ -6,7 +8,10 @@ import { ActivitiesTable } from "@/components/dashboard/activities-table";
 import { SyncBanner } from "@/components/dashboard/sync-banner";
 import { SyncProvider } from "@/contexts/SyncContext";
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login");
+
   return (
     <SyncProvider>
       <div className="min-h-screen bg-background">

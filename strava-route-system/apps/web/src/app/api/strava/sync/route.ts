@@ -1,19 +1,22 @@
 /**
  * POST /api/strava/sync
  * 使用當前登入使用者的 Strava token 拉取近期活動、寫入 Firestore，並回傳結果。
+ *
+ * 1. 從 cookie 取得 auth.uid；未登入 → 401
+ * 2. 要求帶 X-Client-UID（前端畫面的 user.uid），且必須 === auth.uid，否則 403
+ *    （避免 cookie 仍是舊帳號時，誤把 A 的活動回傳給畫面上的 B）
+ * 3. 只從 Firestore 讀取該 uid 的 Strava token（不讀 memory），沒有 → 200 + needAuth: true
+ * 4. token 過期 → 400
+ * 5. 用 token 拉活動、寫入 Firestore，回傳 200 + { success, count, activities }
  */
 
 import { NextResponse } from "next/server";
 import { getAuthFromRequest } from "@/lib/auth/server";
-import { getStravaToken } from "@/lib/background/strava-token-store";
-import {
-  getStravaTokenFirestore,
-  upsertStravaTokenFirestore,
-} from "@/lib/background/strava-token-store.firestore";
+import { getStravaTokenFirestore } from "@/lib/background/strava-token-store.firestore";
 import { pullRecentActivities } from "@/lib/background/strava-activities";
 import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
 
-/** 前端傳送的當前 Firebase UID，用來與 cookie 比對，避免 cookie 仍為舊帳號時誤回他人資料 */
+/** 前端傳送的當前 Firebase UID，必須與 cookie 一致，避免 cookie 錯人時誤回他人資料 */
 const HEADER_CLIENT_UID = "x-client-uid";
 
 export async function POST(request: Request) {
@@ -24,31 +27,17 @@ export async function POST(request: Request) {
     }
 
     const clientUid = request.headers.get(HEADER_CLIENT_UID)?.trim();
-    if (clientUid && clientUid !== auth.uid) {
+    if (!clientUid || clientUid !== auth.uid) {
       return NextResponse.json(
         { error: "登入狀態與目前頁面不符，請重新整理頁面後再試" },
         { status: 403 }
       );
     }
 
-    let tokenRecord = await getStravaTokenFirestore(auth.uid);
-    if (!tokenRecord) {
-      const mem = getStravaToken(auth.uid);
-      if (mem) {
-        await upsertStravaTokenFirestore({
-          userId: mem.userId,
-          athleteId: mem.athleteId,
-          accessToken: mem.accessToken,
-          refreshToken: mem.refreshToken,
-          expiresAt: mem.expiresAt,
-        });
-        tokenRecord = mem;
-      }
-    }
+    const tokenRecord = await getStravaTokenFirestore(auth.uid);
     if (!tokenRecord) {
       return NextResponse.json(
-        { error: "尚未連結 Strava，請先完成授權", needAuth: true },
-        { status: 400 }
+        { error: "尚未連結 Strava，請先完成授權", needAuth: true }
       );
     }
 

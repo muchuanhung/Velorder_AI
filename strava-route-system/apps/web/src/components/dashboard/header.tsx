@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Search, RefreshCw, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Bell, Search, RefreshCw, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +24,8 @@ export function Header() {
   const { user } = useAuth();
   const { syncing, setSyncing, setLastSyncCount } = useSync();
   const handleSignOut = useSignOut();
+  /** 取得授權網址後先不跳轉，顯示確認再導向（避免多人共用瀏覽器時誤用他人 Strava） */
+  const [pendingStravaUrl, setPendingStravaUrl] = useState<string | null>(null);
 
   const handleSyncNow = async () => {
     if (!user?.uid) return;
@@ -34,20 +37,28 @@ export function Header() {
         headers: { "X-Client-UID": user.uid },
       });
       const data = await res.json();
+
+      if (data.needAuth) {
+        const urlRes = await fetch("/api/strava/oauth-url", {
+          credentials: "include",
+          headers: { "X-Client-UID": user.uid },
+        });
+        const urlData = await urlRes.json();
+        if (!urlRes.ok) {
+          toast.error((urlData.error as string) ?? "無法取得 Strava 授權網址，請稍後再試");
+          return;
+        }
+        if (urlData.oauthUrl) {
+          setPendingStravaUrl(urlData.oauthUrl);
+          return;
+        }
+        toast.error("無法取得 Strava 授權網址，請稍後再試");
+        return;
+      }
+
       if (!res.ok) {
         if (res.status === 403) {
           toast.error("登入狀態與頁面不符，請重新整理頁面後再試");
-          return;
-        }
-        if (data.needAuth) {
-          toast.info("尚未連結 Strava，即將導向授權頁面");
-          const urlRes = await fetch("/api/strava/oauth-url", { credentials: "include" });
-          const urlData = await urlRes.json();
-          if (urlData.oauthUrl) {
-            window.location.href = urlData.oauthUrl;
-            return;
-          }
-          toast.error("無法取得 Strava 授權網址，請稍後再試");
           return;
         }
         const msg = (data.error as string) ?? "";
@@ -73,7 +84,33 @@ export function Header() {
   const initials = getInitials(displayName, email);
 
   return (
-    <header className="flex items-center justify-between gap-4 pb-6">
+    <header className="flex flex-col gap-4 pb-6">
+      {/* confirm to authorize */}
+      {pendingStravaUrl && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm">
+          <p className="font-medium text-foreground">請確認使用您自己的 Strava 帳號</p>
+          <p className="mt-1 text-muted-foreground">
+            多人共用瀏覽器時，授權畫面會顯示目前登入的 Strava 帳號。<span className="text-amber-600 dark:text-amber-500 font-medium">若為他人帳號請勿點擊授權</span>，否則其活動資料將被連結至您的 app 帳號（資安風險）。請先登出 Strava 或使用無痕視窗後再點「前往授權」。
+          </p>
+          <div className="mt-3 flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPendingStravaUrl(null)}>
+              取消
+            </Button>
+            <Button
+              size="sm"
+              className="bg-strava hover:bg-strava/90"
+              onClick={() => {
+                if (pendingStravaUrl) window.location.href = pendingStravaUrl;
+              }}
+            >
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              前往 Strava 授權
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-4">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
@@ -171,8 +208,9 @@ export function Header() {
             >
               登出
             </DropdownMenuItem>
-          </DropdownMenuContent>
+            </DropdownMenuContent>
         </DropdownMenu>
+      </div>
       </div>
     </header>
   );
