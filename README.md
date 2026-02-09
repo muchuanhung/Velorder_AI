@@ -4,7 +4,7 @@
 #  Velorder_AI(Strava + 推薦路線系統（AI 自動推薦跑步 / 騎行路線)
 
 ##  🚴‍♂️專案介紹
-> Strava Route AI 是一個結合 Strava 活動資料、即時氣象與路況的智慧路線推薦系統。使用者可快速產生個人化的跑步或騎行路線，並在危險天氣或路況變化時收到即時警示。
+> Strava Route AI 是一個結合 Strava 活動資料、即時氣象與路況安全示警系統。使用者可以根據危險天氣或路況變化時收到即時警示。
 
 ## 🗂️ 主要分類（模組化說明）
 ### 認證與資料整合（Integration）
@@ -14,10 +14,6 @@
 ### 資料庫與 Schema（Storage）
 > 功能：使用者 profile、歷史活動、儲存推薦路線（GPX / GeoJSON）、路線評分紀錄、偏好設定。
 > 技術範例：PostgreSQL + PostGIS（地理空間查詢）、Prisma schema。
-
-### 路線推薦引擎（Recommendation Engine）
-> 功能：根據使用者偏好（距離、坡度、路面、熱門度）與即時資料（天氣/路況）輸出路線候選、打分、排序。
-> 技術範例：route-engine package（A*/Dijkstra、OSRM/GraphHopper、LLM prompt + heuristic scoring）、Python 或 Node.js microservice。
 
 ### 即時資料整合（Real-time Feeds）
 > 功能：氣象（CWB 或其他）、交通（TDX）、道路事件（事故/施工）、使用者即時位置上報。
