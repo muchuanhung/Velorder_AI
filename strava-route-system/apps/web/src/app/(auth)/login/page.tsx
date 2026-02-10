@@ -8,6 +8,7 @@ import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -119,13 +120,13 @@ export default function LoginPage() {
           className="relative z-10 mt-8 text-center text-xs text-muted-foreground"
         >
           繼續使用即表示您同意我們的{" "}
-          <a href="#" className="text-primary hover:underline">
+          <Link href="/terms" className="text-primary hover:underline">
             服務條款
-          </a>{" "}
-          and{" "}
-          <a href="#" className="text-primary hover:underline">
+          </Link>{" "}
+          and 
+          <Link href="/privacy" className="text-primary hover:underline">
             隱私政策
-          </a>
+          </Link>{" "}
         </motion.p>
       </div>
     </div>

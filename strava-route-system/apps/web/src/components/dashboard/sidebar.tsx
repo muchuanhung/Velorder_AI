@@ -17,10 +17,10 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", active: true },
-  { icon: Map, label: "Maps", href: "/maps", active: false },
-  { icon: ClipboardList, label: "Training Log", href: "/training", active: false },
-  { icon: User, label: "Profile", href: "/profile", active: false },
-  { icon: Settings, label: "Settings", href: "/settings", active: false },
+  { icon: Map, label: "地圖", href: "/maps", active: false },
+  { icon: ClipboardList, label: "訓練紀錄", href: "/training", active: false },
+  { icon: User, label: "個人資料", href: "/profile", active: false },
+  { icon: Settings, label: "設定", href: "/settings", active: false },
 ];
 
 export function Sidebar() {
