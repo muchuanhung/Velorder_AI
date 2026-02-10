@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/", active: true },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard", active: true },
   { icon: Map, label: "Maps", href: "/maps", active: false },
   { icon: ClipboardList, label: "Training Log", href: "/training", active: false },
   { icon: User, label: "Profile", href: "/profile", active: false },

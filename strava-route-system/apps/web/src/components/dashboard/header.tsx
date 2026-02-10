@@ -19,13 +19,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSync } from "@/contexts/SyncContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getInitials } from "@/constants";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user } = useAuth();
   const { syncing, setSyncing, setLastSyncCount, setLastSyncStatus } = useSync();
   const handleSignOut = useSignOut();
-  /** 取得授權網址後先不跳轉，顯示確認再導向（避免多人共用瀏覽器時誤用他人 Strava） */
   const [pendingStravaUrl, setPendingStravaUrl] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSyncNow = async () => {
     if (!user?.uid) return;
@@ -204,9 +205,9 @@ export function Header() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="cursor-pointer text-foreground">個人資料</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-foreground">設定</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-foreground">連結的應用程式</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/profile")}>個人資料</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/settings")}>設定</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/connected-apps")}>連結的應用程式</DropdownMenuItem>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               className="cursor-pointer text-destructive"
