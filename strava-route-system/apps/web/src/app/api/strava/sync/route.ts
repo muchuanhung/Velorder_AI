@@ -3,16 +3,20 @@
  * 使用當前登入使用者的 Strava token 拉取近期活動、寫入 Firestore，並回傳結果。
  *
  * 1. 從 cookie 取得 auth.uid；未登入 → 401
- * 2. 要求帶 X-Client-UID（前端畫面的 user.uid），且必須 === auth.uid，否則 403
- *    （避免 cookie 仍是舊帳號時，誤把 A 的活動回傳給畫面上的 B）
- * 3. 只從 Firestore 讀取該 uid 的 Strava token（不讀 memory），沒有 → 200 + needAuth: true
- * 4. token 過期 → 400
+ * 2. 要求帶 X-Client-UID，且必須 === auth.uid，否則 403
+ * 3. 只從 Firestore 讀取該 uid 的 Strava token，沒有 → 200 + needAuth: true
+ * 4. token 過期 → 自動用 refresh_token 換新 token，更新 Firestore 後繼續同步；若 refresh 失敗 → 刪除過期 token，回傳 200 + needAuth: true（引導重新授權）
  * 5. 用 token 拉活動、寫入 Firestore，回傳 200 + { success, count, activities }
  */
 
 import { NextResponse } from "next/server";
+import { refreshStravaToken } from "@repo/auth";
 import { getAuthFromRequest } from "@/lib/auth/server";
-import { getStravaTokenFirestore } from "@/lib/background/strava-token-store.firestore";
+import {
+  getStravaTokenFirestore,
+  deleteStravaTokenFirestore,
+  upsertStravaTokenFirestore,
+} from "@/lib/background/strava-token-store.firestore";
 import { pullRecentActivities } from "@/lib/background/strava-activities";
 import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
 import { getLastMonthYearMonth } from "@/constants";
@@ -42,17 +46,30 @@ export async function POST(request: Request) {
       );
     }
 
+    let accessToken = tokenRecord.accessToken;
     const nowSec = Math.floor(Date.now() / 1000);
     if (tokenRecord.expiresAt <= nowSec) {
-      return NextResponse.json(
-        { error: "Strava token 已過期，請重新連結 Strava" },
-        { status: 400 }
-      );
+      try {
+        const refreshed = await refreshStravaToken(tokenRecord.refreshToken);
+        await upsertStravaTokenFirestore({
+          userId: auth.uid,
+          athleteId: tokenRecord.athleteId,
+          accessToken: refreshed.access_token,
+          refreshToken: refreshed.refresh_token,
+          expiresAt: refreshed.expires_at,
+        });
+        accessToken = refreshed.access_token;
+      } catch {
+        await deleteStravaTokenFirestore(auth.uid);
+        return NextResponse.json(
+          { error: "Strava 授權已失效，請重新連結", needAuth: true }
+        );
+      }
     }
 
     const [thisMonthActivities, lastMonthActivities] = await Promise.all([
-      pullRecentActivities(tokenRecord.accessToken),
-      pullRecentActivities(tokenRecord.accessToken, { month: getLastMonthYearMonth() }),
+      pullRecentActivities(accessToken),
+      pullRecentActivities(accessToken, { month: getLastMonthYearMonth() }),
     ]);
     const byId = new Map(thisMonthActivities.map((a) => [a.id, a]));
     lastMonthActivities.forEach((a) => byId.set(a.id, a));

@@ -84,6 +84,37 @@ export async function exchangeStravaToken(code: string) {
   return payload;
 }
 
+export async function refreshStravaToken(refreshToken: string) {
+  const clientId = getEnv('STRAVA_CLIENT_ID');
+  const clientSecret = getEnv('STRAVA_CLIENT_SECRET');
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
+    grant_type: 'refresh_token'
+  });
+
+  const res = await fetch(STRAVA_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: params.toString()
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('Strava token refresh failed', { status: res.status, body: errorText });
+    throw new Error(`Strava token refresh failed: ${res.status}`);
+  }
+
+  const payload = (await res.json()) as StravaTokenResponse;
+  const { logRateLimit } = await import('./rate-limit');
+  logRateLimit(res.headers, '/oauth/token');
+  return payload;
+}
+
 export async function getStravaAthlete(accessToken: string) {
   const res = await fetch('https://www.strava.com/api/v3/athlete', {
     headers: {
