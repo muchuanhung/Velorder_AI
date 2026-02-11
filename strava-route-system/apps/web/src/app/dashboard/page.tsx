@@ -7,6 +7,8 @@ import { ActivityMap } from "@/components/dashboard/activity-map";
 import { ActivitiesTable } from "@/components/dashboard/activities-table";
 import { SyncBanner } from "@/components/dashboard/sync-banner";
 import { SyncProvider } from "@/contexts/SyncContext";
+import { LocationProvider } from "@/contexts/LocationContext";
+import { WeatherWidget } from "@/components/dashboard/weather/weather-widget";
 
 export default async function Dashboard() {
   const userId = await getCurrentUserId();
@@ -14,7 +16,8 @@ export default async function Dashboard() {
 
   return (
     <SyncProvider>
-      <div className="min-h-screen bg-background">
+      <LocationProvider>
+        <div className="min-h-screen bg-background">
         <Sidebar />
 
         {/* Main content */}
@@ -26,17 +29,20 @@ export default async function Dashboard() {
             {/* Sync Status Banner：顯示與 Header Sync 按鈕一致的同步狀態 */}
             <SyncBanner />
 
-          {/* Stats Cards */}
-          <StatsCards />
+            {/* Stats Cards */}
+            <StatsCards />
 
-          {/* Map and Table Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <ActivityMap />
-            <ActivitiesTable />
-          </div>
+            {/* Map and Table Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <WeatherWidget />
+              <div className="xl:col-span-2">
+                <ActivitiesTable />
+              </div>
+            </div>
           </div>
         </main>
-      </div>
+        </div>
+      </LocationProvider>
     </SyncProvider>
   );
 }
