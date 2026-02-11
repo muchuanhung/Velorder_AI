@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user } = useAuth();
-  const { syncing, setSyncing, setLastSyncCount, setLastSyncStatus } = useSync();
+  const { syncing, setSyncing, setLastSyncCount, setLastSyncStatus, emitSyncComplete } = useSync();
   const handleSignOut = useSignOut();
   const [pendingStravaUrl, setPendingStravaUrl] = useState<string | null>(null);
   const router = useRouter();
@@ -79,6 +79,7 @@ export function Header() {
       const count = data.count ?? 0;
       setLastSyncCount(count);
       setLastSyncStatus("completed");
+      emitSyncComplete();
     } catch {
       setLastSyncStatus("error");
     } finally {

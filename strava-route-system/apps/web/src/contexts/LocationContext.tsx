@@ -13,13 +13,10 @@ export type LocationInfo = {
   latitude: number;
   longitude: number;
   displayName: string;
-  /** 城市，如 台北市 */
   city?: string;
-  /** 區/鄉鎮，如 信義區 */
   district?: string;
-  /** 郵遞區號，如 110 */
+  county?: string;
   postcode?: string;
-  /** 縣/州 */
   admin1?: string;
   country?: string;
 };
@@ -49,6 +46,7 @@ async function reverseGeocode(
 
   let city: string | undefined;
   let district: string | undefined;
+  let county: string | undefined;
   let postcode: string | undefined;
   let country: string | undefined;
   let rawName: string | undefined;
@@ -58,12 +56,14 @@ async function reverseGeocode(
     rawName = r.name;
     city = r.admin1 ?? r.name;
     district = r.admin2 ?? r.name;
+    county = r.admin1 ?? r.name;
     postcode = undefined;
     country = r.country;
   } else {
     const addr = data.address ?? {};
     city = addr.city ?? addr.town ?? addr.municipality ?? addr.county;
     district = addr.suburb ?? addr.district ?? addr.village ?? addr.neighbourhood ?? addr.county;
+    county = addr.county ?? addr.state ?? addr.city ?? addr.town;
     postcode = addr.postcode;
     country = addr.country;
     rawName = data.display_name;
@@ -81,9 +81,10 @@ async function reverseGeocode(
     displayName,
     city,
     district: district !== city ? district : undefined,
+    county,
     postcode,
     admin1: data.source === "nominatim" ? (data.address?.state ?? data.address?.province) : undefined,
-    country,
+    country
   };
 }
 
@@ -115,7 +116,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           setLocation(info ?? fallbackLocation);
           setStatus("granted");
         } catch {
-          setStatus("granted"); // 有座標就視為成功，顯示 fallback
+          setStatus("granted");
           setLocation(fallbackLocation);
           setError("無法取得地區名稱（顯示座標）");
         }

@@ -5,30 +5,40 @@ import React from "react"
 import { Cloud, Sun, CloudRain, CloudSnow, CloudLightning } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type WeatherCondition = "sunny" | "cloudy" | "rainy" | "stormy" | "snowy";
+export type WeatherCondition = "sunny" | "cloudy" | "rainy" | "stormy" | "snowy";
 
 interface WeatherHeroProps {
   temperature: number;
   condition: WeatherCondition;
+  description: string;
   feelsLike: number;
   verdict: string;
   verdictType: "good" | "caution" | "bad";
 }
 
-const conditionIcons: Record<WeatherCondition, React.ReactNode> = {
-  sunny: <Sun className="h-12 w-12" />,
-  cloudy: <Cloud className="h-12 w-12" />,
-  rainy: <CloudRain className="h-12 w-12" />,
-  stormy: <CloudLightning className="h-12 w-12" />,
-  snowy: <CloudSnow className="h-12 w-12" />,
-};
+const conditionIconMap = {
+  sunny: Sun,
+  cloudy: Cloud,
+  rainy: CloudRain,
+  stormy: CloudLightning,
+  snowy: CloudSnow,
+} as const;
+
+/** 依 condition 回傳對應 icon，可傳入 className 調整大小 */
+export function getConditionIcon(
+  condition: WeatherCondition,
+  className = "h-12 w-12"
+): React.ReactNode {
+  const Icon = conditionIconMap[condition] ?? Cloud;
+  return <Icon className={className} />;
+}
 
 const conditionLabels: Record<WeatherCondition, string> = {
-  sunny: "Sunny",
-  cloudy: "Partly Cloudy",
-  rainy: "Light Rain",
-  stormy: "Thunderstorms",
-  snowy: "Snow",
+  sunny: "晴",
+  cloudy: "多雲",
+  rainy: "降雨",
+  stormy: "雷雨",
+  snowy: "降雪",
 };
 
 const verdictColors: Record<string, string> = {
@@ -40,6 +50,7 @@ const verdictColors: Record<string, string> = {
 export function WeatherHero({
   temperature,
   condition,
+  description,
   feelsLike,
   verdict,
   verdictType,
@@ -55,15 +66,17 @@ export function WeatherHero({
             {"°C"}
           </span>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {conditionLabels[condition]} · Feels like {feelsLike}{"°"}
-        </p>
-        <p className={cn("text-sm font-medium mt-1", verdictColors[verdictType])}>
-          {verdict}
-        </p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-sm text-muted-foreground">
+            {conditionLabels[condition]}
+          </span>
+          <span className={cn("text-sm font-medium", verdictColors[verdictType])}>
+            {verdict}
+          </span>
+        </div>
       </div>
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-background/40 text-muted-foreground">
-        {conditionIcons[condition]}
+        {getConditionIcon(condition)}
       </div>
     </div>
   );

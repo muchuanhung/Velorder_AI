@@ -10,20 +10,21 @@ import {
   Tooltip,
 } from "recharts";
 
-const rainfallData = [
-  { hour: "Now", precipitation: 5, label: "12 PM" },
-  { hour: "1h", precipitation: 12, label: "1 PM" },
-  { hour: "2h", precipitation: 28, label: "2 PM" },
-  { hour: "3h", precipitation: 45, label: "3 PM" },
-  { hour: "4h", precipitation: 38, label: "4 PM" },
-  { hour: "5h", precipitation: 22, label: "5 PM" },
-  { hour: "6h", precipitation: 15, label: "6 PM" },
-  { hour: "7h", precipitation: 8, label: "7 PM" },
-  { hour: "8h", precipitation: 3, label: "8 PM" },
-  { hour: "9h", precipitation: 10, label: "9 PM" },
-  { hour: "10h", precipitation: 18, label: "10 PM" },
-  { hour: "11h", precipitation: 25, label: "11 PM" },
-];
+export type RainfallDataPoint = {
+  hour: string;
+  precipitation: number;
+  label: string;
+};
+
+const defaultRainfallData: RainfallDataPoint[] = Array.from({ length: 12 }, (_, i) => ({
+  hour: i === 0 ? "Now" : `${i}h`,
+  precipitation: 0,
+  label: "—",
+}));
+
+interface RainfallChartProps {
+  data?: RainfallDataPoint[];
+}
 
 function CustomTooltip({
   active,
@@ -36,22 +37,23 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
 
+  const value = payload?.[0]?.value ?? 0;
   return (
     <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm px-3 py-2 shadow-xl">
       <p className="text-xs font-medium text-foreground">{label}</p>
       <p className="text-sm font-bold text-[#60a5fa]">
-        {payload[0].value}% rain
+        {value}% rain
       </p>
     </div>
   );
 }
 
-export function RainfallChart() {
+export function RainfallChart({ data = defaultRainfallData }: RainfallChartProps) {
   return (
     <div className="h-[140px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={rainfallData}
+          data={data}
           margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
         >
           <defs>

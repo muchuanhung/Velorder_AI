@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react"
+import React from "react";
 
 import { Wind, Droplets, Sun, Sunset } from "lucide-react";
 
@@ -26,32 +26,46 @@ function Metric({ icon, label, value, unit }: MetricProps) {
   );
 }
 
-export function MetricsGrid() {
+interface MetricsGridProps {
+  windKmh?: number;
+  humidity?: number;
+  uvIndex?: number;
+  uvLevel?: string;
+  sunset?: string;
+}
+
+export function MetricsGrid({
+  windKmh = 0,
+  humidity = 0,
+  uvIndex = 0,
+  uvLevel,
+  sunset = "—",
+}: MetricsGridProps) {
   return (
     <div className="grid grid-cols-4 gap-2">
       <Metric
         icon={<Wind className="h-4 w-4" />}
-        label="Wind"
-        value="18"
+        label="風速"
+        value={String(windKmh)}
         unit="km/h"
       />
       <Metric
         icon={<Droplets className="h-4 w-4" />}
-        label="Humidity"
-        value="62"
+        label="濕度"
+        value={String(humidity)}
         unit="%"
       />
       <Metric
         icon={<Sun className="h-4 w-4" />}
-        label="UV Index"
-        value="4"
-        unit="mod"
+        label="紫外線"
+        value={String(uvIndex)}
+        unit={uvLevel ?? "—"}
       />
       <Metric
         icon={<Sunset className="h-4 w-4" />}
-        label="Sunset"
-        value="6:48"
-        unit="PM"
+        label="日落"
+        value={sunset}
+        unit=""
       />
     </div>
   );

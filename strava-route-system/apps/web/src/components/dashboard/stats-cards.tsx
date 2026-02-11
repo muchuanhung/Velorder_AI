@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useSync } from "@/contexts/SyncContext";
-import { Route, Mountain, Clock, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Route, Mountain, Clock } from "lucide-react";
+import { SYNC_STATUS_CONFIG, type SyncStatus } from "@/constants";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
@@ -56,17 +57,8 @@ function StatCard({ title, value, subtitle, icon, trend, highlight }: StatCardPr
   );
 }
 
-type JobStatus = "idle" | "running" | "completed" | "error";
-
-function JobStatusCard({ status, syncCount }: { status: JobStatus; syncCount: number | null }) {
-  const statusConfig = {
-    idle: { icon: <CheckCircle2 className="h-5 w-5" />, label: "Ready", color: "text-muted-foreground" },
-    running: { icon: <Loader2 className="h-5 w-5 animate-spin" />, label: "Syncing...", color: "text-strava" },
-    completed: { icon: <CheckCircle2 className="h-5 w-5" />, label: "Synced", color: "text-success" },
-    error: { icon: <AlertCircle className="h-5 w-5" />, label: "Error", color: "text-destructive" },
-  };
-
-  const config = statusConfig[status];
+function JobStatusCard({ status, syncCount }: { status: SyncStatus; syncCount: number | null }) {
+  const config = SYNC_STATUS_CONFIG[status];
   const subtitle =
     status === "running"
       ? "同步中…"
@@ -128,7 +120,7 @@ export function StatsCards() {
   const [stats, setStats] = useState<MonthStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { syncing, lastSyncCount, lastSyncStatus } = useSync();
-  const jobStatus: JobStatus = syncing ? "running" : lastSyncStatus;
+  const jobStatus: SyncStatus = syncing ? "running" : lastSyncStatus;
 
   useEffect(() => {
     let cancelled = false;

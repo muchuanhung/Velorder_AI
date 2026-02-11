@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { MapPin, RefreshCw, ChevronUp, CloudRain, Navigation, Locate } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MapPin, ChevronUp, CloudRain, Navigation, Locate } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -13,10 +12,15 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { WeatherHero } from "./weather-hero";
+import { WeatherHero, getConditionIcon } from "./weather-hero";
 import { RainfallChart } from "./rainfall-chart";
 import { MetricsGrid } from "./metrics-grid";
+import { SYNC_STATUS_CONFIG } from "@/constants";
+import { cn } from "@/lib/utils";
 import { useLocation } from "@/contexts/LocationContext";
+import { useWeather } from "@/contexts/WeatherContext";
+import { WeatherProvider } from "@/contexts/WeatherContext";
+import type { RainfallDataPoint } from "./rainfall-chart";
 
 type WeatherDetailsProps = {
   onRefresh: () => void;
@@ -28,7 +32,21 @@ type WeatherDetailsProps = {
 
 function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus, onRequestLocation }: WeatherDetailsProps) {
   const [mounted, setMounted] = useState(false);
+  const { data, loading, error } = useWeather();
   useEffect(() => setMounted(true), []);
+
+  const rainfallData: RainfallDataPoint[] = data?.rainfall12h?.length
+    ? data.rainfall12h.map((r, i) => ({
+        hour: i === 0 ? "Now" : `${i}h`,
+        precipitation: r.pop,
+        label: r.label,
+      }))
+    : [];
+
+  const peakPop = rainfallData.length ? Math.max(...rainfallData.map((d) => d.precipitation)) : 0;
+
+  const weatherStatus = isRefreshing || loading ? "running" : error && !data ? "error" : data ? "completed" : "idle";
+  const config = SYNC_STATUS_CONFIG[weatherStatus];
 
   return (
     <div className="flex flex-col gap-4">
@@ -64,49 +82,73 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
             </button>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
+        <button
+          type="button"
           onClick={onRefresh}
-          disabled={isRefreshing}
+          disabled={isRefreshing || loading}
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary transition-colors hover:text-foreground disabled:opacity-50",
+            config.color
+          )}
+          title="重新整理天氣"
         >
-          <RefreshCw
-            className={`h-3.5 w-3.5 text-muted-foreground ${isRefreshing ? "animate-spin" : ""}`}
-          />
+          {config.icon}
           <span className="sr-only">Refresh weather</span>
-        </Button>
+        </button>
       </div>
 
       {/* Hero section */}
-      <WeatherHero
-        temperature={14}
-        condition="cloudy"
-        feelsLike={11}
-        verdict="Perfect for a 5km run"
-        verdictType="good"
-      />
+      {loading && !data && (
+        <div className="text-sm text-muted-foreground py-4">載入天氣中...</div>
+      )}
+      {error && !data && (
+        <div className="text-sm text-destructive py-4">{error}</div>
+      )}
+      {data && (
+        <>
+          <WeatherHero
+            temperature={data.temperature}
+            condition={data.condition}
+            feelsLike={data.feelsLike}
+            verdict={data.verdict}
+            verdictType={data.verdictType}
+          />
 
-      <Separator className="bg-border/50" />
+          <Separator className="bg-border/50" />
 
-      {/* Rainfall chart */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <CloudRain className="h-3.5 w-3.5 text-[#60a5fa]" />
-            <span className="text-xs font-medium text-muted-foreground">
-              Precipitation (next 12h)
-            </span>
+          {/* Rainfall chart */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <CloudRain className="h-3.5 w-3.5 text-[#60a5fa]" />
+                <span className="text-xs font-medium text-muted-foreground">
+                  未來12小時降雨機率
+                </span>
+              </div>
+              {peakPop > 0 && (
+                <span className="text-xs text-muted-foreground">{peakPop}% 最高</span>
+              )}
+            </div>
+            <RainfallChart data={rainfallData} />
           </div>
-          <span className="text-xs text-muted-foreground">45% peak</span>
+
+          <Separator className="bg-border/50" />
+
+          {/* Metrics grid */}
+          <MetricsGrid
+            windKmh={data.windSpeedKmh}
+            humidity={data.humidity}
+            uvIndex={data.uvIndex}
+            uvLevel={data.uvLevel}
+            sunset={data.sunset}
+          />
+        </>
+      )}
+      {!loading && !data && !error && (
+        <div className="text-sm text-muted-foreground py-4">
+          啟用位置後顯示天氣預報
         </div>
-        <RainfallChart />
-      </div>
-
-      <Separator className="bg-border/50" />
-
-      {/* Metrics grid */}
-      <MetricsGrid />
+      )}
     </div>
   );
 }
@@ -115,9 +157,11 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
 function DesktopCard() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { location, status, requestLocation } = useLocation();
+  const { refetch } = useWeather();
 
   function handleRefresh() {
     setIsRefreshing(true);
+    refetch();
     setTimeout(() => setIsRefreshing(false), 1500);
   }
 
@@ -145,9 +189,11 @@ function DesktopCard() {
 function MobileBar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { location, status, requestLocation } = useLocation();
+  const { data, refetch } = useWeather();
 
   function handleRefresh() {
     setIsRefreshing(true);
+    refetch();
     setTimeout(() => setIsRefreshing(false), 1500);
   }
 
@@ -164,19 +210,27 @@ function MobileBar() {
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-background/40 text-muted-foreground">
-                <CloudRain className="h-5 w-5" />
+                {data?.condition ? getConditionIcon(data.condition, "h-5 w-5") : <CloudRain className="h-5 w-5" />}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-lg font-bold text-foreground">
-                  14{"°C"}
+                  {data?.temperature ?? "—"}
+                  {"°C"}
                 </span>
                 <Separator orientation="vertical" className="h-5 bg-border/50" />
                 <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <CloudRain className="h-3.5 w-3.5 text-[#60a5fa]" />
-                  <span>28%</span>
+                  <span>
+                    {data
+                      ? Math.max(0, ...(data.rainfall12h?.map((r) => r.pop) ?? [0]))
+                      : 0}
+                    %
+                  </span>
                 </div>
                 <Separator orientation="vertical" className="h-5 bg-border/50" />
-                <span className="text-sm text-strava font-medium">Good to run</span>
+                <span className="text-sm text-strava font-medium">
+                  {data?.verdict ?? "—"}
+                </span>
               </div>
             </div>
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -186,7 +240,7 @@ function MobileBar() {
         <DrawerContent className="bg-card/95 backdrop-blur-xl border-border">
           <DrawerHeader className="pb-2">
             <DrawerTitle className="text-foreground">
-              Weather & Conditions
+              天氣預報
             </DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-6 overflow-y-auto">
@@ -213,16 +267,33 @@ function LocationAutoRequest() {
       if (window.localStorage.getItem(LOCATION_DENIED_KEY)) return;
     } catch { /* ignore */ }
     requestLocation();
-  }, []);
+  }, [requestLocation]);
   return null;
 }
 
 export function WeatherWidget() {
+  const [mounted, setMounted] = useState(false);
+  const { location } = useLocation();
+  const county = location?.county ?? location?.admin1 ?? null;
+  const district = location?.district ?? location?.city ?? null;
+
+  useEffect(() => setMounted(true), []);
+
   return (
     <>
       <LocationAutoRequest />
-      <DesktopCard />
-      <MobileBar />
+      <WeatherProvider county={county} district={district}>
+        {mounted ? (
+          <>
+            <DesktopCard />
+            <MobileBar />
+          </>
+        ) : (
+          <div className="rounded-xl border border-border/60 bg-card/60 p-4 animate-pulse">
+            <div className="h-12 bg-background/40 rounded" />
+          </div>
+        )}
+      </WeatherProvider>
     </>
   );
 }
