@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { MapPin, ChevronUp, CloudRain, Navigation, Locate } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import { WeatherHero, getConditionIcon } from "./weather-hero";
 import { RainfallChart } from "./rainfall-chart";
 import { MetricsGrid } from "./metrics-grid";
@@ -21,6 +15,7 @@ import { useLocation } from "@/contexts/LocationContext";
 import { useWeather } from "@/contexts/WeatherContext";
 import { WeatherProvider } from "@/contexts/WeatherContext";
 import type { RainfallDataPoint } from "./rainfall-chart";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
 type WeatherDetailsProps = {
   onRefresh: () => void;
@@ -82,19 +77,17 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={isRefreshing || loading}
+        <div
+          role="img"
+          aria-label="天氣狀態"
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary transition-colors hover:text-foreground disabled:opacity-50",
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary",
             config.color
           )}
-          title="重新整理天氣"
         >
           {config.icon}
-          <span className="sr-only">Refresh weather</span>
-        </button>
+          <span className="sr-only">Weather status</span>
+        </div>
       </div>
 
       {/* Hero section */}
@@ -271,7 +264,12 @@ function LocationAutoRequest() {
   return null;
 }
 
-export function WeatherWidget() {
+type WeatherWidgetProps = {
+  navigateTo?: string;
+};
+
+export function WeatherWidget({ navigateTo }: WeatherWidgetProps) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { location } = useLocation();
   const county = location?.county ?? location?.admin1 ?? null;
@@ -279,7 +277,7 @@ export function WeatherWidget() {
 
   useEffect(() => setMounted(true), []);
 
-  return (
+  const content = (
     <>
       <LocationAutoRequest />
       <WeatherProvider county={county} district={district}>
@@ -295,5 +293,30 @@ export function WeatherWidget() {
         )}
       </WeatherProvider>
     </>
+  );
+
+  if (!navigateTo) return content;
+
+  const handleClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button, [role='button'], a")) return;
+    router.push(navigateTo);
+  };
+
+  return (
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(navigateTo);
+        }
+      }}
+      className="block cursor-pointer transition-opacity hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-strava focus-visible:ring-offset-2 rounded-xl"
+    >
+      {content}
+    </div>
   );
 }

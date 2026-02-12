@@ -137,7 +137,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           } catch { /* ignore */ }
         }
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
     );
   }, []);
 

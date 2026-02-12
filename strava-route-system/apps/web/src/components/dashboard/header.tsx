@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLocation } from "@/contexts/LocationContext";
 import { useSync } from "@/contexts/SyncContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getInitials } from "@/constants";
@@ -23,6 +24,7 @@ import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user } = useAuth();
+  const { requestLocation } = useLocation();
   const { syncing, setSyncing, setLastSyncCount, setLastSyncStatus, emitSyncComplete } = useSync();
   const handleSignOut = useSignOut();
   const [pendingStravaUrl, setPendingStravaUrl] = useState<string | null>(null);
@@ -79,6 +81,7 @@ export function Header() {
       const count = data.count ?? 0;
       setLastSyncCount(count);
       setLastSyncStatus("completed");
+      requestLocation();
       emitSyncComplete();
     } catch {
       setLastSyncStatus("error");

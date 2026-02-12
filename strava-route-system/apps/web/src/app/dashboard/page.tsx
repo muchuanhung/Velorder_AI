@@ -34,7 +34,7 @@ export default async function Dashboard() {
 
             {/* Map and Table Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <WeatherWidget />
+              <WeatherWidget navigateTo="/map" />
               <div className="xl:col-span-2">
                 <ActivitiesTable />
               </div>

@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 import type { CWBWeatherResponse } from "@/app/api/weather/cwb/route";
-import { useSync } from "@/contexts/SyncContext";
 
 type WeatherContextValue = {
   data: CWBWeatherResponse | null;
@@ -58,11 +57,6 @@ export function WeatherProvider({ children, county, district }: WeatherProviderP
   useEffect(() => {
     fetchWeather();
   }, [fetchWeather]);
-
-  const { onSyncComplete } = useSync();
-  useEffect(() => {
-    return onSyncComplete(fetchWeather);
-  }, [onSyncComplete, fetchWeather]);
 
   const value = useMemo(
     () => ({
