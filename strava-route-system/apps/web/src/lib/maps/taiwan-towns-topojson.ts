@@ -1,0 +1,254 @@
+/**
+ * 鄉鎮區邊界，來自 g0v/twgeojson twTown1982.topo.json
+ * 支援「縣市+鄉鎮區」例如 台北市大安區
+ */
+
+import townTopology from "./twTown1982.topo.json";
+
+type TopoGeometry = {
+  type: "Polygon" | "MultiPolygon" | null;
+  arcs?: number[][] | number[][][];
+  properties?: { COUNTYNAME?: string; TOWNNAME?: string };
+};
+
+type Topology = {
+  type: "Topology";
+  transform: { scale: [number, number]; translate: [number, number] };
+  objects: { layer1: { geometries: TopoGeometry[] } };
+  arcs: number[][][];
+};
+
+const BBOX = {
+  minLng: 118.217,
+  maxLng: 122.006,
+  minLat: 21.896,
+  maxLat: 26.276,
+};
+const VIEW_WIDTH = 100;
+const VIEW_HEIGHT = 90;
+
+function projectToSvg(lng: number, lat: number): [number, number] {
+  const x = ((lng - BBOX.minLng) / (BBOX.maxLng - BBOX.minLng)) * VIEW_WIDTH;
+  const y = ((BBOX.maxLat - lat) / (BBOX.maxLat - BBOX.minLat)) * VIEW_HEIGHT;
+  return [x, y];
+}
+
+function decodeArc(topo: Topology, arcIndex: number): [number, number][] {
+  const [sx, sy] = topo.transform.scale;
+  const [tx, ty] = topo.transform.translate;
+  const arc = topo.arcs[arcIndex];
+  if (!arc) return [];
+  const out: [number, number][] = [];
+  let x = 0, y = 0;
+  for (const pt of arc) {
+    x += pt[0] ?? 0;
+    y += pt[1] ?? 0;
+    out.push([tx + sx * x, ty + sy * y]);
+  }
+  return out;
+}
+
+function resolveRing(topo: Topology, indices: number[]): [number, number][] {
+  let points: [number, number][] = [];
+  for (const idx of indices) {
+    const arc = decodeArc(topo, idx < 0 ? ~idx : idx);
+    if (idx < 0) arc.reverse();
+    if (points.length) points.pop();
+    points = points.concat(arc);
+  }
+  return points;
+}
+
+function resolvePolygonRings(topo: Topology, arcs: number[][]): number[][][] {
+  const rings: number[][][] = [];
+  for (const ringRef of arcs) {
+    const points = resolveRing(topo, ringRef);
+    if (points.length) rings.push(points);
+  }
+  return rings;
+}
+
+function ringToPath(ring: number[][]): string {
+  if (!ring.length) return "";
+  const [x0, y0] = projectToSvg(ring[0][0] ?? 0, ring[0][1] ?? 0);
+  let d = `M ${x0.toFixed(2)} ${y0.toFixed(2)}`;
+  for (let i = 1; i < ring.length; i++) {
+    const [x, y] = projectToSvg(ring[i][0] ?? 0, ring[i][1] ?? 0);
+    d += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }
+  return `${d} Z`;
+}
+
+function geometryToPath(topo: Topology, geom: TopoGeometry): string {
+  if (!geom.arcs) return "";
+  const paths: string[] = [];
+  if (geom.type === "Polygon") {
+    for (const ring of resolvePolygonRings(topo, geom.arcs as number[][])) {
+      paths.push(ringToPath(ring));
+    }
+  } else if (geom.type === "MultiPolygon") {
+    for (const poly of geom.arcs as number[][][]) {
+      for (const ring of resolvePolygonRings(topo, poly)) {
+        paths.push(ringToPath(ring));
+      }
+    }
+  }
+  return paths.join(" ");
+}
+
+function getCentroid(topo: Topology, geom: TopoGeometry): [number, number] {
+  if (!geom.arcs) return [121.0, 23.5];
+  const rings =
+    geom.type === "Polygon"
+      ? resolvePolygonRings(topo, geom.arcs as number[][])
+      : (geom.arcs as number[][][]).flatMap((p) => resolvePolygonRings(topo, p));
+  let sumLng = 0, sumLat = 0, count = 0;
+  for (const ring of rings) {
+    for (const pt of ring) {
+      sumLng += pt[0] ?? 0;
+      sumLat += pt[1] ?? 0;
+      count++;
+    }
+  }
+  return count > 0 ? [sumLng / count, sumLat / count] : [121.0, 23.5];
+}
+
+/** 使用完整 縣市鄉鎮區 作為唯一 id，避免 高雄縣三民鄉 vs 高雄市三民區 碰撞 */
+function toId(county: string, town: string): string {
+  return county && town ? `${county}${town}` : "unknown";
+}
+
+/** 比對用：統一 臺/台 方便 Nominatim 與 TopoJSON 對應 */
+function normalizeForMatch(s: string): string {
+  return s.replace(/臺/g, "台").replace(/\s/g, "");
+}
+
+/** Point-in-polygon (ray casting)：點是否在多邊形內 */
+function pointInRing(lng: number, lat: number, ring: [number, number][]): boolean {
+  let inside = false;
+  const n = ring.length;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** 從經緯度找出包含該點的鄉鎮區 nameZh */
+export function findTownshipByLngLat(
+  lng: number,
+  lat: number
+): string | null {
+  const topo = townTopology as unknown as Topology;
+  const layer = topo.objects?.layer1;
+  if (!layer?.geometries) return null;
+
+  for (const geom of layer.geometries) {
+    if (geom.type !== "Polygon" && geom.type !== "MultiPolygon" || !geom.arcs) continue;
+    const county = (geom.properties?.COUNTYNAME ?? "") as string;
+    const town = (geom.properties?.TOWNNAME ?? "") as string;
+    if (!county || !town) continue;
+
+    const polygons: number[][][][] =
+      geom.type === "Polygon"
+        ? [resolvePolygonRings(topo, geom.arcs as number[][])]
+        : (geom.arcs as number[][][]).map((p) => resolvePolygonRings(topo, p));
+
+    for (const polyRings of polygons) {
+      const outer = polyRings[0];
+      if (!outer || !pointInRing(lng, lat, outer as [number, number][])) continue;
+      let inHole = false;
+      for (let i = 1; i < polyRings.length; i++) {
+        if (pointInRing(lng, lat, polyRings[i] as [number, number][])) {
+          inHole = true;
+          break;
+        }
+      }
+      if (!inHole) return `${county}${town}`;
+    }
+  }
+  return null;
+}
+
+function mockRainProbability(seed: string): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return (h % 55) + 15;
+}
+
+export interface TownshipFromTopo {
+  id: string;
+  name: string;
+  nameZh: string;
+  countyName: string;
+  townName: string;
+  path: string;
+  center: [number, number];
+  rainProbability: number;
+  isCurrentDistrict: boolean;
+}
+
+/**
+ * @param currentLocation 使用者位置，格式 "縣市鄉鎮區" 如 "台北市大安區"（用於字串比對）
+ * @param lngLat 若提供，以經緯度 point-in-polygon 找出鄉鎮區，優先於 currentLocation
+ */
+export function getTaiwanTownshipsFromTopojson(
+  currentLocation = "台北市大安區",
+  lngLat?: [number, number]
+): TownshipFromTopo[] {
+  const effectiveLocation =
+    lngLat ? (findTownshipByLngLat(lngLat[0], lngLat[1]) ?? currentLocation) : currentLocation;
+  const topo = townTopology as unknown as Topology;
+  const layer = topo.objects?.layer1;
+  if (!layer?.geometries) return [];
+
+  // 依 縣市+鄉鎮區 分組，合併同鄉鎮的多個 polygon（如離島）
+  const byTown = new Map<string, { paths: string[]; centers: [number, number][]; geom: TopoGeometry }>();
+
+  for (const geom of layer.geometries) {
+    if (geom.type !== "Polygon" && geom.type !== "MultiPolygon") continue;
+    const county = (geom.properties?.COUNTYNAME ?? "") as string;
+    const town = (geom.properties?.TOWNNAME ?? "") as string;
+    if (!county || !town) continue;
+
+    const key = `${county}-${town}`;
+    const path = geometryToPath(topo, geom);
+    const center = getCentroid(topo, geom);
+
+    if (!byTown.has(key)) {
+      byTown.set(key, { paths: [], centers: [], geom });
+    }
+    const entry = byTown.get(key)!;
+    entry.paths.push(path);
+    entry.centers.push(center);
+  }
+
+  const results: TownshipFromTopo[] = [];
+
+  for (const [key, { paths, centers, geom }] of byTown) {
+    const [county, town] = key.split("-");
+    const nameZh = `${county}${town}`;
+    const fullPath = paths.join(" ");
+
+    // centroid 取平均
+    const cx = centers.reduce((s, c) => s + c[0], 0) / centers.length;
+    const cy = centers.reduce((s, c) => s + c[1], 0) / centers.length;
+
+    results.push({
+      id: toId(county, town),
+      name: town,
+      nameZh,
+      countyName: county,
+      townName: town,
+      path: fullPath,
+      center: [cx, cy],
+      rainProbability: mockRainProbability(nameZh),
+      isCurrentDistrict: normalizeForMatch(nameZh) === normalizeForMatch(effectiveLocation),
+    });
+  }
+
+  return results;
+}

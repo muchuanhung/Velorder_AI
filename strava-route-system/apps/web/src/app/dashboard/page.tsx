@@ -7,7 +7,6 @@ import { ActivityMap } from "@/components/dashboard/activity-map";
 import { ActivitiesTable } from "@/components/dashboard/activities-table";
 import { SyncBanner } from "@/components/dashboard/sync-banner";
 import { SyncProvider } from "@/contexts/SyncContext";
-import { LocationProvider } from "@/contexts/LocationContext";
 import { WeatherWidget } from "@/components/dashboard/weather/weather-widget";
 
 export default async function Dashboard() {
@@ -16,7 +15,6 @@ export default async function Dashboard() {
 
   return (
     <SyncProvider>
-      <LocationProvider>
         <div className="min-h-screen bg-background">
         <Sidebar />
 
@@ -34,7 +32,7 @@ export default async function Dashboard() {
 
             {/* Map and Table Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <WeatherWidget navigateTo="/map" />
+              <WeatherWidget navigateTo="/maps" />
               <div className="xl:col-span-2">
                 <ActivitiesTable />
               </div>
@@ -42,7 +40,6 @@ export default async function Dashboard() {
           </div>
         </main>
         </div>
-      </LocationProvider>
     </SyncProvider>
   );
 }

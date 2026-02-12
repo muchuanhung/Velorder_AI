@@ -4,9 +4,36 @@ import {
   createContext,
   useContext,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+
+const LOCATION_STORAGE_KEY = "velorder_location";
+const LOCATION_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h
+
+function loadStoredLocation(): LocationInfo | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(LOCATION_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as LocationInfo & { savedAt?: number };
+    if (data.savedAt && Date.now() - data.savedAt > LOCATION_MAX_AGE_MS) return null;
+    const { savedAt: _, ...info } = data;
+    if (typeof info.latitude === "number" && typeof info.longitude === "number") return info;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function saveLocation(info: LocationInfo): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      LOCATION_STORAGE_KEY,
+      JSON.stringify({ ...info, savedAt: Date.now() })
+    );
+  } catch { /* ignore */ }
+}
 
 /** Reverse geocoding 回傳的地名結構 */
 export type LocationInfo = {
@@ -93,6 +120,15 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<LocationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
+  // 延遲到 hydration 完成後再還原，避免 SSR/client 不一致
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const stored = loadStoredLocation();
+      if (stored) setLocation(stored);
+    }, 0);
+    return () => clearTimeout(id);
+  }, []);
+
   const requestLocation = useCallback(() => {
     if (!navigator?.geolocation) {
       setStatus("error");
@@ -113,11 +149,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         };
         try {
           const info = await reverseGeocode(latitude, longitude);
-          setLocation(info ?? fallbackLocation);
+          const resolved = info ?? fallbackLocation;
+          setLocation(resolved);
+          saveLocation(resolved);
           setStatus("granted");
         } catch {
           setStatus("granted");
           setLocation(fallbackLocation);
+          saveLocation(fallbackLocation);
           setError("無法取得地區名稱（顯示座標）");
         }
       },
@@ -131,9 +170,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
               : "定位逾時"
         );
         setLocation(null);
-        if (err.code === 1 && typeof window !== "undefined") {
+        if (typeof window !== "undefined") {
           try {
-            window.localStorage.setItem("location_denied", "1");
+            if (err.code === 1) {
+              window.localStorage.setItem("location_denied", "1");
+              window.localStorage.removeItem(LOCATION_STORAGE_KEY);
+            }
           } catch { /* ignore */ }
         }
       },
@@ -148,6 +190,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem("location_denied");
+        window.localStorage.removeItem(LOCATION_STORAGE_KEY);
       } catch { /* ignore */ }
     }
   }, []);
