@@ -4,6 +4,7 @@
  */
 
 import townTopology from "./twTown1982.topo.json";
+import { normalizeCountyForCWB, normalizeLocationCounty } from "@/lib/cwb/county-map";
 
 type TopoGeometry = {
   type: "Polygon" | "MultiPolygon" | null;
@@ -173,12 +174,6 @@ export function findTownshipByLngLat(
   return null;
 }
 
-function mockRainProbability(seed: string): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  return (h % 55) + 15;
-}
-
 export interface TownshipFromTopo {
   id: string;
   name: string;
@@ -194,13 +189,16 @@ export interface TownshipFromTopo {
 /**
  * @param currentLocation 使用者位置，格式 "縣市鄉鎮區" 如 "台北市大安區"（用於字串比對）
  * @param lngLat 若提供，以經緯度 point-in-polygon 找出鄉鎮區，優先於 currentLocation
+ * @param countyRainfall 縣市名(已正規化) → 12hr 降雨機率，若無則該縣市鄉鎮顯示 0
  */
 export function getTaiwanTownshipsFromTopojson(
   currentLocation = "台北市大安區",
-  lngLat?: [number, number]
+  lngLat?: [number, number],
+  countyRainfall?: Record<string, number>
 ): TownshipFromTopo[] {
-  const effectiveLocation =
+  const rawLocation =
     lngLat ? (findTownshipByLngLat(lngLat[0], lngLat[1]) ?? currentLocation) : currentLocation;
+  const effectiveLocation = normalizeLocationCounty(rawLocation);
   const topo = townTopology as unknown as Topology;
   const layer = topo.objects?.layer1;
   if (!layer?.geometries) return [];
@@ -229,23 +227,31 @@ export function getTaiwanTownshipsFromTopojson(
   const results: TownshipFromTopo[] = [];
 
   for (const [key, { paths, centers, geom }] of byTown) {
-    const [county, town] = key.split("-");
-    const nameZh = `${county}${town}`;
+    const parts = key.split("-");
+    const county = parts[0] ?? "";
+    const town = parts[1] ?? "";
+    const countyDisplay = normalizeCountyForCWB(county);
+    const nameZh = `${countyDisplay}${town}`;
     const fullPath = paths.join(" ");
 
     // centroid 取平均
     const cx = centers.reduce((s, c) => s + c[0], 0) / centers.length;
     const cy = centers.reduce((s, c) => s + c[1], 0) / centers.length;
 
+    const rainProbability =
+      countyRainfall != null && countyDisplay in countyRainfall
+        ? countyRainfall[countyDisplay] ?? 0
+        : 0;
+
     results.push({
-      id: toId(county, town),
+      id: toId(countyDisplay, town),
       name: town,
       nameZh,
-      countyName: county,
+      countyName: countyDisplay,
       townName: town,
       path: fullPath,
       center: [cx, cy],
-      rainProbability: mockRainProbability(nameZh),
+      rainProbability,
       isCurrentDistrict: normalizeForMatch(nameZh) === normalizeForMatch(effectiveLocation),
     });
   }

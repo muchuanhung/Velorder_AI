@@ -272,7 +272,7 @@ export function MobileControlBar({
             }`}
           >
             <CloudRain className="h-3.5 w-3.5" />
-            Rain
+            降雨
           </button>
           <button
             type="button"
@@ -284,7 +284,7 @@ export function MobileControlBar({
             }`}
           >
             <Car className="h-3.5 w-3.5" />
-            Traffic
+            交通事故
           </button>
 
           <div className="flex items-center gap-1.5 ml-auto">

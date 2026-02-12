@@ -23,10 +23,38 @@ export const CWB_COUNTY_DATASET: Record<string, string> = {
   金門縣: "087",
 };
 
+/** 舊縣市名 → CWB 縣市名（2010 五都改制、2014 桃園升格等） */
+const COUNTY_ALIASES: Record<string, string> = {
+  台北縣: "新北市",
+  臺北縣: "新北市",
+  台中縣: "臺中市",
+  臺中縣: "臺中市",
+  台南縣: "臺南市",
+  臺南縣: "臺南市",
+  高雄縣: "高雄市",
+  桃園縣: "桃園市",
+};
+
+/** 將縣市名轉為 CWB API 使用的名稱（含舊名對應） */
+export function normalizeCountyForCWB(county: string): string {
+  const c = (county ?? "").replace(/\s/g, "");
+  const aliased = COUNTY_ALIASES[c] ?? c;
+  return aliased.replace(/台/g, "臺");
+}
+
+export function normalizeLocationCounty(location: string): string {
+  let s = location;
+  for (const [oldName, newName] of Object.entries(COUNTY_ALIASES)) {
+    s = s.replace(new RegExp(oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"), newName);
+  }
+  return s.replace(/台/g, "臺");
+}
+
 export function getCWBdatasetId(county: string): string | null {
   const c = (county ?? "").replace(/\s/g, "");
   if (!c) return null;
-  if (CWB_COUNTY_DATASET[c]) return CWB_COUNTY_DATASET[c];
-  const alt = c.replace(/臺/g, "台").replace(/台/g, "臺");
+  const normalized = COUNTY_ALIASES[c] ?? c;
+  if (CWB_COUNTY_DATASET[normalized]) return CWB_COUNTY_DATASET[normalized];
+  const alt = normalized.replace(/臺/g, "台").replace(/台/g, "臺");
   return CWB_COUNTY_DATASET[alt] ?? null;
 }

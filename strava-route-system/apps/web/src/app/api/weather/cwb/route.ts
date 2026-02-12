@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCWBdatasetId } from "@/lib/cwb/county-map";
+import { getCWBdatasetId, normalizeCountyForCWB } from "@/lib/cwb/county-map";
 
 const CWB_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
 
@@ -159,6 +159,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "缺少 county 參數" }, { status: 400 });
   }
 
+  const cwbCounty = normalizeCountyForCWB(county);
   const datasetId = getCWBdatasetId(county);
   if (!datasetId) {
     return NextResponse.json(
@@ -178,7 +179,7 @@ export async function GET(request: Request) {
       fetch(`${CWB_BASE}/A-B0062-001?${auth}&${format}`, {
         next: { revalidate: 86400 },
       }),
-      fetch(`${CWB_BASE}/O-A0002-002?${auth}&${format}&locationName=${encodeURIComponent(county.replace(/台/g, "臺"))}`, {
+      fetch(`${CWB_BASE}/O-A0002-002?${auth}&${format}&locationName=${encodeURIComponent(cwbCounty)}`, {
         next: { revalidate: 600 },
       }),
     ]);
@@ -203,7 +204,7 @@ export async function GET(request: Request) {
     if (rainRes.ok) {
       try {
         const rainData = await rainRes.json();
-        rainfallMmPerHr = parseRainfallMmPerHr(rainData, county);
+        rainfallMmPerHr = parseRainfallMmPerHr(rainData, cwbCounty);
       } catch {
         // 雨量 API 失敗不影響主流程
       }
@@ -277,11 +278,9 @@ export async function GET(request: Request) {
     const today = new Date().toISOString().slice(0, 10);
     const sunsetLocList = sunsetData?.records?.locations?.location;
     const sunsetLocs = Array.isArray(sunsetLocList) ? sunsetLocList : sunsetLocList ? [sunsetLocList] : [];
-    const countyNorm = county.replace(/台/g, "臺");
     const sunsetLoc = sunsetLocs.find(
       (l: { locationName?: string; CountyName?: string }) =>
-        (l.locationName ?? l.CountyName ?? "").includes(countyNorm) ||
-        (l.locationName ?? l.CountyName ?? "").includes(county)
+        (l.locationName ?? l.CountyName ?? "").includes(cwbCounty)
     ) ?? sunsetLocs[0];
     const sunsetTime = sunsetLoc?.time?.find((t: { Date?: string }) => t.Date === today);
     const sunsetStr = sunsetTime?.SunSetTime ?? "17:45";

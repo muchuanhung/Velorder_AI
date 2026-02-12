@@ -13,6 +13,7 @@ interface MapCanvasProps {
   activeLayer: "rainfall" | "traffic";
   onDistrictSelect: (district: District | null) => void;
   selectedDistrict: District | null;
+  viewBox?: string;
 }
 
 export function MapCanvas({
@@ -20,6 +21,7 @@ export function MapCanvas({
   activeLayer,
   onDistrictSelect,
   selectedDistrict,
+  viewBox = "0 0 100 90",
 }: MapCanvasProps) {
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
 
@@ -102,7 +104,7 @@ export function MapCanvas({
 
       {/* SVG Map of Taiwan */}
       <svg
-        viewBox="0 0 100 90"
+        viewBox={viewBox}
         className="absolute inset-0 w-full h-full"
         preserveAspectRatio="xMidYMid meet"
         role="img"
@@ -155,12 +157,12 @@ export function MapCanvas({
         </defs>
 
         {/* Sea labels */}
-        <text x="15" y="35" fill="#1e3a5f" fontSize="2.5" fontWeight="300" opacity="0.4" className="font-sans">
+        {/* <text x="15" y="35" fill="#1e3a5f" fontSize="2.5" fontWeight="300" opacity="0.4" className="font-sans">
           Taiwan Strait
         </text>
         <text x="75" y="55" fill="#1e3a5f" fontSize="2" fontWeight="300" opacity="0.35" className="font-sans">
           Pacific Ocean
-        </text>
+        </text> */}
 
         {/* Render districts in layers: shadows first, then fills, then borders */}
         {/* Shadow layer for 3D extrusion */}

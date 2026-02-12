@@ -30,6 +30,7 @@ import { IncidentMarkers } from "@/components/maps/incident-markers";
 import {
   getTaiwanTownships,
   getCurrentLocationFromInfo,
+  getViewBoxForFocus,
   tdxIncidents,
   currentWeather,
   getRainColor,
@@ -42,7 +43,8 @@ export default function MapsPage() {
   const [showIncidents, setShowIncidents] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [zoom, setZoom] = useState(100);
+  const [zoom, setZoom] = useState(250);
+  const [countyRainfall, setCountyRainfall] = useState<Record<string, number> | null>(null);
 
   const { location, status, requestLocation } = useLocation();
   const locateToastIdRef = useRef<string | number | null>(null);
@@ -56,7 +58,7 @@ export default function MapsPage() {
   }, [status]);
 
   const handleLocate = () => {
-    setZoom(100);
+    setZoom(250);
     setSelectedDistrict(null);
     locateToastIdRef.current = toast.loading("正在取得位置…");
     requestLocation();
@@ -67,13 +69,33 @@ export default function MapsPage() {
     [location]
   );
 
+  useEffect(() => {
+    fetch("/api/weather/cwb/all-counties")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data === "object" && !("error" in data)) {
+          setCountyRainfall(data as Record<string, number>);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const districts = useMemo(() => {
     const lngLat =
       location?.longitude != null && location?.latitude != null
         ? ([location.longitude, location.latitude] as [number, number])
         : undefined;
-    return getTaiwanTownships(currentLocation, lngLat);
-  }, [currentLocation, location?.longitude, location?.latitude]);
+    return getTaiwanTownships(
+      currentLocation,
+      lngLat,
+      countyRainfall ?? undefined
+    );
+  }, [
+    currentLocation,
+    location?.longitude,
+    location?.latitude,
+    countyRainfall,
+  ]);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoaded(true), 400);
@@ -91,6 +113,14 @@ export default function MapsPage() {
 
   const accidentCount = tdxIncidents.filter((i) => i.type === "accident").length;
   const constructionCount = tdxIncidents.filter((i) => i.type === "construction").length;
+
+  const focusedDistrict =
+    selectedDistrict ||
+    districts.find((d) => d.isCurrentDistrict) ||
+    districts[0];
+  const viewBox = focusedDistrict
+    ? getViewBoxForFocus(focusedDistrict.center, zoom)
+    : "0 0 100 90";
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#070b14] relative">
@@ -128,32 +158,31 @@ export default function MapsPage() {
         )}
       </AnimatePresence>
 
-      {/* Map canvas */}
+      {/* Map canvas - viewBox 依 focus 區塊與 zoom 縮放 */}
       <motion.div
-        initial={{ scale: 1.15, opacity: 0 }}
-        animate={loaded ? { scale: 1, opacity: 1 } : {}}
-        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0 }}
+        animate={loaded ? { opacity: 1 } : {}}
+        transition={{ duration: 0.4, ease: "easeOut" }}
         className="absolute inset-0"
-        style={{ transform: `scale(${zoom / 100})` }}
       >
         <MapCanvas
           districts={districts}
           activeLayer={activeLayer}
           onDistrictSelect={setSelectedDistrict}
           selectedDistrict={selectedDistrict}
+          viewBox={viewBox}
         />
       </motion.div>
 
       {/* Incident markers overlay */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0 }}
-        animate={loaded ? { opacity: 1 } : {}}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="absolute inset-0"
-        style={{ transform: `scale(${zoom / 100})` }}
+        animate={loaded ? { scale: zoom / 100, opacity: 1 } : {}}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="absolute inset-0 origin-center"
       >
         <IncidentMarkers visible={showIncidents} zoom={zoom} />
-      </motion.div>
+      </motion.div> */}
 
       {/* Top navigation bar */}
       <motion.div
@@ -232,7 +261,7 @@ export default function MapsPage() {
         <div className="rounded-lg border border-border/30 bg-[#0c1220]/80 backdrop-blur-xl shadow-lg shadow-black/30 overflow-hidden">
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.min(z + 15, 160))}
+            onClick={() => setZoom((z) => Math.min(z + 15, 300))}
             className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
             aria-label="Zoom in"
           >
@@ -247,7 +276,7 @@ export default function MapsPage() {
           <Separator className="bg-border/20" />
           <button
             type="button"
-            onClick={() => setZoom((z) => Math.max(z - 15, 60))}
+            onClick={() => setZoom((z) => Math.max(z - 15, 100))}
             className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
             aria-label="Zoom out"
           >

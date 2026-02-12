@@ -2,6 +2,34 @@
 
 import { getTaiwanTownshipsFromTopojson } from "./taiwan-towns-topojson";
 
+const BBOX = { minLng: 118.217, maxLng: 122.006, minLat: 21.896, maxLat: 26.276 };
+const VIEW = { w: 100, h: 90 };
+
+/** 經緯度 → SVG 座標 (viewBox 0 0 100 90) */
+export function projectLngLatToSvg(lng: number, lat: number): [number, number] {
+  const x = ((lng - BBOX.minLng) / (BBOX.maxLng - BBOX.minLng)) * VIEW.w;
+  const y = ((BBOX.maxLat - lat) / (BBOX.maxLat - BBOX.minLat)) * VIEW.h;
+  return [x, y];
+}
+
+/**
+ * 根據 focus 中心點與 zoom 計算 SVG viewBox
+ * @param center [lng, lat] 中心點
+ * @param zoom 100=全台, 越大越放大（如 150=1.5x）
+ */
+export function getViewBoxForFocus(
+  center: [number, number],
+  zoom: number
+): string {
+  const [cx, cy] = projectLngLatToSvg(center[0], center[1]);
+  const scale = zoom / 100;
+  const w = VIEW.w / scale;
+  const h = VIEW.h / scale;
+  const x = Math.max(0, Math.min(cx - w / 2, VIEW.w - w));
+  const y = Math.max(0, Math.min(cy - h / 2, VIEW.h - h));
+  return `${x} ${y} ${w} ${h}`;
+}
+
 export interface District {
   id: string;
   name: string;
@@ -261,12 +289,18 @@ export function getCurrentLocationFromInfo(info: {
  * 鄉鎮區 (~368)，例如 台北市大安區
  * @param currentLocation 使用者位置，格式 "縣市鄉鎮區" 如 "台北市大安區"
  * @param lngLat 若有經緯度則用 point-in-polygon 找出鄉鎮區，優先於 currentLocation
+ * @param countyRainfall 縣市名 → 12hr 降雨機率，來自 CWB API
  */
 export function getTaiwanTownships(
   currentLocation = "台北市大安區",
-  lngLat?: [number, number]
+  lngLat?: [number, number],
+  countyRainfall?: Record<string, number>
 ): District[] {
-  const towns = getTaiwanTownshipsFromTopojson(currentLocation, lngLat);
+  const towns = getTaiwanTownshipsFromTopojson(
+    currentLocation,
+    lngLat,
+    countyRainfall
+  );
   return towns.map((t) => ({
     id: t.id,
     name: t.name,
