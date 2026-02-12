@@ -27,6 +27,7 @@ import {
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  refreshSession: () => Promise<void>;
   signIn: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
@@ -57,7 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     const unsub = onAuthStateChanged(authRef.current, async (u) => {
       setUser(u ?? null);
-      // 必須先完成 session cookie 更新，再關閉 loading，否則 B 點 Sync 時可能仍帶 A 的 cookie 而撈到 A 的資料
       if (u) {
         try {
           await setSessionFromUser(u);
@@ -111,17 +111,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetch("/api/auth/signout", { method: "POST" });
   }, []);
 
+  const refreshSession = useCallback(async () => {
+    const auth = authRef.current ?? getAuthClient();
+    const u = auth.currentUser;
+    if (u) await setSessionFromUser(u);
+  }, [setSessionFromUser]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       loading,
+      refreshSession,
       signIn,
       signInWithEmail,
       signUpWithEmail,
       sendPasswordReset,
       signOut,
     }),
-    [user, loading, signIn, signInWithEmail, signUpWithEmail, sendPasswordReset, signOut]
+    [user, loading, refreshSession, signIn, signInWithEmail, signUpWithEmail, sendPasswordReset, signOut]
   );
 
   return (

@@ -113,7 +113,7 @@ export default function MapsPage() {
                 <Activity className="h-6 w-6 text-strava" />
               </div>
               <p className="text-sm text-muted-foreground font-medium">
-                Loading map data...
+                Loading...
               </p>
               <div className="w-32 h-1 rounded-full bg-secondary overflow-hidden">
                 <motion.div
@@ -164,7 +164,7 @@ export default function MapsPage() {
       >
         <div className="flex items-center justify-between px-4 py-3">
           {/* Left: Return to dashboard */}
-          <Link href="/">
+          <Link href="/dashboard">
             <Button
               variant="outline"
               size="sm"
@@ -185,7 +185,7 @@ export default function MapsPage() {
                 StravaSync Maps
               </h1>
               <p className="text-[10px] text-muted-foreground">
-                Taiwan | CWA & TDX Data
+                Taiwan | 氣象、交通事故資訊地圖
               </p>
             </div>
           </div>
@@ -197,14 +197,14 @@ export default function MapsPage() {
               className="border-border/30 bg-[#0c1220]/80 backdrop-blur-xl text-muted-foreground text-[10px] shadow-lg shadow-black/20 hidden sm:flex"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-success mr-1.5 animate-pulse" />
-              {accidentCount} accidents
+              {accidentCount} 交通事故
             </Badge>
             <Badge
               variant="outline"
               className="border-border/30 bg-[#0c1220]/80 backdrop-blur-xl text-muted-foreground text-[10px] shadow-lg shadow-black/20 hidden sm:flex"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-warning mr-1.5" />
-              {constructionCount} construction
+              {constructionCount} 施工中
             </Badge>
           </div>
         </div>

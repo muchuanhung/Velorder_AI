@@ -4,12 +4,6 @@ import { motion } from "framer-motion";
 import {
   CloudRain,
   Car,
-  Thermometer,
-  Droplets,
-  Wind,
-  Eye,
-  Sun,
-  Gauge,
   Layers,
   LocateFixed,
   Loader2,
@@ -22,10 +16,102 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  currentWeather,
   getRainColor,
   type District,
 } from "@/lib/maps/map-data";
+import { WeatherProvider, useWeather } from "@/contexts/WeatherContext";
+import { CompactMetricsGrid } from "@/components/dashboard/weather/compact-metrics-grid";
+
+function ControlPanelWeatherInner({
+  focusedDistrict,
+}: {
+  focusedDistrict: District;
+}) {
+  const { data, loading, error } = useWeather();
+  const rainPop =
+    data?.rainfall12h?.[0]?.pop ?? focusedDistrict.rainProbability;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+          即時天氣
+        </p>
+        <Badge
+          variant="outline"
+          className="border-success/40 text-success text-[9px] px-1.5 py-0 h-4"
+        >
+          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-success inline-block animate-pulse" />
+          Live
+        </Badge>
+      </div>
+
+      <div className="rounded-lg bg-secondary/30 ring-1 ring-border/20 px-3 py-2.5">
+        <div className="flex items-center gap-2 mb-1.5">
+          <div
+            className="h-2.5 w-2.5 rounded-full ring-1 ring-background/30 shrink-0"
+            style={{
+              backgroundColor: focusedDistrict.isCurrentDistrict
+                ? "#FC4C02"
+                : getRainColor(rainPop),
+            }}
+          />
+          <span className="text-xs font-semibold text-foreground truncate">
+            {focusedDistrict.nameZh}
+          </span>
+          <span className="text-[10px] text-muted-foreground shrink-0">
+            {focusedDistrict.name}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-1 flex-1 rounded-full bg-background/40 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${rainPop}%`,
+                backgroundColor: focusedDistrict.isCurrentDistrict
+                  ? "#FC4C02"
+                  : getRainColor(rainPop),
+              }}
+            />
+          </div>
+          <span className="text-[10px] text-muted-foreground tabular-nums font-medium">
+            {rainPop}% rain
+          </span>
+        </div>
+      </div>
+
+      {loading && !data && (
+        <div className="text-[10px] text-muted-foreground py-2">載入天氣中…</div>
+      )}
+      {error && !data && (
+        <div className="text-[10px] text-destructive py-2">{error}</div>
+      )}
+      {data && (
+        <CompactMetricsGrid
+          data={{
+            temperature: data.temperature,
+            humidity: data.humidity,
+            windSpeedKmh: data.windSpeedKmh,
+            uvIndex: data.uvIndex,
+            rainPop,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ControlPanelWeather({ focusedDistrict }: { focusedDistrict: District }) {
+  const county = focusedDistrict.countyName ?? null;
+  const district = focusedDistrict.townName ?? undefined;
+
+  return (
+    <WeatherProvider county={county} district={district}>
+      <ControlPanelWeatherInner focusedDistrict={focusedDistrict} />
+    </WeatherProvider>
+  );
+}
 
 interface ControlPanelProps {
   districts: District[];
@@ -68,10 +154,10 @@ export function ControlPanel({
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">
-                  Map Controls
+                  地圖
                 </h3>
                 <p className="text-[10px] text-muted-foreground">
-                  Layer toggles & live data
+                  圖層切換 & 即時資料
                 </p>
               </div>
             </div>
@@ -81,15 +167,15 @@ export function ControlPanel({
             {/* Layer toggles */}
             <div className="space-y-2.5">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                Data Layers
+                圖層
               </p>
 
               <LayerButton
                 active={activeLayer === "rainfall"}
                 onClick={() => onLayerChange("rainfall")}
                 icon={CloudRain}
-                label="CWA Rainfall"
-                description="Rain probability by district"
+                label="降雨機率"
+                description="各鄉鎮降雨機率"
                 activeColor="#4169E1"
               />
 
@@ -97,8 +183,8 @@ export function ControlPanel({
                 active={activeLayer === "traffic"}
                 onClick={() => onLayerChange("traffic")}
                 icon={Car}
-                label="TDX Traffic"
-                description="Incidents & road status"
+                label="交通事故"
+                description="各鄉鎮交通事故"
                 activeColor="#FC4C02"
               />
 
@@ -107,7 +193,7 @@ export function ControlPanel({
                 <div className="flex items-center gap-2">
                   <Radio className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">
-                    Show Incidents
+                    顯示道路狀況
                   </span>
                 </div>
                 <Switch
@@ -119,101 +205,8 @@ export function ControlPanel({
 
             <Separator className="bg-border/20" />
 
-            {/* Live weather */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                  Live Weather
-                </p>
-                <Badge
-                  variant="outline"
-                  className="border-success/40 text-success text-[9px] px-1.5 py-0 h-4"
-                >
-                  <span className="mr-1 h-1.5 w-1.5 rounded-full bg-success inline-block animate-pulse" />
-                  LIVE
-                </Badge>
-              </div>
-
-              {/* Focused area */}
-              <div className="rounded-lg bg-secondary/30 ring-1 ring-border/20 px-3 py-2.5">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div
-                    className="h-2.5 w-2.5 rounded-full ring-1 ring-background/30"
-                    style={{
-                      backgroundColor: focusedDistrict.isCurrentDistrict
-                        ? "#FC4C02"
-                        : getRainColor(focusedDistrict.rainProbability),
-                    }}
-                  />
-                  <span className="text-xs font-semibold text-foreground">
-                    {focusedDistrict.nameZh}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {focusedDistrict.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-1 flex-1 rounded-full bg-background/40 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${focusedDistrict.rainProbability}%`,
-                        backgroundColor: focusedDistrict.isCurrentDistrict
-                          ? "#FC4C02"
-                          : getRainColor(focusedDistrict.rainProbability),
-                      }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-muted-foreground tabular-nums font-medium">
-                    {focusedDistrict.rainProbability}% rain
-                  </span>
-                </div>
-              </div>
-
-              {/* Weather metrics grid */}
-              <div className="grid grid-cols-2 gap-1.5">
-                <WeatherMetric
-                  icon={Thermometer}
-                  label="Temp"
-                  value={`${currentWeather.temperature}\u00b0C`}
-                  color="text-strava"
-                />
-                <WeatherMetric
-                  icon={Droplets}
-                  label="Humidity"
-                  value={`${currentWeather.humidity}%`}
-                  color="text-[#60a5fa]"
-                />
-                <WeatherMetric
-                  icon={Wind}
-                  label="Wind"
-                  value={`${currentWeather.windSpeed} km/h`}
-                  color="text-[#a78bfa]"
-                />
-                <WeatherMetric
-                  icon={Eye}
-                  label="AQI"
-                  value={String(currentWeather.aqi)}
-                  color="text-success"
-                />
-                <WeatherMetric
-                  icon={Sun}
-                  label="UV Index"
-                  value={String(currentWeather.uvIndex)}
-                  color="text-warning"
-                />
-                <WeatherMetric
-                  icon={Gauge}
-                  label="Rain %"
-                  value={`${currentWeather.rainProbability}%`}
-                  color="text-[#4169E1]"
-                />
-              </div>
-
-              <p className="text-[9px] text-muted-foreground/40 text-right font-mono">
-                Updated {currentWeather.updatedAt}
-              </p>
-            </div>
+            {/* Live weather - CWB API */}
+            <ControlPanelWeather focusedDistrict={focusedDistrict} />
 
             {/* Rain legend */}
             {activeLayer === "rainfall" && (
@@ -221,7 +214,7 @@ export function ControlPanel({
                 <Separator className="bg-border/20" />
                 <div className="space-y-2">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-                    Rain Probability
+                    降雨機率
                   </p>
                   <div className="h-2.5 rounded-full bg-gradient-to-r from-[#87CEEB] via-[#4169E1] to-[#0A1E5C] ring-1 ring-border/20" />
                   <div className="flex justify-between text-[9px] text-muted-foreground/60 font-mono">
@@ -390,29 +383,5 @@ function LayerButton({
         }}
       />
     </button>
-  );
-}
-
-function WeatherMetric({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div className="rounded-md bg-background/30 ring-1 ring-border/10 px-2.5 py-2 flex items-center gap-2">
-      <Icon className={`h-3.5 w-3.5 ${color} shrink-0`} />
-      <div className="min-w-0">
-        <p className="text-[9px] text-muted-foreground/70 truncate">{label}</p>
-        <p className="text-xs font-semibold text-foreground tabular-nums">
-          {value}
-        </p>
-      </div>
-    </div>
   );
 }

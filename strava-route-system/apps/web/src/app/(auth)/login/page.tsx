@@ -13,14 +13,18 @@ import Link from "next/link";
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { user, loading: authLoading, signIn, signInWithEmail, signUpWithEmail, sendPasswordReset } =
+  const { user, loading: authLoading, refreshSession, signIn, signInWithEmail, signUpWithEmail, sendPasswordReset } =
     auth;
 
-  // 已登入則導向 dashboard
+  // 已登入則先更新 session cookie（避免 idToken 過期導致 dashboard ↔ login 導向迴圈），再導向 dashboard
   useEffect(() => {
     if (authLoading) return;
-    if (user) router.replace("/dashboard");
-  }, [user, authLoading, router]);
+    if (user) {
+      refreshSession()
+        .then(() => router.replace("/dashboard"))
+        .catch(() => router.replace("/dashboard")); // 仍導向，後續 API 會處理 401
+    }
+  }, [user, authLoading, refreshSession, router]);
 
   const handleGoogleAuth = async () => {
     await signIn();

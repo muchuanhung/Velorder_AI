@@ -381,13 +381,13 @@ function DistrictTooltip({
               />
             </div>
             <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
-              {district.rainProbability}%
+              {district.rainProbability}% 降雨機率
             </span>
           </div>
         )}
         {district.isCurrentDistrict && (
           <p className="text-[10px] text-strava font-medium mt-1">
-            Your current location
+            您目前的位置
           </p>
         )}
       </div>

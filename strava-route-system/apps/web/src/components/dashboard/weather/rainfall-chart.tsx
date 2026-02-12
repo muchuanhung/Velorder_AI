@@ -42,7 +42,7 @@ function CustomTooltip({
     <div className="rounded-lg border border-border bg-card/95 backdrop-blur-sm px-3 py-2 shadow-xl">
       <p className="text-xs font-medium text-foreground">{label}</p>
       <p className="text-sm font-bold text-[#60a5fa]">
-        {value}% rain
+        {value}% 降雨機率
       </p>
     </div>
   );
