@@ -57,7 +57,7 @@ function StatCard({ title, value, subtitle, icon, trend, highlight }: StatCardPr
   );
 }
 
-function JobStatusCard({ status, syncCount }: { status: SyncStatus; syncCount: number | null }) {
+function JobStatusCard({ status, syncCount, highlight }: { status: SyncStatus; syncCount: number | null; highlight?: boolean }) {
   const config = SYNC_STATUS_CONFIG[status];
   const subtitle =
     status === "running"
@@ -69,7 +69,10 @@ function JobStatusCard({ status, syncCount }: { status: SyncStatus; syncCount: n
           : "點擊 Sync 開始同步";
 
   return (
-    <Card className="bg-card border-border">
+    <Card className={cn(
+      "bg-card border-border transition-all hover:border-strava/30",
+      highlight && "border-strava/50"
+    )}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -190,7 +193,7 @@ export function StatsCards() {
         icon={<Clock className="h-5 w-5" />}
         trend={movingTimeTrend}
       />
-      <JobStatusCard status={jobStatus} syncCount={lastSyncCount} />
+      <JobStatusCard status={jobStatus} syncCount={lastSyncCount}/>
     </div>
   );
 }
