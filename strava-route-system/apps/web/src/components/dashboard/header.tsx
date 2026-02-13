@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Search, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { Bell, RefreshCw, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -129,16 +128,6 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Search - hidden on mobile */}
-        <div className="hidden md:block relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search activities..."
-            className="w-64 pl-9 bg-secondary border-border focus-visible:ring-strava"
-          />
-        </div>
-
         {/* Sync button */}
         <Button
           variant="outline"
