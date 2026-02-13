@@ -56,17 +56,6 @@ export interface Incident {
   position: [number, number];
 }
 
-export interface WeatherData {
-  temperature: number;
-  humidity: number;
-  windSpeed: number;
-  condition: string;
-  rainProbability: number;
-  aqi: number;
-  uvIndex: number;
-  updatedAt: string;
-}
-
 // 22 districts/cities of Taiwan with approximate SVG polygon paths
 export const taiwanDistricts: District[] = [
   {
@@ -404,17 +393,6 @@ export const tdxIncidents: Incident[] = [
     position: [33, 55],
   },
 ];
-
-export const currentWeather: WeatherData = {
-  temperature: 22,
-  humidity: 78,
-  windSpeed: 12,
-  condition: "Partly Cloudy",
-  rainProbability: 65,
-  aqi: 42,
-  uvIndex: 3,
-  updatedAt: "12:05 PM CST",
-};
 
 /** Returns a color based on rain probability percentage */
 export function getRainColor(probability: number): string {
