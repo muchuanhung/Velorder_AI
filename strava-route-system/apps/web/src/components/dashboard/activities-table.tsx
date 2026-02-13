@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -65,10 +64,14 @@ export function ActivitiesTable() {
           <p className="text-sm text-muted-foreground">您的最新 Strava 活動</p>
         </div>
         <Button variant="ghost" size="sm" asChild className="text-strava hover:text-strava hover:bg-strava/10">
-          <Link href="/training">
+          <a
+            href="https://www.strava.com/athlete/training"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             查看所有
             <ArrowUpRight className="ml-1 h-4 w-4" />
-          </Link>
+          </a>
         </Button>
       </CardHeader>
       <CardContent className="p-0">
