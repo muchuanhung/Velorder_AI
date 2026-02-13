@@ -20,22 +20,116 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Drawer,
   DrawerContent,
-  DrawerTrigger,
+  DrawerTitle,
 } from "@/components/ui/drawer";
 import { useLocation } from "@/contexts/LocationContext";
+import { WeatherProvider, useWeather } from "@/contexts/WeatherContext";
 import { MapCanvas } from "@/components/maps/map-canvas";
 import { ControlPanel, MobileControlBar } from "@/components/maps/control-panel";
-import { IncidentMarkers } from "@/components/maps/incident-markers";
 import {
   getTaiwanTownships,
   getCurrentLocationFromInfo,
   getViewBoxForFocus,
   tdxIncidents,
-  currentWeather,
   getRainColor,
   type District,
 } from "@/lib/maps/map-data";
 import { ProductLogo } from "@/components/ui/product-logo";
+
+function DrawerWeatherSummary() {
+  const { data, loading } = useWeather();
+  const temperature = data?.temperature ?? "—";
+  const rainProbability = data?.rainfall12h?.length
+    ? Math.max(0, ...data.rainfall12h.map((r) => r.pop))
+    : "—";
+  const windSpeed = data?.windSpeedKmh ?? "—";
+
+  if (loading && !data)
+    return (
+      <div className="rounded-lg bg-secondary/20 ring-1 ring-border/20 p-3">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">目前天氣</p>
+        <div className="text-sm text-muted-foreground py-2">載入中...</div>
+      </div>
+    );
+
+  return (
+    <div className="rounded-lg bg-secondary/20 ring-1 ring-border/20 p-3">
+      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">目前天氣</p>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p className="text-lg font-bold text-foreground">{temperature}{typeof temperature === "number" ? "°" : ""}</p>
+          <p className="text-[10px] text-muted-foreground">溫度</p>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-[#4169E1]">{rainProbability}{typeof rainProbability === "number" ? "%" : ""}</p>
+          <p className="text-[10px] text-muted-foreground">降雨機率</p>
+        </div>
+        <div>
+          <p className="text-lg font-bold text-foreground">{windSpeed}{typeof windSpeed === "number" ? " km/h" : ""}</p>
+          <p className="text-[10px] text-muted-foreground">風速</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SelectedDistrictBar({ district, onClose }: { district: District; onClose: () => void }) {
+  const { data, loading } = useWeather();
+  const temperature = data?.temperature ?? (loading ? "—" : "—");
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-[#0c1220]/85 backdrop-blur-2xl shadow-2xl shadow-black/40 px-4 py-3 w-64">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="h-3 w-3 rounded-full ring-1 ring-background/30"
+            style={{
+              backgroundColor: district.isCurrentDistrict
+                ? "#FC4C02"
+                : getRainColor(district.rainProbability),
+            }}
+          />
+          <span className="text-sm font-semibold text-foreground">{district.nameZh}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-0.5 rounded text-muted-foreground hover:text-foreground"
+          aria-label="關閉"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground mb-2">{district.name}</p>
+      <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="rounded-md bg-secondary/30 px-2 py-1.5">
+          <p className="text-base font-bold text-foreground tabular-nums">{district.rainProbability}%</p>
+          <p className="text-[9px] text-muted-foreground">降雨機率</p>
+        </div>
+        <div className="rounded-md bg-secondary/30 px-2 py-1.5">
+          <p className="text-base font-bold text-foreground tabular-nums">
+            {temperature}{typeof temperature === "number" ? "°C" : ""}
+          </p>
+          <p className="text-[9px] text-muted-foreground">溫度</p>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-1.5">
+        <div className="h-1 flex-1 rounded-full bg-background/40 overflow-hidden">
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${district.rainProbability}%`,
+              backgroundColor: getRainColor(district.rainProbability),
+            }}
+          />
+        </div>
+        <span className="text-[9px] text-muted-foreground/60 font-mono tabular-nums">
+          {district.center[1].toFixed(2)}°N
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function MapsPage() {
   const [activeLayer, setActiveLayer] = useState<"rainfall" | "traffic">("rainfall");
@@ -122,7 +216,11 @@ export default function MapsPage() {
     ? getViewBoxForFocus(focusedDistrict.center, zoom)
     : "0 0 100 90";
 
+  const county = location?.county ?? location?.admin1 ?? null;
+  const districtParam = location?.district ?? location?.city ?? null;
+
   return (
+    <WeatherProvider county={county} district={districtParam}>
     <div className="h-screen w-screen overflow-hidden bg-[#070b14] relative">
       {/* Loading / flyTo transition overlay */}
       <AnimatePresence>
@@ -317,9 +415,9 @@ export default function MapsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="h-4 w-4 text-strava" />
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Map Details
-                  </h3>
+                  <DrawerTitle className="text-sm font-semibold text-foreground">
+                    地圖詳細資訊
+                  </DrawerTitle>
                 </div>
                 <button
                   type="button"
@@ -334,39 +432,12 @@ export default function MapsPage() {
 
               <ScrollArea className="max-h-[50vh]">
                 <div className="space-y-4">
-                  {/* Weather summary */}
-                  <div className="rounded-lg bg-secondary/20 ring-1 ring-border/20 p-3">
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-                      Current Weather
-                    </p>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div>
-                        <p className="text-lg font-bold text-foreground">
-                          {currentWeather.temperature}&deg;
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Temp</p>
-                      </div>
-                      <div>
-                        <p className="text-lg font-bold text-[#4169E1]">
-                          {currentWeather.rainProbability}%
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Rain</p>
-                      </div>
-                      <div>
-                        <p className="text-lg font-bold text-foreground">
-                          {currentWeather.windSpeed}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          km/h Wind
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <DrawerWeatherSummary />
 
                   {/* Active incidents list */}
                   <div>
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-                      Active Incidents ({tdxIncidents.length})
+                      交通事故 ({tdxIncidents.length})
                     </p>
                     <div className="space-y-2">
                       {tdxIncidents.slice(0, 4).map((incident) => (
@@ -398,7 +469,7 @@ export default function MapsPage() {
                   {activeLayer === "rainfall" && (
                     <div>
                       <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-                        Rain Probability
+                        降雨機率
                       </p>
                       <div className="h-2.5 rounded-full bg-gradient-to-r from-[#87CEEB] via-[#4169E1] to-[#0A1E5C] ring-1 ring-border/20" />
                       <div className="flex justify-between text-[9px] text-muted-foreground/60 font-mono mt-1">
@@ -425,66 +496,14 @@ export default function MapsPage() {
             transition={{ duration: 0.25 }}
             className="absolute bottom-4 right-4 z-10 hidden lg:block"
           >
-            <div className="rounded-xl border border-border/30 bg-[#0c1220]/85 backdrop-blur-2xl shadow-2xl shadow-black/40 px-4 py-3 w-64">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-3 w-3 rounded-full ring-1 ring-background/30"
-                    style={{
-                      backgroundColor: selectedDistrict.isCurrentDistrict
-                        ? "#FC4C02"
-                        : getRainColor(selectedDistrict.rainProbability),
-                    }}
-                  />
-                  <span className="text-sm font-semibold text-foreground">
-                    {selectedDistrict.nameZh}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedDistrict(null)}
-                  className="p-0.5 rounded text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">
-                {selectedDistrict.name}
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-md bg-secondary/30 px-2 py-1.5">
-                  <p className="text-base font-bold text-foreground tabular-nums">
-                    {selectedDistrict.rainProbability}%
-                  </p>
-                  <p className="text-[9px] text-muted-foreground">Rain</p>
-                </div>
-                <div className="rounded-md bg-secondary/30 px-2 py-1.5">
-                  <p className="text-base font-bold text-foreground tabular-nums">
-                    {currentWeather.temperature}&deg;C
-                  </p>
-                  <p className="text-[9px] text-muted-foreground">Temp</p>
-                </div>
-              </div>
-              <div className="mt-2 flex items-center gap-1.5">
-                <div className="h-1 flex-1 rounded-full bg-background/40 overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${selectedDistrict.rainProbability}%`,
-                      backgroundColor: getRainColor(
-                        selectedDistrict.rainProbability
-                      ),
-                    }}
-                  />
-                </div>
-                <span className="text-[9px] text-muted-foreground/60 font-mono tabular-nums">
-                  {selectedDistrict.center[1].toFixed(2)}&deg;N
-                </span>
-              </div>
-            </div>
+            <SelectedDistrictBar
+              district={selectedDistrict}
+              onClose={() => setSelectedDistrict(null)}
+            />
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+    </WeatherProvider>
   );
 }
