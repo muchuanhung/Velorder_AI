@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { MapPin, ChevronUp, CloudRain, Navigation, Locate } from "lucide-react";
+import { MapPin, ChevronUp, CloudRain, Navigation, Locate, Map } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { WeatherHero, getConditionIcon } from "./weather-hero";
@@ -16,6 +17,7 @@ import { useWeather } from "@/contexts/WeatherContext";
 import { WeatherProvider } from "@/contexts/WeatherContext";
 import type { RainfallDataPoint } from "./rainfall-chart";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 
 type WeatherDetailsProps = {
   onRefresh: () => void;
@@ -148,7 +150,8 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
 }
 
 /** Desktop: expanded glassmorphism card */
-function DesktopCard() {
+function DesktopCard({ navigateTo }: { navigateTo?: string }) {
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { location, status, requestLocation } = useLocation();
   const { refetch } = useWeather();
@@ -159,6 +162,13 @@ function DesktopCard() {
     setTimeout(() => setIsRefreshing(false), 1500);
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (!navigateTo) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, [role='button'], a")) return;
+    router.push(navigateTo);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -166,7 +176,25 @@ function DesktopCard() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="hidden lg:block"
     >
-      <div className="rounded-xl border border-border/60 bg-card/60 backdrop-blur-xl p-5 shadow-2xl shadow-background/50">
+      <div
+        role={navigateTo ? "link" : undefined}
+        tabIndex={navigateTo ? 0 : undefined}
+        onClick={navigateTo ? handleCardClick : undefined}
+        onKeyDown={
+          navigateTo
+            ? (e: React.KeyboardEvent) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  router.push(navigateTo);
+                }
+              }
+            : undefined
+        }
+        className={cn(
+          "rounded-xl border border-border/60 bg-card/60 backdrop-blur-xl p-5 shadow-2xl shadow-background/50",
+          navigateTo && "cursor-pointer transition-opacity hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-strava focus-visible:ring-offset-2"
+        )}
+      >
         <WeatherDetails
           onRefresh={handleRefresh}
           isRefreshing={isRefreshing}
@@ -180,7 +208,7 @@ function DesktopCard() {
 }
 
 /** Mobile: collapsed sticky bar + drawer bottom sheet */
-function MobileBar() {
+function MobileBar({ navigateTo }: { navigateTo?: string }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { location, status, requestLocation } = useLocation();
   const { data, refetch } = useWeather();
@@ -245,6 +273,14 @@ function MobileBar() {
               locationStatus={status}
               onRequestLocation={requestLocation}
             />
+            {navigateTo && (
+              <Link href={navigateTo} className="mt-4 block">
+                <Button className="w-full gap-2 bg-strava text-white hover:bg-strava/90">
+                  <Map className="h-4 w-4" />
+                  查看地圖
+                </Button>
+              </Link>
+            )}
           </div>
         </DrawerContent>
       </Drawer>
@@ -270,7 +306,6 @@ type WeatherWidgetProps = {
 };
 
 export function WeatherWidget({ navigateTo }: WeatherWidgetProps) {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { location } = useLocation();
   const county = location?.county ?? location?.admin1 ?? null;
@@ -278,14 +313,14 @@ export function WeatherWidget({ navigateTo }: WeatherWidgetProps) {
 
   useEffect(() => setMounted(true), []);
 
-  const content = (
+  return (
     <>
       <LocationAutoRequest />
       <WeatherProvider county={county} district={district}>
         {mounted ? (
           <>
-            <DesktopCard />
-            <MobileBar />
+            <DesktopCard navigateTo={navigateTo} />
+            <MobileBar navigateTo={navigateTo} />
           </>
         ) : (
           <div className="rounded-xl border border-border/60 bg-card/60 p-4 animate-pulse">
@@ -294,30 +329,5 @@ export function WeatherWidget({ navigateTo }: WeatherWidgetProps) {
         )}
       </WeatherProvider>
     </>
-  );
-
-  if (!navigateTo) return content;
-
-  const handleClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (target.closest("button, [role='button'], a")) return;
-    router.push(navigateTo);
-  };
-
-  return (
-    <div
-      role="link"
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          router.push(navigateTo);
-        }
-      }}
-      className="block cursor-pointer transition-opacity hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-strava focus-visible:ring-offset-2 rounded-xl"
-    >
-      {content}
-    </div>
   );
 }

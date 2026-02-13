@@ -23,17 +23,15 @@ export default async function Dashboard() {
           <div className="p-4 pt-16 lg:pt-4 lg:p-8 space-y-6">
             {/* Header */}
             <Header />
-
-            {/* Sync Status Banner：顯示與 Header Sync 按鈕一致的同步狀態 */}
             <SyncBanner />
-
-            {/* Stats Cards */}
-            <StatsCards />
-
-            {/* Map and Table Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <WeatherWidget navigateTo="/maps" />
-              <div className="xl:col-span-2">
+            <div className="flex flex-col xl:grid xl:grid-cols-3 xl:grid-rows-[auto_auto] gap-6">
+              <div className="order-1 xl:row-start-2 xl:col-start-1 xl:col-span-1">
+                <WeatherWidget navigateTo="/maps" />
+              </div>
+              <div className="order-2 xl:row-start-1 xl:col-span-3">
+                <StatsCards />
+              </div>
+              <div className="order-3 xl:row-start-2 xl:col-start-2 xl:col-span-2">
                 <ActivitiesTable />
               </div>
             </div>
