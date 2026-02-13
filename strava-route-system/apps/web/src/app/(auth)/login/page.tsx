@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { ProductLogo } from "@/components/ui/product-logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -86,19 +87,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5 }}
           className="relative z-10 mb-8 flex items-center gap-2 lg:hidden"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <svg
-              className="h-5 w-5 text-primary-foreground"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-          </div>
+          <ProductLogo size={40} />
           <span className="text-xl font-bold text-foreground">StravaSync</span>
         </motion.div>
 

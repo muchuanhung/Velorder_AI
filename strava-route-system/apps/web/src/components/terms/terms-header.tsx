@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ArrowLeft, ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ProductLogo } from "@/components/ui/product-logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -28,9 +29,7 @@ export function TermsHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-8">
         <div className="flex items-center gap-3">
           <Link href="/login" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-strava">
-              <Activity className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <ProductLogo size={32} />
             <span className="hidden sm:block font-semibold text-foreground text-sm">
               StravaSync
             </span>

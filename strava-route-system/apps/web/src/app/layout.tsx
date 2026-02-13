@@ -1,7 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LocationProvider } from "@/contexts/LocationContext";
@@ -14,6 +13,18 @@ export const metadata: Metadata = {
   title: "StravaSync - Fitness Dashboard",
   description: "Track your fitness activities with Strava integration",
   generator: "v0.app",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    title: "StravaSync",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-icon.png",
+  },
 }
 
 export default function RootLayout({
@@ -28,7 +39,6 @@ export default function RootLayout({
           <LocationProvider>{children}</LocationProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors closeButton />
-        {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>
   )

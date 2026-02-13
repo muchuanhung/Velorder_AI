@@ -40,7 +40,6 @@ export function Header() {
         headers: { "X-Client-UID": user.uid },
       });
       const data = await res.json();
-      console.log("[Strava sync] API 回傳:", data);
 
       if (data.needAuth) {
         setLastSyncStatus("error");

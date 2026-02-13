@@ -5,7 +5,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
-  Activity,
   LocateFixed,
   Loader2,
   ZoomIn,
@@ -36,6 +35,7 @@ import {
   getRainColor,
   type District,
 } from "@/lib/maps/map-data";
+import { ProductLogo } from "@/components/ui/product-logo";
 
 export default function MapsPage() {
   const [activeLayer, setActiveLayer] = useState<"rainfall" | "traffic">("rainfall");
@@ -140,7 +140,7 @@ export default function MapsPage() {
               className="flex flex-col items-center gap-3"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-strava/10 ring-1 ring-strava/20">
-                <Activity className="h-6 w-6 text-strava" />
+                <ProductLogo size={40} />
               </div>
               <p className="text-sm text-muted-foreground font-medium">
                 Loading...
@@ -207,7 +207,7 @@ export default function MapsPage() {
           {/* Center: Page title */}
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-strava/10 ring-1 ring-strava/20">
-              <Activity className="h-4 w-4 text-strava" />
+              <ProductLogo size={40} />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-sm font-semibold text-foreground">

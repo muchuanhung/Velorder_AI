@@ -44,7 +44,6 @@ export function WeatherProvider({ children, county, district }: WeatherProviderP
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
-        console.log("[Weather]", json);
         setData(json);
       })
       .catch((e) => {

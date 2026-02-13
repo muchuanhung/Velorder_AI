@@ -8,10 +8,10 @@ import {
   ClipboardList,
   Settings,
   User,
-  Activity,
   Menu,
   X,
 } from "lucide-react";
+import { ProductLogo } from "@/components/ui/product-logo";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -57,9 +57,7 @@ export function Sidebar() {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 p-4 border-b border-sidebar-border">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-strava">
-            <Activity className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <ProductLogo size={40} />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-semibold text-sidebar-foreground">StravaSync</span>

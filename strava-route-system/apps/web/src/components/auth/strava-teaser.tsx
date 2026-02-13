@@ -1,13 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Activity, MapPin, TrendingUp } from "lucide-react";
+import { Zap, Activity, MapPin, CloudSun } from "lucide-react";
 import { DecorativeMapBackground } from "@/components/ui/decorative-map-background";
 import { StravaLogoIcon } from "@/components/ui/strava-logo-icon";
+import { ProductLogo } from "@/components/ui/product-logo";
 
 const teaserConfig = {
   hero: {
-    icon: Activity,
     title: "StravaSync",
     subtitle: "您的Strava數據，精彩呈現在您的眼前",
   },
@@ -28,9 +28,9 @@ const teaserConfig = {
       description: "GPS軌跡視覺化",
     },
     {
-      icon: TrendingUp,
-      title: "Performance Analytics",
-      description: "表現分析",
+      icon: CloudSun,
+      title: "Live Weather",
+      description: "即時天氣資訊，中央氣象署數據",
     },
     {
       icon: Zap,
@@ -46,7 +46,6 @@ const teaserConfig = {
 };
 
 export function StravaTeaser() {
-  const HeroIcon = teaserConfig.hero.icon;
   return (
     <div className="relative flex h-full flex-col justify-center p-12">
       <DecorativeMapBackground />
@@ -60,9 +59,7 @@ export function StravaTeaser() {
           className="mb-8"
         >
           <div className="mb-2 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <HeroIcon className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <ProductLogo size={48} />
             <span className="text-2xl font-bold tracking-tight text-foreground">
               {teaserConfig.hero.title}
             </span>
