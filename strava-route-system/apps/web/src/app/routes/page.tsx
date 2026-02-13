@@ -29,7 +29,6 @@ import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { WeatherVerdict } from "@/components/routes/weather-verdict";
 import { CCTVGallery } from "@/components/routes/cctv-gallery";
-import { ProUpsell } from "@/components/routes/pro-upsell";
 
 type FilterType = "all" | "cycling" | "running";
 
@@ -71,12 +70,13 @@ export default function RoutesPage() {
               <ProductLogo size={32} className="rounded-lg" />
               <div className="hidden sm:block">
                 <h1 className="text-sm font-semibold text-foreground">路線分析</h1>
-                <p className="text-[10px] text-muted-foreground">Premium weather & road analysis</p>
+                <p className="text-[10px] text-muted-foreground">即時天氣 & 路況分析</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* 根據路線切換定位 */}
             <Badge variant="outline" className="border-strava/30 text-strava text-[10px] px-2 py-0.5">
               <MapPin className="h-3 w-3 mr-1" />
               Taipei
@@ -86,12 +86,12 @@ export default function RoutesPage() {
               <DrawerTrigger asChild>
                 <Button variant="outline" size="sm" className="lg:hidden gap-1.5 text-xs">
                   <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Routes
+                  路線列表
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="bg-card/95 backdrop-blur-xl border-border max-h-[85vh]">
                 <DrawerHeader className="pb-2">
-                  <DrawerTitle className="text-foreground">Select a Route</DrawerTitle>
+                  <DrawerTitle className="text-foreground">選擇一條路線</DrawerTitle>
                 </DrawerHeader>
                 <div className="px-4 pb-6 overflow-y-auto">
                   <div className="space-y-3">
@@ -100,7 +100,7 @@ export default function RoutesPage() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <input
                         type="text"
-                        placeholder="Search routes..."
+                        placeholder="搜尋路線..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full h-9 pl-9 pr-3 rounded-lg bg-secondary/40 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-strava/40"
@@ -141,7 +141,7 @@ export default function RoutesPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search routes..."
+                placeholder="搜尋路線..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-9 pl-9 pr-8 rounded-lg bg-secondary/40 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-strava/40 transition-colors"
@@ -158,9 +158,9 @@ export default function RoutesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <FilterChip active={typeFilter === "all"} onClick={() => setTypeFilter("all")} label="All" />
-              <FilterChip active={typeFilter === "cycling"} onClick={() => setTypeFilter("cycling")} label="Cycling" icon={Bike} />
-              <FilterChip active={typeFilter === "running"} onClick={() => setTypeFilter("running")} label="Running" icon={Footprints} />
+              <FilterChip active={typeFilter === "all"} onClick={() => setTypeFilter("all")} label="全部" />
+              <FilterChip active={typeFilter === "cycling"} onClick={() => setTypeFilter("cycling")} label="騎自行車" icon={Bike} />
+              <FilterChip active={typeFilter === "running"} onClick={() => setTypeFilter("running")} label="跑步" icon={Footprints} />
             </div>
           </div>
 
@@ -223,9 +223,6 @@ export default function RoutesPage() {
 
               {/* CCTV Gallery */}
               <CCTVGallery feeds={selectedRoute.cctvFeeds} />
-
-              {/* Pro upsell */}
-              <ProUpsell />
 
               {/* Bottom spacing */}
               <div className="h-4" />
