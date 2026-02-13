@@ -70,11 +70,14 @@ function resolvePolygonRings(topo: Topology, arcs: number[][]): number[][][] {
 }
 
 function ringToPath(ring: number[][]): string {
-  if (!ring.length) return "";
-  const [x0, y0] = projectToSvg(ring[0][0] ?? 0, ring[0][1] ?? 0);
+  const p0 = ring[0];
+  if (!ring.length || !p0) return "";
+  const [x0, y0] = projectToSvg(p0[0] ?? 0, p0[1] ?? 0);
   let d = `M ${x0.toFixed(2)} ${y0.toFixed(2)}`;
   for (let i = 1; i < ring.length; i++) {
-    const [x, y] = projectToSvg(ring[i][0] ?? 0, ring[i][1] ?? 0);
+    const pt = ring[i];
+    if (!pt) continue;
+    const [x, y] = projectToSvg(pt[0] ?? 0, pt[1] ?? 0);
     d += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
   }
   return `${d} Z`;
@@ -129,8 +132,11 @@ function pointInRing(lng: number, lat: number, ring: [number, number][]): boolea
   let inside = false;
   const n = ring.length;
   for (let i = 0, j = n - 1; i < n; j = i++) {
-    const [xi, yi] = ring[i];
-    const [xj, yj] = ring[j];
+    const ptI = ring[i];
+    const ptJ = ring[j];
+    if (ptI == null || ptJ == null) continue;
+    const [xi, yi] = ptI;
+    const [xj, yj] = ptJ;
     if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
       inside = !inside;
     }

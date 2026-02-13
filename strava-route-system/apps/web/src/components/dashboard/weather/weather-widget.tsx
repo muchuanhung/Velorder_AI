@@ -102,6 +102,7 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
           <WeatherHero
             temperature={data.temperature}
             condition={data.condition}
+            description={data.description}
             feelsLike={data.feelsLike}
             verdict={data.verdict}
             verdictType={data.verdictType}
