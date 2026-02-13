@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Map,
-  BarChart3,
+  Route,
   User,
   Menu,
   X,
@@ -60,7 +60,7 @@ const navigation: NavEntry[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: Map, label: "地圖", href: "/maps" },
   {
-    icon: Map,
+    icon: Route,
     label: "路線",
     basePath: "/routes",
     children: [
