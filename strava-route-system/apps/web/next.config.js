@@ -19,6 +19,11 @@ if (existsSync(envPath) && !process.env.CWB_API_KEY) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@repo/auth'],
+  async rewrites() {
+    return [
+      { source: '/favicon.ico', destination: '/api/favicon' },
+    ];
+  },
   images: {
     remotePatterns: [
       {
