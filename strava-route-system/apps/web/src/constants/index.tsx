@@ -1,5 +1,7 @@
-import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, Loader2, AlertCircle, Bike, Footprints, Mountain } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import type { Route } from "@/lib/routes/route-data";
 
 export type SyncStatus = "idle" | "running" | "completed" | "error";
 
@@ -31,6 +33,14 @@ export const SYNC_STATUS_CONFIG: Record<SyncStatus, SyncStatusConfigItem> = {
     color: "text-destructive",
     label: "Error",
   },
+};
+
+/** Route 類型的 icon 對應 */
+export const ROUTE_TYPE_ICONS: Record<Route["type"], LucideIcon> = {
+  自行車: Bike,
+  跑步: Footprints,
+  健行: Mountain,
+  混合: Mountain,
 };
 
 export type AthleteFieldKey =

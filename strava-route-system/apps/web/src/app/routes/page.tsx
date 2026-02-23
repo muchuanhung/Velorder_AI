@@ -9,6 +9,7 @@ import {
   SlidersHorizontal,
   Bike,
   Footprints,
+  Mountain,
   MapPin,
   X,
   Loader2,
@@ -31,13 +32,13 @@ import { RouteHeader } from "@/components/routes/route-header";
 import { WeatherVerdict } from "@/components/routes/weather-verdict";
 import { CCTVGallery } from "@/components/routes/cctv-gallery";
 
-type FilterType = "all" | "cycling" | "running";
+type FilterType = "全部" | "自行車" | "跑步" | "健行";
 
 export default function RoutesPage() {
   const { routes, loading, error } = useRoutesFromStorage();
   const [selectedId, setSelectedId] = useState("");
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<FilterType>("all");
+  const [typeFilter, setTypeFilter] = useState<FilterType>("全部");
   const [mobileListOpen, setMobileListOpen] = useState(false);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function RoutesPage() {
     const matchesSearch =
       r.name.toLowerCase().includes(search.toLowerCase()) ||
       r.nameZh.includes(search);
-    const matchesType = typeFilter === "all" || r.type === typeFilter;
+    const matchesType = typeFilter === "全部" || r.type === typeFilter;
     return matchesSearch && matchesType;
   });
 
@@ -148,9 +149,10 @@ export default function RoutesPage() {
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <FilterChip active={typeFilter === "all"} onClick={() => setTypeFilter("all")} label="All" />
-                      <FilterChip active={typeFilter === "cycling"} onClick={() => setTypeFilter("cycling")} label="Cycling" icon={Bike} />
-                      <FilterChip active={typeFilter === "running"} onClick={() => setTypeFilter("running")} label="Running" icon={Footprints} />
+                      <FilterChip active={typeFilter === "全部"} onClick={() => setTypeFilter("全部")} label="全部" />
+                      <FilterChip active={typeFilter === "自行車"} onClick={() => setTypeFilter("自行車")} label="自行車" icon={Bike} />
+                      <FilterChip active={typeFilter === "跑步"} onClick={() => setTypeFilter("跑步")} label="跑步" icon={Footprints} />
+                      <FilterChip active={typeFilter === "健行"} onClick={() => setTypeFilter("健行")} label="健行" icon={Mountain} />
                     </div>
                     <div className="space-y-2">
                       {filteredRoutes.map((route, i) => (
@@ -194,9 +196,10 @@ export default function RoutesPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <FilterChip active={typeFilter === "all"} onClick={() => setTypeFilter("all")} label="全部" />
-              <FilterChip active={typeFilter === "cycling"} onClick={() => setTypeFilter("cycling")} label="騎自行車" icon={Bike} />
-              <FilterChip active={typeFilter === "running"} onClick={() => setTypeFilter("running")} label="跑步" icon={Footprints} />
+              <FilterChip active={typeFilter === "全部"} onClick={() => setTypeFilter("全部")} label="全部" />
+              <FilterChip active={typeFilter === "自行車"} onClick={() => setTypeFilter("自行車")} label="自行車" icon={Bike} />
+              <FilterChip active={typeFilter === "跑步"} onClick={() => setTypeFilter("跑步")} label="跑步" icon={Footprints} />
+              <FilterChip active={typeFilter === "健行"} onClick={() => setTypeFilter("健行")} label="健行" icon={Mountain} />
             </div>
           </div>
           <ScrollArea className="flex-1">
@@ -219,9 +222,9 @@ export default function RoutesPage() {
                     className="text-center py-12"
                   >
                     <Search className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">No routes found</p>
+                    <p className="text-sm text-muted-foreground">找不到路線</p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
-                      Try adjusting your search or filters
+                      請調整搜尋或過濾條件
                     </p>
                   </motion.div>
                 )}

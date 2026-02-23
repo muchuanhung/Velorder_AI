@@ -1,17 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Bike,
-  Footprints,
-  Mountain,
-  Route as RouteIcon,
-  Clock,
-  Sun,
-} from "lucide-react";
+import { Mountain, Route as RouteIcon, Clock, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Route } from "@/lib/routes/route-data";
 import { getStatusColor } from "@/lib/routes/route-data";
+import { ROUTE_TYPE_ICONS } from "@/constants";
 import { getSvgPath } from "@/lib/routes/polyline";
 
 interface RouteHeaderProps {
@@ -21,6 +15,7 @@ interface RouteHeaderProps {
 export function RouteHeader({ route }: RouteHeaderProps) {
   const statusColor = getStatusColor(route.status);
   const svgPath = getSvgPath(route.gpxPreviewPath);
+  const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
   // Build elevation profile SVG
   const maxElev = Math.max(...route.elevationProfile.map((p) => p[1]));
@@ -154,20 +149,16 @@ export function RouteHeader({ route }: RouteHeaderProps) {
             <p className="text-sm text-muted-foreground">{route.nameZh}</p>
           </div>
           <div className="flex items-center gap-1.5 shrink-0 rounded-lg bg-secondary/40 px-2.5 py-1.5">
-            {route.type === "cycling" ? (
-              <Bike className="h-4 w-4 text-strava" />
-            ) : (
-              <Footprints className="h-4 w-4 text-strava" />
-            )}
-            <span className="text-xs font-medium text-foreground capitalize">{route.type}</span>
+            <TypeIcon className="h-4 w-4 text-strava" />
+            <span className="text-xs font-medium text-foreground">{route.type}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-3">
-          <StatPill icon={RouteIcon} label="Distance" value={`${route.distance} km`} />
-          <StatPill icon={Mountain} label="Elevation" value={`${route.elevationGain}m`} />
-          <StatPill icon={Clock} label="Est. Time" value={route.estimatedTime} />
-          <StatPill icon={Sun} label="Best Time" value={route.bestTimeToRide} />
+          <StatPill icon={RouteIcon} label="距離" value={`${route.distance} km`} />
+          <StatPill icon={Mountain} label="海拔" value={`${route.elevationGain}m`} />
+          <StatPill icon={Clock} label="預估時間" value={route.estimatedTime} />
+          <StatPill icon={Sun} label="最佳時間" value={route.bestTimeToRide} />
         </div>
       </div>
     </motion.div>

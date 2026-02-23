@@ -1,18 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Bike,
-  Footprints,
-  Mountain,
-  Route as RouteIcon,
-  Clock,
-  ChevronRight,
-} from "lucide-react";
+import { Mountain, Route as RouteIcon, Clock, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Route } from "@/lib/routes/route-data";
 import { getStatusColor, getDifficultyColor } from "@/lib/routes/route-data";
+import { ROUTE_TYPE_ICONS } from "@/constants";
 
 interface RouteCardProps {
   route: Route;
@@ -24,6 +18,7 @@ interface RouteCardProps {
 export function RouteCard({ route, isSelected, onSelect, index }: RouteCardProps) {
   const statusColor = getStatusColor(route.status);
   const diffColor = getDifficultyColor(route.difficulty);
+  const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
   return (
     <motion.button
@@ -43,13 +38,9 @@ export function RouteCard({ route, isSelected, onSelect, index }: RouteCardProps
       {/* Top row: name + status */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
-            {route.type === "cycling" ? (
-              <Bike className="h-3.5 w-3.5 text-strava shrink-0" />
-            ) : (
-              <Footprints className="h-3.5 w-3.5 text-strava shrink-0" />
-            )}
-            <span className="text-sm font-semibold text-foreground truncate">
+          <div className="flex items-start gap-2 mb-0.5">
+            <TypeIcon className="h-3.5 w-3.5 text-strava shrink-0 mt-0.5" />
+            <span className="text-sm font-semibold text-foreground break-words min-w-0">
               {route.name}
             </span>
           </div>

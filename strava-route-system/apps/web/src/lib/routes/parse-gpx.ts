@@ -12,13 +12,12 @@ interface Point {
 }
 
 function parseGpxType(xml: string): Route["type"] {
-  // GPX <trk><type>run</type> 或 <rte><type>cycling</type>（Strava 等會輸出）
   const typeMatch = xml.match(/<type>\s*([^<]+)\s*<\/type>/i);
   const raw = typeMatch?.[1]?.trim().toLowerCase() ?? "";
-  if (/run|跑步|jog|trail run|road run/i.test(raw)) return "running";
-  if (/cycle|cycling|ride|bike|騎|車|騎車|road|mtb/i.test(raw)) return "cycling";
-  if (/hike|walk|健行|步/i.test(raw)) return "running";
-  return "cycling"; // 預設
+  if (/trail_run|trail run|hike|walk|健行|步/i.test(raw)) return "健行";
+  if (/run|跑步|jog|road run/i.test(raw)) return "跑步";
+  if (/cycle|cycling|ride|bike|騎|車|騎車|road|mtb/i.test(raw)) return "自行車";
+  return "自行車"; // 預設
 }
 
 function parseGpxPoints(xml: string): { points: Point[]; name: string } {
@@ -61,12 +60,30 @@ function haversineKm(
   return R * c;
 }
 
-function inferDifficulty(distanceKm: number, elevationGain: number): Route["difficulty"] {
+/** 騎車難度分級：依距離與爬升。跑步/健行用 ratio 推估 */
+function inferDifficulty(
+  distanceKm: number,
+  elevationGain: number,
+  type: Route["type"]
+): Route["difficulty"] {
+  if (type === "自行車") {
+    if (distanceKm >= 150 && elevationGain >= 2000) return "極難";
+    if (distanceKm >= 100 && elevationGain >= 1000) return "困難";
+    if (distanceKm >= 50 && distanceKm < 100 && elevationGain < 1000) return "中等";
+    if (distanceKm >= 20 && distanceKm <= 30 && elevationGain < 500) return "簡單";
+    // 邊界：30-50km 等，依 ratio 推估
+    const ratio = elevationGain / distanceKm;
+    if (ratio >= 25) return "困難";
+    if (ratio >= 15) return "中等";
+    return "簡單";
+  }
+  // 跑步/健行：依 ratio
   const ratio = elevationGain / distanceKm;
-  if (ratio >= 50) return "hard";
-  if (ratio >= 25) return "moderate";
-  if (ratio >= 10) return "easy";
-  return "easy";
+  if (ratio >= 80) return "極難";
+  if (ratio >= 50) return "困難";
+  if (ratio >= 20) return "中等";
+  if (ratio >= 8) return "簡單";
+  return "簡單";
 }
 
 function estimateTime(distanceKm: number, elevationGain: number): string {
@@ -123,6 +140,7 @@ export function parseGpxToRoute(xml: string, routeId: string): Route {
 
   const distance = Math.round(distanceKm * 10) / 10;
   const polyline = encodePolyline(points);
+  const routeType = parseGpxType(xml);
 
   return {
     id: routeId,
@@ -130,8 +148,8 @@ export function parseGpxToRoute(xml: string, routeId: string): Route {
     nameZh: extractNameZh(name),
     distance,
     elevationGain,
-    type: parseGpxType(xml),
-    difficulty: inferDifficulty(distanceKm, elevationGain),
+    type: routeType,
+    difficulty: inferDifficulty(distanceKm, elevationGain, routeType),
     status: "safe",
     verdictMessage: "",
     segments: [],
