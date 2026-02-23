@@ -20,7 +20,7 @@ function parseGpxType(xml: string): Route["type"] {
   return "自行車"; // 預設
 }
 
-function parseGpxPoints(xml: string): { points: Point[]; name: string } {
+export function parseGpxPoints(xml: string): { points: Point[]; name: string } {
   const points: Point[] = [];
   const ptRegex =
     /<(?:rtept|trkpt)\s+lat="([^"]+)"\s+lon="([^"]+)"[^>]*>([\s\S]*?)<\/(?:rtept|trkpt)>/gi;
@@ -105,8 +105,13 @@ function extractNameZh(name: string): string {
 /**
  * 解析 GPX XML 字串，轉為 Route 格式
  * GPX 無 weather/CCTV，使用預設空值
+ * segments 可選：若提供則使用，否則為空陣列
  */
-export function parseGpxToRoute(xml: string, routeId: string): Route {
+export function parseGpxToRoute(
+  xml: string,
+  routeId: string,
+  segments: Route["segments"] = []
+): Route {
   const { points, name } = parseGpxPoints(xml);
   if (points.length < 2) {
     throw new Error("GPX 中無有效 route/track 點位");
@@ -152,7 +157,7 @@ export function parseGpxToRoute(xml: string, routeId: string): Route {
     difficulty: inferDifficulty(distanceKm, elevationGain, routeType),
     status: "safe",
     verdictMessage: "",
-    segments: [],
+    segments,
     cctvFeeds: [],
     gpxPreviewPath: polyline,
     elevationProfile,

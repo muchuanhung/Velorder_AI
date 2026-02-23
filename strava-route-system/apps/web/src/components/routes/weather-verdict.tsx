@@ -22,6 +22,7 @@ interface WeatherVerdictProps {
 
 export function WeatherVerdict({ route }: WeatherVerdictProps) {
   const statusColor = getStatusColor(route.status);
+  const hasSegments = route.segments.length > 0;
 
   const VerdictIcon =
     route.status === "safe"
@@ -30,10 +31,15 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
         ? AlertTriangle
         : ShieldAlert;
 
-  const avgRain = Math.round(
-    route.segments.reduce((s, seg) => s + seg.rainProbability, 0) / route.segments.length
-  );
-  const maxWind = Math.max(...route.segments.map((s) => s.windSpeed));
+  const avgRain = hasSegments
+    ? Math.round(
+        route.segments.reduce((s, seg) => s + seg.rainProbability, 0) / route.segments.length
+      )
+    : 0;
+  const maxWind = hasSegments ? Math.max(...route.segments.map((s) => s.windSpeed)) : 0;
+  const tempRange = hasSegments
+    ? `${Math.min(...route.segments.map((s) => s.temperature))} - ${Math.max(...route.segments.map((s) => s.temperature))}°C`
+    : "-";
 
   return (
     <motion.div
@@ -80,16 +86,12 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
           </span>
           <span className="flex items-center gap-1.5">
             <Thermometer className="h-3.5 w-3.5 text-strava" />
-            Range:{" "}
-            <strong className="text-foreground">
-              {Math.min(...route.segments.map((s) => s.temperature))} -{" "}
-              {Math.max(...route.segments.map((s) => s.temperature))}{"°C"}
-            </strong>
+            Range: <strong className="text-foreground">{tempRange}</strong>
           </span>
         </div>
       </div>
 
-      {/* Weather breakdown table */}
+      {hasSegments && (
       <div className="rounded-xl border border-border/40 bg-card/40 overflow-hidden">
         <div className="px-4 py-3 border-b border-border/30">
           <h3 className="text-sm font-semibold text-foreground">
@@ -128,6 +130,7 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
           </table>
         </div>
       </div>
+      )}
     </motion.div>
   );
 }
