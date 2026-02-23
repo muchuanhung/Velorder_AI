@@ -3,6 +3,7 @@
 export interface RouteSegment {
     district: string;
     districtZh: string;
+    county?: string;
     rainProbability: number;
     windSpeed: number;
     temperature: number;

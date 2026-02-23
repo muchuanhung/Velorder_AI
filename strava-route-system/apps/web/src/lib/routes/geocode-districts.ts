@@ -26,22 +26,23 @@ export function getSegmentsFromPoints(points: Point[]): RouteSegment[] {
     n - 1,
   ].filter((i, pos, arr) => arr.indexOf(i) === pos); // 去重
 
-  const districtZhs: string[] = [];
+  const items: { county: string; town: string }[] = [];
   const seen = new Set<string>();
 
   for (const i of indices) {
     const pt = points[i]!;
     const detail = findTownshipDetailByLngLat(pt.lon, pt.lat);
-    const districtZh = detail?.town ?? null;
-    if (districtZh && !seen.has(districtZh)) {
-      seen.add(districtZh);
-      districtZhs.push(districtZh);
-    }
+    if (!detail) continue;
+    const key = `${detail.county}-${detail.town}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ county: detail.county, town: detail.town });
   }
 
-  return districtZhs.map((districtZh) => ({
-    district: districtZh,
-    districtZh,
+  return items.map(({ county, town }) => ({
+    district: town,
+    districtZh: town,
+    county,
     rainProbability: 0,
     windSpeed: 0,
     temperature: 0,

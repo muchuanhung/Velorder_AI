@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -11,10 +12,12 @@ import {
   Sun,
   Cloud,
   CloudLightning,
+  Loader2,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import type { Route, RouteSegment } from "@/lib/routes/route-data";
 import { getStatusColor } from "@/lib/routes/route-data";
+import { useSegmentsWeather } from "@/hooks/useSegmentsWeather";
 
 interface WeatherVerdictProps {
   route: Route;
@@ -23,6 +26,27 @@ interface WeatherVerdictProps {
 export function WeatherVerdict({ route }: WeatherVerdictProps) {
   const statusColor = getStatusColor(route.status);
   const hasSegments = route.segments.length > 0;
+  const { weatherMap, loading: weatherLoading, error: weatherError } = useSegmentsWeather(
+    hasSegments ? route.segments : []
+  );
+
+  const enrichedSegments = useMemo(() => {
+    return route.segments.map((seg) => {
+      const key = seg.county && seg.districtZh ? `${seg.county}|${seg.districtZh}` : null;
+      const w = key ? weatherMap.get(key) : undefined;
+      return w ? { ...seg, ...w } : seg;
+    });
+  }, [route.segments, weatherMap]);
+
+  const avgRain = hasSegments
+    ? Math.round(
+        enrichedSegments.reduce((s, seg) => s + seg.rainProbability, 0) / enrichedSegments.length
+      )
+    : 0;
+  const maxWind = hasSegments ? Math.max(...enrichedSegments.map((s) => s.windSpeed)) : 0;
+  const tempRange = hasSegments
+    ? `${Math.min(...enrichedSegments.map((s) => s.temperature))} - ${Math.max(...enrichedSegments.map((s) => s.temperature))}°C`
+    : "-";
 
   const VerdictIcon =
     route.status === "safe"
@@ -30,16 +54,6 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
       : route.status === "caution"
         ? AlertTriangle
         : ShieldAlert;
-
-  const avgRain = hasSegments
-    ? Math.round(
-        route.segments.reduce((s, seg) => s + seg.rainProbability, 0) / route.segments.length
-      )
-    : 0;
-  const maxWind = hasSegments ? Math.max(...route.segments.map((s) => s.windSpeed)) : 0;
-  const tempRange = hasSegments
-    ? `${Math.min(...route.segments.map((s) => s.temperature))} - ${Math.max(...route.segments.map((s) => s.temperature))}°C`
-    : "-";
 
   return (
     <motion.div
@@ -65,7 +79,7 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-foreground mb-1">
-              Multi-District Weather Verdict
+              多個行政區天氣狀況
             </h3>
             <p className="text-sm leading-relaxed" style={{ color: statusColor }}>
               {route.verdictMessage}
@@ -78,15 +92,15 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <CloudRain className="h-3.5 w-3.5 text-[#60a5fa]" />
-            Avg Rain: <strong className="text-foreground">{avgRain}%</strong>
+            平均降雨機率: <strong className="text-foreground">{avgRain}%</strong>
           </span>
           <span className="flex items-center gap-1.5">
             <Wind className="h-3.5 w-3.5 text-[#a78bfa]" />
-            Max Wind: <strong className="text-foreground">{maxWind} km/h</strong>
+            最大風速: <strong className="text-foreground">{maxWind} km/h</strong>
           </span>
           <span className="flex items-center gap-1.5">
             <Thermometer className="h-3.5 w-3.5 text-strava" />
-            Range: <strong className="text-foreground">{tempRange}</strong>
+            溫度範圍: <strong className="text-foreground">{tempRange}</strong>
           </span>
         </div>
       </div>
@@ -95,10 +109,10 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
       <div className="rounded-xl border border-border/40 bg-card/40 overflow-hidden">
         <div className="px-4 py-3 border-b border-border/30">
           <h3 className="text-sm font-semibold text-foreground">
-            District Weather Breakdown
+            行政區天氣概況
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Conditions along each segment of your route
+            此路線經過的行政區
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -106,25 +120,25 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
             <thead>
               <tr className="border-b border-border/20">
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  District
+                  行政區
                 </th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Condition
+                  天氣狀況
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Rain %
+                  降雨機率
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Wind
+                  風速
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Temp
+                  溫度
                 </th>
               </tr>
             </thead>
             <tbody>
-              {route.segments.map((seg, i) => (
-                <SegmentRow key={seg.district} segment={seg} index={i} />
+              {enrichedSegments.map((seg, i) => (
+                <SegmentRow key={seg.county && seg.districtZh ? `${seg.county}|${seg.districtZh}` : seg.district} segment={seg} index={i} loading={weatherLoading} />
               ))}
             </tbody>
           </table>
@@ -135,7 +149,15 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
   );
 }
 
-function SegmentRow({ segment, index }: { segment: RouteSegment; index: number }) {
+function SegmentRow({
+  segment,
+  index,
+  loading,
+}: {
+  segment: RouteSegment;
+  index: number;
+  loading?: boolean;
+}) {
   const CondIcon = getCondIcon(segment.condition);
   const rainColor =
     segment.rainProbability >= 60
@@ -159,8 +181,12 @@ function SegmentRow({ segment, index }: { segment: RouteSegment; index: number }
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <CondIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="capitalize text-foreground text-xs">{segment.condition}</span>
+          {loading && segment.county ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            <CondIcon className="h-4 w-4 text-muted-foreground" />
+          )}
+          <span className="text-foreground text-xs">{COND_LABELS[segment.condition]}</span>
         </div>
       </td>
       <td className="px-4 py-3 text-right">
@@ -185,6 +211,13 @@ function SegmentRow({ segment, index }: { segment: RouteSegment; index: number }
     </motion.tr>
   );
 }
+
+const COND_LABELS: Record<RouteSegment["condition"], string> = {
+  clear: "晴",
+  cloudy: "多雲",
+  rainy: "雨",
+  stormy: "雷雨",
+};
 
 function getCondIcon(condition: RouteSegment["condition"]) {
   switch (condition) {
