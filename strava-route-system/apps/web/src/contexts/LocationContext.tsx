@@ -78,7 +78,13 @@ async function reverseGeocode(
   let country: string | undefined;
   let rawName: string | undefined;
 
-  if (data.source === "openmeteo" && data.results?.[0]) {
+  if (data.source === "topojson") {
+    city = data.county;
+    district = data.district;
+    county = data.county;
+    country = "台灣";
+    rawName = data.displayName ?? `${data.county}${data.district}`;
+  } else if (data.source === "openmeteo" && data.results?.[0]) {
     const r = data.results[0];
     rawName = r.name;
     city = r.admin1 ?? r.name;
@@ -110,7 +116,7 @@ async function reverseGeocode(
     district: district !== city ? district : undefined,
     county,
     postcode,
-    admin1: data.source === "nominatim" ? (data.address?.state ?? data.address?.province) : undefined,
+    admin1: data.source === "nominatim" ? (data.address?.state ?? data.address?.province) : (data.source === "topojson" ? data.county : undefined),
     country
   };
 }

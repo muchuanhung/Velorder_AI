@@ -1,5 +1,5 @@
 /**
- * 從 Firebase Storage 取得 GPX 路線列表，每條透過 Nominatim 取得行政區
+ * 從 Firebase Storage 取得 GPX 路線列表
  */
 
 import { NextResponse } from "next/server";
@@ -25,12 +25,7 @@ export async function GET() {
         const [contents] = await file.download();
         const xml = contents.toString("utf-8");
         const { points } = parseGpxPoints(xml);
-        let segments: Awaited<ReturnType<typeof getSegmentsFromPoints>> = [];
-        try {
-          segments = await getSegmentsFromPoints(points);
-        } catch (geoErr) {
-          console.warn(`GPX ${routeId} 行政區 geocode 失敗:`, geoErr);
-        }
+        const segments = getSegmentsFromPoints(points);
         const route = parseGpxToRoute(xml, routeId, segments);
         routes.push(route);
       } catch (err) {

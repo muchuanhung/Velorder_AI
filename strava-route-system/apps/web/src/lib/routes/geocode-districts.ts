@@ -1,7 +1,9 @@
 /**
- * 依 GPX 起點、中點、終點座標 reverse geocode 取得行政區
+ * 依 GPX 軌跡點做 point-in-polygon，用本地 TopoJSON 找出涵蓋行政區
+ * 無網路請求，即時計算
  */
 
+import { findTownshipDetailByLngLat } from "@/lib/maps/taiwan-towns-topojson";
 import type { RouteSegment } from "./route-data";
 
 interface Point {
@@ -9,45 +11,28 @@ interface Point {
   lon: number;
 }
 
-/** 從 Nominatim 取得行政區名稱（繁中） */
-async function fetchDistrictFromNominatim(lat: number, lon: number): Promise<string | null> {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=zh`;
-  const res = await fetch(url, {
-    headers: { "User-Agent": "Velorder-Strava-Routes/1.0" },
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (data.error) return null;
-  const addr = data.address ?? {};
-  const district =
-    addr.suburb ?? addr.district ?? addr.village ?? addr.neighbourhood ?? addr.county ?? null;
-  return district;
-}
-
 /**
- * 依 GPX 起點、中點、終點 reverse geocode，回傳唯一行政區列表（RouteSegment 格式）
- * 天氣欄位為 placeholder，可後續由 CWB API 補上
+ * 依 GPX 起點、1/4、中點、3/4、終點 sample，用本地 TopoJSON 找出唯一行政區
  */
-export async function getSegmentsFromPoints(
-  points: Point[]
-): Promise<RouteSegment[]> {
+export function getSegmentsFromPoints(points: Point[]): RouteSegment[] {
   if (points.length < 2) return [];
 
+  const n = points.length;
   const indices = [
     0,
-    Math.floor(points.length / 2),
-    points.length - 1,
-  ];
-  const uniqueCoords = Array.from(
-    new Map(indices.map((i) => [`${points[i]!.lat},${points[i]!.lon}`, points[i]!])).values()
-  );
+    Math.floor(n * 0.25),
+    Math.floor(n / 2),
+    Math.floor(n * 0.75),
+    n - 1,
+  ].filter((i, pos, arr) => arr.indexOf(i) === pos); // 去重
 
   const districtZhs: string[] = [];
   const seen = new Set<string>();
 
-  for (const pt of uniqueCoords) {
-    await new Promise((r) => setTimeout(r, 1100)); // Nominatim 要求 1 req/s
-    const districtZh = await fetchDistrictFromNominatim(pt.lat, pt.lon);
+  for (const i of indices) {
+    const pt = points[i]!;
+    const detail = findTownshipDetailByLngLat(pt.lon, pt.lat);
+    const districtZh = detail?.town ?? null;
     if (districtZh && !seen.has(districtZh)) {
       seen.add(districtZh);
       districtZhs.push(districtZh);

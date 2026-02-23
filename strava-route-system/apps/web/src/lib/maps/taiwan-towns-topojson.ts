@@ -122,7 +122,7 @@ function toId(county: string, town: string): string {
   return county && town ? `${county}${town}` : "unknown";
 }
 
-/** 比對用：統一 臺/台 方便 Nominatim 與 TopoJSON 對應 */
+/** 比對用：統一 臺/台 方便字串比對 */
 function normalizeForMatch(s: string): string {
   return s.replace(/臺/g, "台").replace(/\s/g, "");
 }
@@ -175,6 +175,36 @@ export function findTownshipByLngLat(
         }
       }
       if (!inHole) return `${county}${town}`;
+    }
+  }
+  return null;
+}
+
+/** 從經緯度找出鄉鎮區，回傳 {county, town}（town 如 士林區） */
+export function findTownshipDetailByLngLat(
+  lng: number,
+  lat: number
+): { county: string; town: string } | null {
+  const topo = townTopology as unknown as Topology;
+  const layer = topo.objects?.layer1;
+  if (!layer?.geometries) return null;
+  for (const geom of layer.geometries) {
+    if (geom.type !== "Polygon" && geom.type !== "MultiPolygon" || !geom.arcs) continue;
+    const county = (geom.properties?.COUNTYNAME ?? "") as string;
+    const town = (geom.properties?.TOWNNAME ?? "") as string;
+    if (!county || !town) continue;
+    const polygons: number[][][][] =
+      geom.type === "Polygon"
+        ? [resolvePolygonRings(topo, geom.arcs as number[][])]
+        : (geom.arcs as number[][][]).map((p) => resolvePolygonRings(topo, p));
+    for (const polyRings of polygons) {
+      const outer = polyRings[0];
+      if (!outer || !pointInRing(lng, lat, outer as [number, number][])) continue;
+      let inHole = false;
+      for (let i = 1; i < polyRings.length; i++) {
+        if (pointInRing(lng, lat, polyRings[i] as [number, number][])) { inHole = true; break; }
+      }
+      if (!inHole) return { county, town };
     }
   }
   return null;
