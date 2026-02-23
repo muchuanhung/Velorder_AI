@@ -27,19 +27,19 @@ function parseGpxPoints(xml: string): { points: Point[]; name: string } {
     /<(?:rtept|trkpt)\s+lat="([^"]+)"\s+lon="([^"]+)"[^>]*>([\s\S]*?)<\/(?:rtept|trkpt)>/gi;
   let m;
   while ((m = ptRegex.exec(xml)) !== null) {
-    const lat = parseFloat(m[1]);
-    const lon = parseFloat(m[2]);
-    const eleMatch = m[3].match(/<ele>([^<]+)<\/ele>/);
+    const lat = parseFloat(m[1] ?? "");
+    const lon = parseFloat(m[2] ?? "");
+    const eleMatch = (m[3] ?? "").match(/<ele>([^<]+)<\/ele>/);
     points.push({
       lat,
       lon,
-      ele: eleMatch ? parseFloat(eleMatch[1]) : undefined,
+      ele: eleMatch?.[1] != null ? parseFloat(eleMatch[1]) : undefined,
     });
   }
   const nameMatch = xml.match(/<name>([^<]+)<\/name>/);
   return {
     points,
-    name: nameMatch ? nameMatch[1].trim() : "Unknown",
+    name: nameMatch?.[1] != null ? nameMatch[1].trim() : "Unknown",
   };
 }
 
@@ -98,12 +98,9 @@ export function parseGpxToRoute(xml: string, routeId: string): Route {
   let distanceKm = 0;
   const cumulDist: number[] = [0];
   for (let i = 1; i < points.length; i++) {
-    const d = haversineKm(
-      points[i - 1].lat,
-      points[i - 1].lon,
-      points[i].lat,
-      points[i].lon
-    );
+    const prev = points[i - 1]!;
+    const curr = points[i]!;
+    const d = haversineKm(prev.lat, prev.lon, curr.lat, curr.lon);
     distanceKm += d;
     cumulDist.push(distanceKm);
   }
@@ -111,14 +108,14 @@ export function parseGpxToRoute(xml: string, routeId: string): Route {
   const hasEle = points.some((p) => p.ele != null);
   const segs = Math.max(5, Math.floor(distanceKm / 2));
   const elevationProfile: [number, number][] = hasEle
-    ? points.map((p, i) => [cumulDist[i], p.ele ?? 0])
+    ? points.map((p, i) => [cumulDist[i] ?? 0, p.ele ?? 0])
     : Array.from({ length: segs + 1 }, (_, i) => [(distanceKm * i) / segs, 0]);
 
   const elevationGain = hasEle
     ? Math.round(
         points.reduce((sum, p, i) => {
           if (i === 0) return 0;
-          const diff = (p.ele ?? 0) - (points[i - 1].ele ?? 0);
+          const diff = (p.ele ?? 0) - ((points[i - 1]?.ele) ?? 0);
           return sum + (diff > 0 ? diff : 0);
         }, 0)
       )
