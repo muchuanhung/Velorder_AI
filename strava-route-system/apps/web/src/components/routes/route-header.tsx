@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Route } from "@/lib/routes/route-data";
 import { getStatusColor } from "@/lib/routes/route-data";
+import { getSvgPath } from "@/lib/routes/polyline";
 
 interface RouteHeaderProps {
   route: Route;
@@ -19,6 +20,7 @@ interface RouteHeaderProps {
 
 export function RouteHeader({ route }: RouteHeaderProps) {
   const statusColor = getStatusColor(route.status);
+  const svgPath = getSvgPath(route.gpxPreviewPath);
 
   // Build elevation profile SVG
   const maxElev = Math.max(...route.elevationProfile.map((p) => p[1]));
@@ -77,7 +79,7 @@ export function RouteHeader({ route }: RouteHeaderProps) {
           </defs>
           {/* Glow layer */}
           <path
-            d={route.gpxPreviewPath}
+            d={svgPath}
             fill="none"
             stroke="url(#route-glow)"
             strokeWidth="8"
@@ -86,7 +88,7 @@ export function RouteHeader({ route }: RouteHeaderProps) {
           />
           {/* Main route line */}
           <motion.path
-            d={route.gpxPreviewPath}
+            d={svgPath}
             fill="none"
             stroke="#FC4C02"
             strokeWidth="2.5"

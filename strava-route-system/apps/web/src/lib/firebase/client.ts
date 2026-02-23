@@ -3,6 +3,7 @@
 
 import { getApps, initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, type User } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,7 +14,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-function getFirebaseApp() {
+export function getFirebaseApp() {
   if (typeof window === "undefined") {
     throw new Error("Firebase client 僅能在 Client Component 使用");
   }
@@ -33,5 +34,9 @@ export function getAuthClient() {
 }
 
 export const googleProvider = new GoogleAuthProvider();
+
+export function getStorageClient() {
+  return getStorage(getFirebaseApp());
+}
 
 export type { User };
