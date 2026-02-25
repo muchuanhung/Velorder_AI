@@ -147,8 +147,18 @@ export function parseGpxToRoute(
   const polyline = encodePolyline(points);
   const routeType = parseGpxType(xml);
 
+  const lats = points.map((p) => p.lat);
+  const lons = points.map((p) => p.lon);
+  const bbox: [number, number, number, number] = [
+    Math.min(...lons),
+    Math.min(...lats),
+    Math.max(...lons),
+    Math.max(...lats),
+  ];
+
   return {
     id: routeId,
+    bbox,
     name,
     nameZh: extractNameZh(name),
     distance,

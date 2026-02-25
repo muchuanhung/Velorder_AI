@@ -122,7 +122,7 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   行政區
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-2.5 whitespace-nowrap text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   天氣狀況
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -175,8 +175,7 @@ function SegmentRow({
     >
       <td className="px-4 py-3">
         <div className="flex flex-col">
-          <span className="font-medium text-foreground">{segment.district}</span>
-          <span className="text-[11px] text-muted-foreground">{segment.districtZh}</span>
+          <span className="whitespace-nowrap font-medium text-foreground">{segment.district}</span>
         </div>
       </td>
       <td className="px-4 py-3">
@@ -203,7 +202,7 @@ function SegmentRow({
         </div>
       </td>
       <td className="px-4 py-3 text-right">
-        <span className="text-xs text-foreground tabular-nums">{segment.windSpeed} km/h</span>
+        <span className="whitespace-nowrap text-xs text-foreground tabular-nums">{segment.windSpeed} km/h</span>
       </td>
       <td className="px-4 py-3 text-right">
         <span className="text-xs text-foreground tabular-nums">{segment.temperature}{"°C"}</span>

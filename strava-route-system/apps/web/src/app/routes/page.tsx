@@ -27,6 +27,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useRoutesFromStorage } from "@/hooks/useRoutesFromStorage";
+import { useRouteCCTV } from "@/hooks/useRouteCCTV";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { WeatherVerdict } from "@/components/routes/weather-verdict";
@@ -48,6 +49,7 @@ export default function RoutesPage() {
   }, [routes, selectedId]);
 
   const selectedRoute = routes.find((r) => r.id === selectedId) || routes[0];
+  const { feeds: cctvFeeds, loading: cctvLoading } = useRouteCCTV(selectedRoute ?? null);
   const filteredRoutes = routes.filter((r) => {
     const matchesSearch =
       r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -251,7 +253,7 @@ export default function RoutesPage() {
               >
                 <RouteHeader route={selectedRoute} />
                 <WeatherVerdict route={selectedRoute} />
-                <CCTVGallery feeds={selectedRoute.cctvFeeds} />
+                <CCTVGallery feeds={cctvFeeds} loading={cctvLoading} />
                 <div className="h-4" />
               </motion.div>
             )}

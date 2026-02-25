@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect, useRef, createContext, useContext } from "react";
 import { motion } from "framer-motion";
 import {
   Camera,
@@ -8,7 +8,7 @@ import {
   AlertCircle,
   CheckCircle2,
   AlertTriangle as TriangleIcon,
-  Flag,
+  ExternalLink,
   Maximize2,
   X,
 } from "lucide-react";
@@ -24,18 +24,70 @@ import {
 } from "@/components/ui/dialog";
 import type { CCTVFeed } from "@/lib/routes/route-data";
 
-interface CCTVGalleryProps {
-  feeds: CCTVFeed[];
+const MAX_CONCURRENT_IFRAMES = 6;
+
+const BLOCKED_IFRAME_DOMAINS = ["atis.ntpc.gov.tw"];
+
+const RATE_LIMITED_IFRAME_DOMAINS = ["hls.bote.gov.taipei"];
+
+function isBlockedByCSP(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return BLOCKED_IFRAME_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch {
+    return false;
+  }
 }
 
-export function CCTVGallery({ feeds }: CCTVGalleryProps) {
-  const [reported, setReported] = useState<Set<string>>(new Set());
-
-  function handleReport(id: string) {
-    setReported((prev) => new Set(prev).add(id));
+function isRateLimited(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return RATE_LIMITED_IFRAME_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch {
+    return false;
   }
+}
+
+type VisibilityContextValue = {
+  registerVisibility: (id: string, visible: boolean) => void;
+  canShowIframe: (id: string) => boolean;
+};
+
+const VisibilityContext = createContext<VisibilityContextValue | null>(null);
+
+interface CCTVGalleryProps {
+  feeds: CCTVFeed[];
+  loading?: boolean;
+}
+
+export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
+  const [orderedVisibleIds, setOrderedVisibleIds] = useState<string[]>([]);
+
+  const registerVisibility = useCallback((id: string, visible: boolean) => {
+    setOrderedVisibleIds((prev) => {
+      if (visible) {
+        if (prev.includes(id)) return prev;
+        return [...prev, id];
+      }
+      return prev.filter((x) => x !== id);
+    });
+  }, []);
+
+  const canShowIframe = useCallback(
+    (id: string) => orderedVisibleIds.slice(0, MAX_CONCURRENT_IFRAMES).includes(id),
+    [orderedVisibleIds]
+  );
+
+  useEffect(() => {
+    setOrderedVisibleIds([]);
+  }, [feeds]);
+
+  if (feeds.length === 0 && !loading) return null;
 
   return (
+    <VisibilityContext.Provider value={{ registerVisibility, canShowIframe }}>
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -47,52 +99,72 @@ export function CCTVGallery({ feeds }: CCTVGalleryProps) {
           <div className="flex items-center gap-2">
             <Camera className="h-4 w-4 text-strava" />
             <h3 className="text-sm font-semibold text-foreground">
-              Live Road Conditions
+              即時影像
             </h3>
           </div>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            TDX CCTV feeds along the route
+            TDX CCTV 監視器
           </p>
         </div>
         <Badge
           variant="outline"
           className="border-success/30 text-success text-[10px] px-2 py-0.5"
         >
-          <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-success inline-block animate-pulse" />
-          {feeds.filter((f) => f.status === "online").length}/{feeds.length} Online
+          {loading ? (
+            <span className="text-muted-foreground">載入中…</span>
+          ) : (
+            <>
+              <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-success inline-block animate-pulse" />
+              {feeds.filter((f) => f.status === "online").length}/{feeds.length} 連線
+            </>
+          )}
         </Badge>
       </div>
 
       <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {feeds.map((feed, i) => (
-          <CCTVCard
-            key={feed.id}
-            feed={feed}
-            index={i}
-            isReported={reported.has(feed.id)}
-            onReport={() => handleReport(feed.id)}
-          />
-        ))}
+        {loading && feeds.length === 0 ? (
+          <div className="col-span-2 flex items-center justify-center py-12 text-muted-foreground text-sm">
+            載入路線附近監視器…
+          </div>
+        ) : (
+          feeds.map((feed, i) => (
+            <CCTVCard key={feed.id} feed={feed} index={i} />
+          ))
+        )}
       </div>
     </motion.div>
+    </VisibilityContext.Provider>
   );
 }
 
-function CCTVCard({
-  feed,
-  index,
-  isReported,
-  onReport,
-}: {
-  feed: CCTVFeed;
-  index: number;
-  isReported: boolean;
-  onReport: () => void;
-}) {
+function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
+  const ctx = useContext(VisibilityContext);
+  const cardRef = useRef<HTMLDivElement>(null);
   const statusIcon =
     feed.status === "online" ? CheckCircle2 : feed.status === "degraded" ? TriangleIcon : AlertCircle;
   const statusColor =
     feed.status === "online" ? "#22c55e" : feed.status === "degraded" ? "#f59e0b" : "#ef4444";
+
+  const needsSlot = feed.videoUrl && isRateLimited(feed.videoUrl);
+  const hasSlot = ctx ? ctx.canShowIframe(feed.id) : true;
+
+  useEffect(() => {
+    if (!ctx || !needsSlot || !cardRef.current) return;
+    const el = cardRef.current;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry) ctx.registerVisibility(feed.id, entry.isIntersecting);
+      },
+      { rootMargin: "50px", threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [ctx, feed.id, needsSlot]);
+
+  const showCardIframe =
+    feed.videoUrl &&
+    !isBlockedByCSP(feed.videoUrl) &&
+    (!needsSlot || hasSlot);
 
   // Deterministic "image" generated via SVG noise pattern
   const seed = feed.imageSeed;
@@ -101,6 +173,7 @@ function CCTVCard({
 
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: index * 0.06 }}
@@ -109,41 +182,63 @@ function CCTVCard({
       {/* Camera view placeholder */}
       <Dialog>
         <div className="relative h-32 bg-[#0a1020] overflow-hidden">
-          {/* Generated "camera" view */}
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 128" preserveAspectRatio="none">
-            <defs>
-              <radialGradient id={`cg-${seed}`} cx="50%" cy="50%">
-                <stop offset="0%" stopColor={`hsl(${hue1}, 30%, 18%)`} />
-                <stop offset="100%" stopColor={`hsl(${hue2}, 20%, 8%)`} />
-              </radialGradient>
-              <filter id={`noise-${seed}`}>
-                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed={seed} />
-                <feColorMatrix type="saturate" values="0" />
-                <feBlend in="SourceGraphic" mode="overlay" />
-              </filter>
-            </defs>
-            <rect width="320" height="128" fill={`url(#cg-${seed})`} />
-            {/* Road lines */}
-            <line
-              x1="0" y1={80 + (seed % 20)} x2="320" y2={75 + (seed % 15)}
-              stroke="rgba(255,255,255,0.06)" strokeWidth="40"
+          {showCardIframe ? (
+            <iframe
+              src={feed.videoUrl}
+              title={feed.label}
+              className="absolute inset-0 w-full h-full border-0"
+              allow="fullscreen"
             />
-            <line
-              x1="0" y1={80 + (seed % 20)} x2="320" y2={75 + (seed % 15)}
-              stroke="rgba(255,255,255,0.08)" strokeWidth="2" strokeDasharray="20,15"
-            />
-            {/* Horizon */}
-            <line x1="0" y1={50 + (seed % 10)} x2="320" y2={48 + (seed % 8)} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-          </svg>
+          ) : (
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 128" preserveAspectRatio="none">
+              <defs>
+                <radialGradient id={`cg-${seed}`} cx="50%" cy="50%">
+                  <stop offset="0%" stopColor={`hsl(${hue1}, 30%, 18%)`} />
+                  <stop offset="100%" stopColor={`hsl(${hue2}, 20%, 8%)`} />
+                </radialGradient>
+                <filter id={`noise-${seed}`}>
+                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed={seed} />
+                  <feColorMatrix type="saturate" values="0" />
+                  <feBlend in="SourceGraphic" mode="overlay" />
+                </filter>
+              </defs>
+              <rect width="320" height="128" fill={`url(#cg-${seed})`} />
+              <line
+                x1="0" y1={80 + (seed % 20)} x2="320" y2={75 + (seed % 15)}
+                stroke="rgba(255,255,255,0.06)" strokeWidth="40"
+              />
+              <line
+                x1="0" y1={80 + (seed % 20)} x2="320" y2={75 + (seed % 15)}
+                stroke="rgba(255,255,255,0.08)" strokeWidth="2" strokeDasharray="20,15"
+              />
+              <line x1="0" y1={50 + (seed % 10)} x2="320" y2={48 + (seed % 8)} stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
+            </svg>
+          )}
 
-          {/* Scanline effect */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)",
-            }}
-          />
+          {(!feed.videoUrl || isBlockedByCSP(feed.videoUrl)) && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)",
+              }}
+            />
+          )}
+
+          {feed.videoUrl && isBlockedByCSP(feed.videoUrl) && (
+            <a
+              href={feed.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              aria-label={`在新分頁開啟 ${feed.label}`}
+            >
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background/90 text-xs font-medium text-foreground">
+                <ExternalLink className="h-3.5 w-3.5" />
+                {needsSlot && !hasSlot ? "點擊或滾動至上方載入" : "觀看即時影像"}
+              </span>
+            </a>
+          )}
 
           {/* Status indicator */}
           <div className="absolute top-2 left-2 flex items-center gap-1.5">
@@ -152,7 +247,7 @@ function CCTVCard({
               return <StatusIcon className="h-3 w-3" style={{ color: statusColor }} />;
             })()}
             <span className="text-[10px] font-medium capitalize" style={{ color: statusColor }}>
-              {feed.status}
+              {feed.status === "online" ? "連線" : feed.status === "degraded" ? "離線" : "離線"}
             </span>
           </div>
 
@@ -184,7 +279,7 @@ function CCTVCard({
             <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
               <div className="text-center">
                 <AlertCircle className="h-6 w-6 text-destructive mx-auto mb-1" />
-                <span className="text-xs text-destructive font-medium">Signal Lost</span>
+                <span className="text-xs text-destructive font-medium">訊號中斷</span>
               </div>
             </div>
           )}
@@ -198,58 +293,69 @@ function CCTVCard({
             </DialogTitle>
           </DialogHeader>
           <div className="relative h-80 bg-[#0a1020] rounded-lg overflow-hidden">
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 640 320" preserveAspectRatio="none">
-              <defs>
-                <radialGradient id={`cg-lg-${seed}`} cx="50%" cy="50%">
-                  <stop offset="0%" stopColor={`hsl(${hue1}, 30%, 18%)`} />
-                  <stop offset="100%" stopColor={`hsl(${hue2}, 20%, 8%)`} />
-                </radialGradient>
-              </defs>
-              <rect width="640" height="320" fill={`url(#cg-lg-${seed})`} />
-              <line
-                x1="0" y1={180 + (seed % 20)} x2="640" y2={170 + (seed % 15)}
-                stroke="rgba(255,255,255,0.06)" strokeWidth="80"
+            {feed.videoUrl && !isBlockedByCSP(feed.videoUrl) ? (
+              <iframe
+                src={feed.videoUrl}
+                title={feed.label}
+                className="absolute inset-0 w-full h-full border-0"
+                allow="fullscreen"
               />
-              <line
-                x1="0" y1={180 + (seed % 20)} x2="640" y2={170 + (seed % 15)}
-                stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeDasharray="30,20"
-              />
-            </svg>
+            ) : (
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 640 320" preserveAspectRatio="none">
+                <defs>
+                  <radialGradient id={`cg-lg-${seed}`} cx="50%" cy="50%">
+                    <stop offset="0%" stopColor={`hsl(${hue1}, 30%, 18%)`} />
+                    <stop offset="100%" stopColor={`hsl(${hue2}, 20%, 8%)`} />
+                  </radialGradient>
+                </defs>
+                <rect width="640" height="320" fill={`url(#cg-lg-${seed})`} />
+                <line
+                  x1="0" y1={180 + (seed % 20)} x2="640" y2={170 + (seed % 15)}
+                  stroke="rgba(255,255,255,0.06)" strokeWidth="80"
+                />
+                <line
+                  x1="0" y1={180 + (seed % 20)} x2="640" y2={170 + (seed % 15)}
+                  stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeDasharray="30,20"
+                />
+              </svg>
+            )}
+            {feed.videoUrl && isBlockedByCSP(feed.videoUrl) && (
+              <a
+                href={feed.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50"
+              >
+                <p className="text-sm text-foreground/90">此影像因安全政策無法嵌入</p>
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-strava text-white text-sm font-medium hover:bg-strava/90 transition-colors">
+                  <ExternalLink className="h-4 w-4" />
+                  在新分頁開啟即時影像
+                </span>
+              </a>
+            )}
             <div className="absolute bottom-3 left-3 flex items-center gap-2">
               {(() => {
                 const StatusIcon = statusIcon;
                 return <StatusIcon className="h-3.5 w-3.5" style={{ color: statusColor }} />;
               })()}
               <span className="text-xs font-mono text-muted-foreground">
-                Last updated: {feed.lastUpdated}
+                最後更新: {feed.lastUpdated}
               </span>
             </div>
           </div>
           <DialogClose asChild>
             <Button variant="outline" size="sm" className="w-fit ml-auto">
               <X className="h-3.5 w-3.5 mr-1.5" />
-              Close
+              關閉
             </Button>
           </DialogClose>
         </DialogContent>
       </Dialog>
 
       {/* Feed info */}
-      <div className="p-2.5 flex items-center justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-foreground truncate">{feed.label}</p>
-          <p className="text-[10px] text-muted-foreground">{feed.location}</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`h-7 text-[10px] px-2 shrink-0 ${isReported ? "text-warning" : "text-muted-foreground hover:text-foreground"}`}
-          onClick={onReport}
-          disabled={isReported}
-        >
-          <Flag className="h-3 w-3 mr-1" />
-          {isReported ? "Reported" : "Report"}
-        </Button>
+      <div className="p-2.5">
+        <p className="text-xs font-medium text-foreground truncate">{feed.label}</p>
+        <p className="text-[10px] text-muted-foreground">{feed.location}</p>
       </div>
     </motion.div>
   );

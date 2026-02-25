@@ -309,21 +309,6 @@ export async function GET(request: Request) {
       verdictType,
     };
 
-    // Debug: 輸出關鍵氣象資料
-    console.log("[CWB]", {
-      county,
-      district,
-      temp: `${temp}°C`,
-      feelsLike: `${feelsLike}°C`,
-      rainfallMmPerHr: rainfallMmPerHr ?? "無資料",
-      pop: `${popFirst}%`,
-      uvIndex,
-      windMs: `${windMs} m/s`,
-      humidity: `${humidity}%`,
-      verdict,
-      verdictType,
-    });
-
     return NextResponse.json(out);
   } catch (e) {
     const err = e instanceof Error ? e.message : String(e);

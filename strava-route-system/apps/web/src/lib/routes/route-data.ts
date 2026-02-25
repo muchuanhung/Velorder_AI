@@ -51,15 +51,16 @@ export interface RouteSegment {
     label: string;
     location: string;
     lastUpdated: string;
-    /** Placeholder image seed for deterministic "screenshot" */
     imageSeed: number;
     status: "online" | "offline" | "degraded";
+    videoUrl?: string;
   }
   
   export interface Route {
     id: string;
     name: string;
     nameZh: string;
+    bbox?: [number, number, number, number];
     distance: number; // km
     elevationGain: number; // m
     type: "自行車" | "跑步" | "健行" | "混合";
