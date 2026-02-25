@@ -70,7 +70,7 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
           backgroundColor: `${statusColor}08`,
         }}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-3">
           <div
             className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
             style={{ backgroundColor: `${statusColor}18` }}
@@ -89,17 +89,17 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
 
         <Separator className="my-3 bg-border/20" />
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <CloudRain className="h-3.5 w-3.5 text-[#60a5fa]" />
+            <CloudRain className="h-3.5 w-3.5 shrink-0 text-[#60a5fa]" />
             平均降雨機率: <strong className="text-foreground">{avgRain}%</strong>
           </span>
           <span className="flex items-center gap-1.5">
-            <Wind className="h-3.5 w-3.5 text-[#a78bfa]" />
+            <Wind className="h-3.5 w-3.5 shrink-0 text-[#a78bfa]" />
             最大風速: <strong className="text-foreground">{maxWind} km/h</strong>
           </span>
           <span className="flex items-center gap-1.5">
-            <Thermometer className="h-3.5 w-3.5 text-strava" />
+            <Thermometer className="h-3.5 w-3.5 shrink-0 text-strava" />
             溫度範圍: <strong className="text-foreground">{tempRange}</strong>
           </span>
         </div>
@@ -122,7 +122,7 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   行政區
                 </th>
-                <th className="px-4 py-2.5 whitespace-nowrap text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left whitespace-nowrap text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   天氣狀況
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -185,7 +185,7 @@ function SegmentRow({
           ) : (
             <CondIcon className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="text-foreground text-xs">{COND_LABELS[segment.condition]}</span>
+          <span className="text-foreground text-xs whitespace-nowrap">{COND_LABELS[segment.condition]}</span>
         </div>
       </td>
       <td className="px-4 py-3 text-right">

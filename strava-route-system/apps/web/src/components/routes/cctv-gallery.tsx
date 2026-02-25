@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef, createContext, useContext } f
 import { motion } from "framer-motion";
 import {
   Camera,
-  Clock,
   AlertCircle,
   CheckCircle2,
   AlertTriangle as TriangleIcon,
@@ -251,14 +250,6 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
             </span>
           </div>
 
-          {/* Timestamp */}
-          <div className="absolute top-2 right-2 flex items-center gap-1 bg-background/40 backdrop-blur-sm rounded px-1.5 py-0.5">
-            <Clock className="h-2.5 w-2.5 text-muted-foreground" />
-            <span className="text-[9px] text-muted-foreground font-mono">
-              {feed.lastUpdated}
-            </span>
-          </div>
-
           {/* Expand button */}
           <DialogTrigger asChild>
             <button
@@ -338,9 +329,6 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
                 const StatusIcon = statusIcon;
                 return <StatusIcon className="h-3.5 w-3.5" style={{ color: statusColor }} />;
               })()}
-              <span className="text-xs font-mono text-muted-foreground">
-                最後更新: {feed.lastUpdated}
-              </span>
             </div>
           </div>
           <DialogClose asChild>
@@ -351,12 +339,6 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
           </DialogClose>
         </DialogContent>
       </Dialog>
-
-      {/* Feed info */}
-      <div className="p-2.5">
-        <p className="text-xs font-medium text-foreground truncate">{feed.label}</p>
-        <p className="text-[10px] text-muted-foreground">{feed.location}</p>
-      </div>
     </motion.div>
   );
 }
