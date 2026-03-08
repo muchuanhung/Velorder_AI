@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LocationProvider } from "@/contexts/LocationContext";
+import { PwaProvider } from "@/components/pwa/pwa-provider";
 import "@/global.css";
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -16,6 +17,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     title: "StravaSync",
+    capable: true,
+    statusBarStyle: "default",
   },
   icons: {
     icon: [
@@ -36,7 +39,9 @@ export default function RootLayout({
     <html lang="zh-TW" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <LocationProvider>{children}</LocationProvider>
+          <LocationProvider>
+            <PwaProvider>{children}</PwaProvider>
+          </LocationProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors closeButton />
       </body>

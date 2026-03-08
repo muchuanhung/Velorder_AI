@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "generate-pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "build": "pnpm run generate-pwa-icons && next build",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -69,6 +70,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "sharp": "^0.33.5",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",

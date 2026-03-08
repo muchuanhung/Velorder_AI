@@ -19,6 +19,17 @@ if (existsSync(envPath) && !process.env.CWB_API_KEY) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@repo/auth'],
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       { source: '/favicon.ico', destination: '/api/favicon' },
