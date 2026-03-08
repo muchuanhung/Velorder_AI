@@ -54,6 +54,7 @@ export interface RouteSegment {
     imageSeed: number;
     status: "online" | "offline" | "degraded";
     videoUrl?: string;
+    township?: string;
   }
   
   export interface Route {

@@ -75,8 +75,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async () => {
     const auth = authRef.current ?? getAuthClient();
-    const result = await signInWithPopup(auth, googleProvider);
-    await setSessionFromUser(result.user);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      await setSessionFromUser(result.user);
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
+        throw new Error("登入已取消");
+      }
+      throw err;
+    }
   }, [setSessionFromUser]);
 
   const signInWithEmail = useCallback(

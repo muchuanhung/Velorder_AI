@@ -5,14 +5,22 @@
 
 import { NextResponse } from "next/server";
 import { getCCTVInBbox } from "@/lib/background/tdx-cctv.firestore";
+import { findTownshipDetailByLngLat } from "@/lib/maps/taiwan-towns-topojson";
 import type { CCTVFeed } from "@/lib/routes/route-data";
 
-function toCCTVFeed(doc: { id: string; label: string; roadName?: string; county?: string; videoUrl: string; syncedAt: number }): CCTVFeed {
+function toCCTVFeed(doc: { id: string; label: string; roadName?: string; county?: string; lat?: number; lon?: number; videoUrl: string; syncedAt: number }): CCTVFeed {
   const seed = doc.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const township =
+    doc.lat != null && doc.lon != null
+      ? findTownshipDetailByLngLat(doc.lon, doc.lat)?.town
+      : undefined;
+  const base = doc.roadName ?? doc.county ?? doc.label;
+  const location = township ? `${base} (${township})` : base;
   return {
     id: doc.id,
     label: doc.label,
-    location: doc.roadName ?? doc.county ?? doc.label,
+    location,
+    township,
     lastUpdated: `同步於 ${new Date(doc.syncedAt).toLocaleString("zh-TW", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`,
     imageSeed: seed,
     status: "online",
@@ -33,7 +41,7 @@ export async function GET(request: Request) {
 
   try {
     const bbox: [number, number, number, number] = [minLon, minLat, maxLon, maxLat];
-    const docs = await getCCTVInBbox(bbox, 15);
+    const docs = await getCCTVInBbox(bbox, 30);
     const feeds: CCTVFeed[] = docs.map(toCCTVFeed);
     return NextResponse.json(feeds);
   } catch (e) {

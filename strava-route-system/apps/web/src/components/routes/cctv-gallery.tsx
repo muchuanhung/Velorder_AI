@@ -63,6 +63,13 @@ interface CCTVGalleryProps {
 
 export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
   const [orderedVisibleIds, setOrderedVisibleIds] = useState<string[]>([]);
+  const [selectedTownship, setSelectedTownship] = useState<string>("全部");
+
+  const townships = [...new Set(feeds.map((f) => f.township).filter(Boolean))] as string[];
+  const filteredFeeds =
+    selectedTownship === "全部"
+      ? feeds
+      : feeds.filter((f) => f.township === selectedTownship);
 
   const registerVisibility = useCallback((id: string, visible: boolean) => {
     setOrderedVisibleIds((prev) => {
@@ -81,6 +88,7 @@ export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
 
   useEffect(() => {
     setOrderedVisibleIds([]);
+    setSelectedTownship("全部");
   }, [feeds]);
 
   if (feeds.length === 0 && !loading) return null;
@@ -120,13 +128,34 @@ export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
         </Badge>
       </div>
 
+      {townships.length > 0 && (
+        <div className="px-4 pb-3 pt-0">
+          <select
+            value={selectedTownship}
+            onChange={(e) => setSelectedTownship(e.target.value)}
+            className="w-full max-w-[200px] h-8 rounded-md border border-border/50 bg-background/50 text-sm text-foreground px-3 focus:outline-none focus:ring-1 focus:ring-strava/40"
+          >
+            <option value="全部">全部行政區</option>
+            {townships.sort().map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
         {loading && feeds.length === 0 ? (
           <div className="col-span-2 flex items-center justify-center py-12 text-muted-foreground text-sm">
             載入路線附近監視器…
           </div>
+        ) : filteredFeeds.length === 0 ? (
+          <div className="col-span-2 flex items-center justify-center py-8 text-muted-foreground text-sm">
+            {selectedTownship === "全部" ? "此路線附近無監視器" : `${selectedTownship} 無監視器`}
+          </div>
         ) : (
-          feeds.map((feed, i) => (
+          filteredFeeds.map((feed, i) => (
             <CCTVCard key={feed.id} feed={feed} index={i} />
           ))
         )}

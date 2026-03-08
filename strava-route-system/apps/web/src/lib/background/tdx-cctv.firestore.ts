@@ -88,16 +88,16 @@ export async function getCCTVCountFirestore(): Promise<number> {
   return snap.data().count ?? 0;
 }
 
-/** bbox [minLon, minLat, maxLon, maxLat]，擴展 ~0.5km 後篩選，最多回傳 limit 筆 */
+/** bbox [minLon, minLat, maxLon, maxLat]，擴展 ~500m (0.005° ≈ 555m) 後篩選，最多回傳 limit 筆 */
 export async function getCCTVInBbox(
   bbox: [number, number, number, number],
   limit = 15
 ): Promise<CCTVFirestoreDoc[]> {
   const [minLon, minLat, maxLon, maxLat] = bbox;
-  const pad = 0.005;
+  const pad = 0.005; // ~555m at Taiwan latitude
   const db = getFirestoreAdmin();
   const snap = await db.collection(COLLECTION).get();
-  const docs = snap.docs
+  const all = snap.docs
     .map((d) => d.data() as CCTVFirestoreDoc)
     .filter(
       (d) =>
@@ -107,7 +107,19 @@ export async function getCCTVInBbox(
         d.lat <= maxLat + pad &&
         d.lon >= minLon - pad &&
         d.lon <= maxLon + pad
-    )
-    .slice(0, limit);
-  return docs;
+    );
+
+  // 依緯度分層取樣，避免全集中單一行政區；最後依緯度排序，顯示順序與路線方向一致
+  const bands = 5;
+  const perBand = Math.ceil(limit / bands);
+  const result: CCTVFirestoreDoc[] = [];
+  for (let i = 0; i < bands; i++) {
+    const bandMinLat = minLat - pad + ((maxLat - minLat + 2 * pad) * i) / bands;
+    const bandMaxLat = minLat - pad + ((maxLat - minLat + 2 * pad) * (i + 1)) / bands;
+    const inBand = all.filter((d) => d.lat! >= bandMinLat && d.lat! < bandMaxLat);
+    result.push(...inBand.slice(0, perBand));
+  }
+  return result
+    .slice(0, limit)
+    .sort((a, b) => (a.lat ?? 0) - (b.lat ?? 0));
 }

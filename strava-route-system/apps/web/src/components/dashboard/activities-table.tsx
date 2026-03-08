@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSync } from "@/contexts/SyncContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,21 +41,25 @@ const typeColors: Record<string, string> = {
 export function ActivitiesTable() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const { onSyncComplete } = useSync();
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchActivities = useCallback(() => {
+    setLoading(true);
     fetch("/api/strava/activities?limit=5", { credentials: "include" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { activities?: Activity[] } | null) => {
-        if (!cancelled && data?.activities) setActivities(data.activities);
+        if (data?.activities) setActivities(data.activities);
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  useEffect(() => {
+    return onSyncComplete(fetchActivities);
+  }, [onSyncComplete, fetchActivities]);
 
   return (
     <Card className="bg-card border-border">

@@ -111,7 +111,12 @@ export function AuthForm({
     try {
       await onGoogleAuth();
     } catch (err) {
-      setError(err instanceof Error ? err.message : authFormConfig.messages.googleError);
+      const msg = err instanceof Error ? err.message : authFormConfig.messages.googleError;
+      const friendly =
+        msg.includes("popup-closed-by-user") || msg.includes("cancelled-popup-request")
+          ? "登入已取消"
+          : msg;
+      setError(friendly);
     } finally {
       setIsGoogleLoading(false);
     }
