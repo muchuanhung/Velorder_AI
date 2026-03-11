@@ -10,7 +10,10 @@ import "@/global.css";
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://strava-sync-alpha.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(baseUrl),
   title: "StravaSync - Fitness Dashboard",
   description: "Track your fitness activities with Strava integration",
   generator: "v0.app",
