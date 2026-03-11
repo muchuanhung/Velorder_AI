@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "StravaSync/1.0" },
+      headers: { "User-Agent": "Routecast/1.0" },
       next: { revalidate: 86400 }, // 快取 24 小時
     });
     if (!res.ok) throw new Error("Fetch failed");

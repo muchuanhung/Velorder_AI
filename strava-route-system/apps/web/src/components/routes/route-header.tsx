@@ -66,9 +66,9 @@ export function RouteHeader({ route, statusOverride }: RouteHeaderProps) {
         >
           <defs>
             <linearGradient id="route-glow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FC4C02" stopOpacity="0.2" />
-              <stop offset="50%" stopColor="#FC4C02" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#FC4C02" stopOpacity="0.2" />
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
+              <stop offset="50%" stopColor="#0ea5e9" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.2" />
             </linearGradient>
             <filter id="route-blur">
               <feGaussianBlur stdDeviation="3" />
@@ -87,7 +87,7 @@ export function RouteHeader({ route, statusOverride }: RouteHeaderProps) {
           <motion.path
             d={svgPath}
             fill="none"
-            stroke="#FC4C02"
+            stroke="#0ea5e9"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -98,8 +98,8 @@ export function RouteHeader({ route, statusOverride }: RouteHeaderProps) {
           {/* Start/end dots */}
           <circle cx="10" cy="95" r="4" fill="#22c55e" opacity="0.9" />
           <circle cx="10" cy="95" r="7" fill="#22c55e" opacity="0.2" />
-          <circle cx="175" cy="55" r="4" fill="#FC4C02" opacity="0.9" />
-          <circle cx="175" cy="55" r="7" fill="#FC4C02" opacity="0.2" />
+          <circle cx="175" cy="55" r="4" fill="#0ea5e9" opacity="0.9" />
+          <circle cx="175" cy="55" r="7" fill="#0ea5e9" opacity="0.2" />
         </svg>
 
         {/* Elevation mini-profile at bottom */}
@@ -107,12 +107,12 @@ export function RouteHeader({ route, statusOverride }: RouteHeaderProps) {
           <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full" preserveAspectRatio="none">
             <defs>
               <linearGradient id="elev-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#FC4C02" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#FC4C02" stopOpacity="0" />
+                <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
               </linearGradient>
             </defs>
             <path d={areaPath} fill="url(#elev-fill)" />
-            <polyline points={elevPoints} fill="none" stroke="#FC4C02" strokeWidth="1" opacity="0.6" />
+            <polyline points={elevPoints} fill="none" stroke="#0ea5e9" strokeWidth="1" opacity="0.6" />
           </svg>
         </div>
 

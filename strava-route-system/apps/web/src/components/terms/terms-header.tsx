@@ -31,7 +31,7 @@ export function TermsHeader() {
           <Link href="/login" className="flex items-center gap-2.5 group">
             <ProductLogo size={32} />
             <span className="hidden sm:block font-semibold text-foreground text-sm">
-              StravaSync
+              Routecast
             </span>
           </Link>
         </div>

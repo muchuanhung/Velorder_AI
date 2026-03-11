@@ -96,7 +96,7 @@ export interface RouteSegment {
       case "中等":
         return "#f59e0b";
       case "困難":
-        return "#FC4C02";
+        return "#0ea5e9";
       case "極難":
         return "#ef4444";
     }

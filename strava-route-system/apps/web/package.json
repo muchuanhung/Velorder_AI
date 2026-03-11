@@ -71,6 +71,7 @@
   },
   "devDependencies": {
     "sharp": "^0.33.5",
+    "to-ico": "^1.1.0",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",

@@ -31,6 +31,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { ProUpgradeModal } from "@/components/ui/pro-ugrade-modal";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 // --- Types ---
 
@@ -250,19 +251,21 @@ export function Sidebar() {
 
   return (
     <TooltipProvider>
-      {/* Mobile menu button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden"
-        onClick={() => setMobileOpen(!mobileOpen)}
-      >
-        {mobileOpen ? (
-          <X className="h-5 w-5" />
-        ) : (
-          <Menu className="h-5 w-5" />
-        )}
-      </Button>
+      {/* Mobile menu button & theme toggle */}
+      <div className="fixed top-4 left-4 z-50 flex gap-1 lg:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
+          {mobileOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+        <ThemeToggle />
+      </div>
 
       {/* Mobile overlay */}
       {mobileOpen && (
@@ -294,7 +297,7 @@ export function Sidebar() {
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-semibold text-sidebar-foreground">
-                StravaSync
+                Routecast
               </span>
               <span className="text-xs text-muted-foreground">
                 Fitness Tracker
@@ -357,15 +360,15 @@ export function Sidebar() {
           </div>
         )}
 
-        {/* Collapse toggle */}
-        <div className="hidden border-t border-sidebar-border p-3 lg:block">
+        {/* Collapse (desktop) - theme toggle moved to header */}
+        <div className="hidden border-t border-sidebar-border p-3 lg:flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start"
+            className={cn("flex-1 justify-start", collapsed && "px-2")}
             onClick={() => setCollapsed(!collapsed)}
           >
-            <Menu className="h-4 w-4" />
+            <Menu className="h-4 w-4 shrink-0" />
             {!collapsed && <span className="ml-2">收合</span>}
           </Button>
         </div>

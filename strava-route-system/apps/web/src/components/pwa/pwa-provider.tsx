@@ -67,7 +67,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-border bg-card p-4 shadow-lg">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-medium text-foreground">將 StravaSync 加入主畫面</p>
+            <p className="font-medium text-foreground">將 Routecast 加入主畫面</p>
             {isIOS ? (
               <p className="mt-1 text-sm text-muted-foreground">
                 點選分享按鈕 <span className="inline-block">⎋</span>，然後選擇「加入主畫面」

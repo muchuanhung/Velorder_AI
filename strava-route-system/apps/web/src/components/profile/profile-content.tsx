@@ -10,6 +10,7 @@ import { PasswordChange } from "@/components/profile/password-change";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getProxiedAvatarUrl } from "@/lib/avatar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 function formatJoinedDate(creationTime: string | undefined): string {
   if (!creationTime) return "—";
@@ -33,7 +34,7 @@ export function ProfileContent() {
     <div className="mx-auto max-w-2xl space-y-8">
       {/* Page heading */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-1">
           <Button
             type="button"
             variant="ghost"
@@ -54,16 +55,19 @@ export function ProfileContent() {
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="hidden gap-2 border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground sm:flex"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-4 w-4" />
-          登出
-        </Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle className="hidden lg:flex" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="hidden gap-2 border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground sm:flex"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" />
+            登出
+          </Button>
+        </div>
       </div>
 
       <Separator className="bg-border" />

@@ -1,6 +1,6 @@
 {
-  "name": "StravaSync - Fitness Dashboard",
-  "short_name": "StravaSync",
+  "name": "Routecast - Route Weather & Traffic",
+  "short_name": "Routecast",
   "description": "即時天氣資訊，中央氣象署數據",
   "start_url": "/login",
   "scope": "/",
@@ -24,7 +24,7 @@
       "purpose": "any maskable"
     }
   ],
-  "theme_color": "#FC4C02",
+  "theme_color": "#0ea5e9",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait-primary"

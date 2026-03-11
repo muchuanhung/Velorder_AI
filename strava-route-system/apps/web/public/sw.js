@@ -2,7 +2,7 @@
  * 最小化 Service Worker - 支援 PWA 安裝
  * 預快取關鍵資源以改善首次載入
  */
-const CACHE_NAME = "stravasync-v1";
+const CACHE_NAME = "routecast-v1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

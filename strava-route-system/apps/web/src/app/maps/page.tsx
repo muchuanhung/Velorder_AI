@@ -85,7 +85,7 @@ function SelectedDistrictBar({ district, onClose }: { district: District; onClos
             className="h-3 w-3 rounded-full ring-1 ring-background/30"
             style={{
               backgroundColor: district.isCurrentDistrict
-                ? "#FC4C02"
+                ? "#0ea5e9"
                 : getRainColor(district.rainProbability),
             }}
           />
@@ -309,7 +309,7 @@ export default function MapsPage() {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-sm font-semibold text-foreground">
-                StravaSync Maps
+                Routecast
               </h1>
               <p className="text-[10px] text-muted-foreground">
                 Taiwan | 氣象、交通事故資訊地圖

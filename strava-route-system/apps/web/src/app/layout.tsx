@@ -2,9 +2,11 @@ import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "@/global.css";
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -14,12 +16,12 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://strava-sync-alpha.ve
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
-  title: "StravaSync - Fitness Dashboard",
-  description: "Track your fitness activities with Strava integration",
+  title: "Routecast - Route Weather & Traffic",
+  description: "運動路線 - 天氣與路況，即時預警，安全出行",
   generator: "v0.app",
   manifest: "/manifest.json",
   appleWebApp: {
-    title: "StravaSync",
+    title: "Routecast",
     capable: true,
     statusBarStyle: "default",
   },
@@ -41,11 +43,15 @@ export default function RootLayout({
   return (
     <html lang="zh-TW" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <AuthProvider>
-          <LocationProvider>
-            <PwaProvider>{children}</PwaProvider>
-          </LocationProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="routecast-theme">
+          <TooltipProvider>
+            <AuthProvider>
+              <LocationProvider>
+                <PwaProvider>{children}</PwaProvider>
+              </LocationProvider>
+            </AuthProvider>
+          </TooltipProvider>
+        </ThemeProvider>
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

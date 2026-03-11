@@ -123,7 +123,7 @@ export function ProUpgradeModal({
 
                 {/* Ambient glow */}
                 <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-72 -translate-x-1/2 rounded-full bg-amber-400/8 blur-3xl" />
-                <div className="pointer-events-none absolute -top-16 left-1/2 h-32 w-48 -translate-x-1/2 rounded-full bg-[#FC4C02]/10 blur-2xl" />
+                <div className="pointer-events-none absolute -top-16 left-1/2 h-32 w-48 -translate-x-1/2 rounded-full bg-[#0ea5e9]/10 blur-2xl" />
 
                 {/* Header */}
                 <div className="relative px-6 pt-8 pb-5 text-center">
@@ -161,8 +161,8 @@ export function ProUpgradeModal({
                 <div className="space-y-0.5 px-6 py-4">
                   {features.map((f) => (
                     <div key={f.title} className="flex items-start gap-3 py-2">
-                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FC4C02]/15">
-                        <Check className="h-3 w-3 text-[#FC4C02]" />
+                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0ea5e9]/15">
+                        <Check className="h-3 w-3 text-[#0ea5e9]" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground leading-tight">
@@ -218,7 +218,7 @@ export function ProUpgradeModal({
                 <div className="px-6 pb-6 space-y-3">
                   {/* Subscribe button with shimmer */}
                   <Button
-                    className="group relative h-12 w-full overflow-hidden bg-[#FC4C02] text-sm font-bold text-white hover:bg-[#e04400]"
+                    className="group relative h-12 w-full overflow-hidden bg-[#0ea5e9] text-sm font-bold text-white hover:bg-[#0284c7]"
                     onClick={handleSubscribe}
                     disabled={subscribing}
                   >
@@ -249,7 +249,7 @@ export function ProUpgradeModal({
                   {/* 試用體驗 */}
                   <button
                     type="button"
-                    className="w-full text-center text-sm font-medium text-[#FC4C02] transition-colors hover:text-[#e04400]"
+                    className="w-full text-center text-sm font-medium text-[#0ea5e9] transition-colors hover:text-[#0284c7]"
                   >
                     試用體驗 7 天
                   </button>

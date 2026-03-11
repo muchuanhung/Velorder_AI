@@ -114,7 +114,7 @@ export function MapCanvas({
           {/* 3D extrusion glow for current district */}
           <filter id="glow-current" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="1" result="blur" />
-            <feFlood floodColor="#FC4C02" floodOpacity="0.5" result="color" />
+            <feFlood floodColor="#0ea5e9" floodOpacity="0.5" result="color" />
             <feComposite in="color" in2="blur" operator="in" result="glow" />
             <feMerge>
               <feMergeNode in="glow" />
@@ -172,7 +172,7 @@ export function MapCanvas({
             <path
               key={`shadow-${district.id}`}
               d={district.path}
-              fill="#FC4C02"
+              fill="#0ea5e9"
               fillOpacity={0.15}
               stroke="none"
               filter="url(#extrude-shadow)"
@@ -189,7 +189,7 @@ export function MapCanvas({
           const showRainfall = activeLayer === "rainfall";
 
           const fillColor = isCurrent
-            ? "#FC4C02"
+            ? "#0ea5e9"
             : showRainfall
               ? getRainColor(district.rainProbability)
               : "#2a3441";
@@ -201,7 +201,7 @@ export function MapCanvas({
               : 0.35;
 
           const strokeColor = isCurrent
-            ? "#FC4C02"
+            ? "#0ea5e9"
             : isSelected
               ? "#87CEEB"
               : isHovered
@@ -279,7 +279,7 @@ export function MapCanvas({
           const [cx, cy] = getCentroid(current.path);
           return (
             <g>
-              <circle cx={cx} cy={cy - 1.5} r="1.8" fill="#FC4C02" opacity="0.15">
+              <circle cx={cx} cy={cy - 1.5} r="1.8" fill="#0ea5e9" opacity="0.15">
                 <animate
                   attributeName="r"
                   from="1.2"
@@ -295,7 +295,7 @@ export function MapCanvas({
                   repeatCount="indefinite"
                 />
               </circle>
-              <circle cx={cx} cy={cy - 1.5} r="0.7" fill="#FC4C02" stroke="#fff" strokeWidth="0.2" />
+              <circle cx={cx} cy={cy - 1.5} r="0.7" fill="#0ea5e9" stroke="#fff" strokeWidth="0.2" />
             </g>
           );
         })()}
@@ -319,14 +319,14 @@ export function MapCanvas({
           <text x="20" y="36" textAnchor="middle" fill="#475569" fontSize="4">S</text>
           <text x="35" y="22" textAnchor="middle" fill="#475569" fontSize="4">E</text>
           <text x="5" y="22" textAnchor="middle" fill="#475569" fontSize="4">W</text>
-          <polygon points="20,10 18.5,16 21.5,16" fill="#FC4C02" opacity="0.8" />
+          <polygon points="20,10 18.5,16 21.5,16" fill="#0ea5e9" opacity="0.8" />
           <polygon points="20,30 18.5,24 21.5,24" fill="#475569" opacity="0.6" />
         </svg>
       </div>
 
       {/* Map attribution */}
       <div className="absolute bottom-3 right-3 z-[2] text-[10px] text-muted-foreground/30 font-mono">
-        StravaSync Maps | CWA | TDX
+        Routecast | CWA | TDX
       </div>
 
       {/* Coordinate display */}
@@ -360,7 +360,7 @@ function DistrictTooltip({
             className="h-2.5 w-2.5 rounded-full ring-2 ring-background/50"
             style={{
               backgroundColor: district.isCurrentDistrict
-                ? "#FC4C02"
+                ? "#0ea5e9"
                 : getRainColor(district.rainProbability),
             }}
           />

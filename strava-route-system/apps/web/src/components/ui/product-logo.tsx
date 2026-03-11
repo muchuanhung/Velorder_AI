@@ -13,8 +13,8 @@ export function ProductLogo({ className, size = 40 }: ProductLogoProps) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/strava-sync.svg"
-        alt="StravaSync"
+        src="/routecast.svg"
+        alt="Routecast"
         width={size}
         height={size}
         className="object-contain"

@@ -52,7 +52,7 @@ function ControlPanelWeatherInner({
             className="h-2.5 w-2.5 rounded-full ring-1 ring-background/30 shrink-0"
             style={{
               backgroundColor: focusedDistrict.isCurrentDistrict
-                ? "#FC4C02"
+                ? "#0ea5e9"
                 : getRainColor(rainPop),
             }}
           />
@@ -70,7 +70,7 @@ function ControlPanelWeatherInner({
               style={{
                 width: `${rainPop}%`,
                 backgroundColor: focusedDistrict.isCurrentDistrict
-                  ? "#FC4C02"
+                  ? "#0ea5e9"
                   : getRainColor(rainPop),
               }}
             />
@@ -185,7 +185,7 @@ export function ControlPanel({
                 icon={Car}
                 label="交通事故"
                 description="各鄉鎮交通事故"
-                activeColor="#FC4C02"
+                activeColor="#0ea5e9"
               />
 
               {/* Incident markers toggle */}

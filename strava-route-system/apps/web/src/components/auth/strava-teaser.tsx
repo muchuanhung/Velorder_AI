@@ -8,7 +8,7 @@ import { ProductLogo } from "@/components/ui/product-logo";
 
 const teaserConfig = {
   hero: {
-    title: "StravaSync",
+    title: "Routecast",
     subtitle: "您的Strava數據，精彩呈現在您的眼前",
   },
   connectCard: {
