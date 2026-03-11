@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Camera } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,9 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ name, email, avatarUrl, joinedDate }: ProfileHeaderProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const initials = name
     .split(" ")
     .map((n) => n[0])
@@ -24,7 +28,7 @@ export function ProfileHeader({ name, email, avatarUrl, joinedDate }: ProfileHea
       {/* Avatar with edit overlay */}
       <div className="group relative">
         <Avatar className="h-24 w-24 border-2 border-border">
-          {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+          {mounted && avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
           <AvatarFallback className="bg-strava text-primary-foreground text-2xl font-semibold">
             {initials}
           </AvatarFallback>

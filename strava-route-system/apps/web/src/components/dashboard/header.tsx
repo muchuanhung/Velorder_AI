@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,11 +18,14 @@ import { useLocation } from "@/contexts/LocationContext";
 import { useSync } from "@/contexts/SyncContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getInitials } from "@/constants";
+import { getProxiedAvatarUrl } from "@/lib/avatar";
 import { useRouter } from "next/navigation";
 
 export function Header() {
   const { user } = useAuth();
   const { requestLocation } = useLocation();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const { syncing, setSyncing, setLastSyncCount, setLastSyncStatus, emitSyncComplete } = useSync();
   const handleSignOut = useSignOut();
   const [pendingStravaUrl, setPendingStravaUrl] = useState<string | null>(null);
@@ -169,7 +172,9 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.photoURL ?? undefined} alt={displayName ?? undefined} />
+                {mounted && user?.photoURL && (
+                  <AvatarImage src={getProxiedAvatarUrl(user.photoURL)!} alt={displayName ?? undefined} />
+                )}
                 <AvatarFallback className="bg-strava text-primary-foreground text-sm font-medium">
                   {initials}
                 </AvatarFallback>
