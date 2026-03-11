@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { RefreshCw, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "@/contexts/LocationContext";
@@ -147,15 +146,6 @@ export function Header() {
 
         {/* Notifications */}
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-strava text-primary-foreground border-0 text-xs">
-                3
-              </Badge>
-              <span className="sr-only">Notifications</span>
-            </Button>
-          </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80 bg-popover border-border">
             <DropdownMenuLabel className="text-foreground">Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
