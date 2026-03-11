@@ -31,15 +31,9 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-    const rewrites = [{ source: '/favicon.ico', destination: '/api/favicon' }];
-    if (projectId) {
-      rewrites.push(
-        { source: '/__/auth/:path*', destination: `https://${projectId}.firebaseapp.com/__/auth/:path*` },
-        { source: '/__/firebase/init.json', destination: `https://${projectId}.firebaseapp.com/__/firebase/init.json` }
-      );
-    }
-    return rewrites;
+    return [
+      { source: '/favicon.ico', destination: '/api/favicon' },
+    ];
   },
   images: {
     remotePatterns: [
