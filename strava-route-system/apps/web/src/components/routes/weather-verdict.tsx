@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -16,17 +16,17 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import type { Route, RouteSegment } from "@/lib/routes/route-data";
-import { getStatusColor } from "@/lib/routes/route-data";
+import { getStatusColor, computeRouteStatus } from "@/lib/routes/route-data";
 import { useSegmentsWeather } from "@/hooks/useSegmentsWeather";
 
 interface WeatherVerdictProps {
   route: Route;
+  onStatusComputed?: (status: Route["status"], verdictMessage: string) => void;
 }
 
-export function WeatherVerdict({ route }: WeatherVerdictProps) {
-  const statusColor = getStatusColor(route.status);
+export function WeatherVerdict({ route, onStatusComputed }: WeatherVerdictProps) {
   const hasSegments = route.segments.length > 0;
-  const { weatherMap, loading: weatherLoading, error: weatherError } = useSegmentsWeather(
+  const { weatherMap, loading: weatherLoading } = useSegmentsWeather(
     hasSegments ? route.segments : []
   );
 
@@ -38,6 +38,18 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
     });
   }, [route.segments, weatherMap]);
 
+  const { status, verdictMessage } = useMemo(() => {
+    if (!weatherLoading && enrichedSegments.length > 0) {
+      return computeRouteStatus(enrichedSegments);
+    }
+    return { status: route.status as Route["status"], verdictMessage: route.verdictMessage || "尚無天氣資料" };
+  }, [enrichedSegments, weatherLoading, route.status, route.verdictMessage]);
+
+  useEffect(() => {
+    onStatusComputed?.(status, verdictMessage);
+  }, [status, verdictMessage, onStatusComputed]);
+
+  const statusColor = getStatusColor(status);
   const avgRain = hasSegments
     ? Math.round(
         enrichedSegments.reduce((s, seg) => s + seg.rainProbability, 0) / enrichedSegments.length
@@ -49,9 +61,9 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
     : "-";
 
   const VerdictIcon =
-    route.status === "safe"
+    status === "safe"
       ? ShieldCheck
-      : route.status === "caution"
+      : status === "caution"
         ? AlertTriangle
         : ShieldAlert;
 
@@ -82,7 +94,7 @@ export function WeatherVerdict({ route }: WeatherVerdictProps) {
               多個行政區天氣狀況
             </h3>
             <p className="text-sm leading-relaxed" style={{ color: statusColor }}>
-              {route.verdictMessage}
+              {verdictMessage}
             </p>
           </div>
         </div>

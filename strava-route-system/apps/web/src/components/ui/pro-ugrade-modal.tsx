@@ -63,13 +63,13 @@ interface Plan {
 }
 
 const plans: Plan[] = [
-  { id: "monthly", label: "月繳", price: "NT$30", period: "/月" },
+  { id: "monthly", label: "月繳", price: "NT$50", period: "/月" },
   {
     id: "yearly",
     label: "年繳",
-    price: "NT$300",
+    price: "NT$500",
     period: "/年",
-    savings: "省 10%",
+    savings: "省 20%",
   },
 ];
 

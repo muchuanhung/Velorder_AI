@@ -13,10 +13,12 @@ interface RouteCardProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   index: number;
+  statusOverride?: Route["status"];
 }
 
-export function RouteCard({ route, isSelected, onSelect, index }: RouteCardProps) {
-  const statusColor = getStatusColor(route.status);
+export function RouteCard({ route, isSelected, onSelect, index, statusOverride }: RouteCardProps) {
+  const status = statusOverride ?? route.status;
+  const statusColor = getStatusColor(status);
   const diffColor = getDifficultyColor(route.difficulty);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
@@ -58,7 +60,7 @@ export function RouteCard({ route, isSelected, onSelect, index }: RouteCardProps
             className="mr-1.5 h-1.5 w-1.5 rounded-full inline-block"
             style={{ backgroundColor: statusColor }}
           />
-          {route.status}
+          {status}
         </Badge>
       </div>
 

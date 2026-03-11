@@ -113,4 +113,49 @@ export interface RouteSegment {
       case "stormy":
         return "cloud-lightning";
     }
-  }  
+  }
+
+/** 依天氣資料動態計算 */
+export function computeRouteStatus(segments: RouteSegment[]): {
+  status: Route["status"];
+  verdictMessage: string;
+} {
+  if (segments.length === 0) {
+    return { status: "safe", verdictMessage: "尚無行政區天氣資料" };
+  }
+
+  const avgRain =
+    segments.reduce((s, seg) => s + seg.rainProbability, 0) / segments.length;
+  const maxWind = Math.max(...segments.map((s) => s.windSpeed));
+  const hasStormy = segments.some((s) => s.condition === "stormy");
+  const hasRainy = segments.some((s) => s.condition === "rainy");
+
+  // risky: 高降雨、強風、雷雨
+  if (avgRain >= 60 || maxWind >= 35 || hasStormy) {
+    const reasons: string[] = [];
+    if (avgRain >= 60) reasons.push(`平均降雨機率 ${Math.round(avgRain)}%`);
+    if (maxWind >= 35) reasons.push(`最大風速 ${maxWind} km/h`);
+    if (hasStormy) reasons.push("有雷雨");
+    return {
+      status: "risky",
+      verdictMessage: `不建議出發：${reasons.join("、")}。請改日或避開該時段。`,
+    };
+  }
+
+  // caution: 中降雨、風速偏高、有雨
+  if (avgRain >= 40 || maxWind >= 25 || hasRainy) {
+    const reasons: string[] = [];
+    if (avgRain >= 40) reasons.push(`降雨機率偏高 ${Math.round(avgRain)}%`);
+    if (maxWind >= 25) reasons.push(`風速 ${maxWind} km/h`);
+    if (hasRainy) reasons.push("部分路段有雨");
+    return {
+      status: "caution",
+      verdictMessage: `注意：${reasons.join("、")}。建議攜帶雨具或提早出發。`,
+    };
+  }
+
+  return {
+    status: "safe",
+    verdictMessage: "天氣狀況良好，適合出發。",
+  };
+}  

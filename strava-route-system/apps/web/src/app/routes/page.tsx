@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,13 +10,11 @@ import {
   Bike,
   Footprints,
   Mountain,
-  MapPin,
   X,
   Loader2,
 } from "lucide-react";
 import { ProductLogo } from "@/components/ui/product-logo";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -32,6 +30,7 @@ import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { WeatherVerdict } from "@/components/routes/weather-verdict";
 import { CCTVGallery } from "@/components/routes/cctv-gallery";
+import type { Route } from "@/lib/routes/route-data";
 
 type FilterType = "全部" | "自行車" | "跑步" | "健行";
 
@@ -41,6 +40,15 @@ export default function RoutesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<FilterType>("全部");
   const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [computedStatus, setComputedStatus] = useState<Route["status"] | null>(null);
+
+  const handleStatusComputed = useCallback((status: Route["status"]) => {
+    setComputedStatus(status);
+  }, []);
+
+  useEffect(() => {
+    setComputedStatus(null);
+  }, [selectedId]);
 
   useEffect(() => {
     if (routes.length > 0 && !selectedId) {
@@ -123,10 +131,6 @@ export default function RoutesPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-strava/30 text-strava text-[10px] px-2 py-0.5">
-              <MapPin className="h-3 w-3 mr-1" />
-              Taipei
-            </Badge>
             <Drawer open={mobileListOpen} onOpenChange={setMobileListOpen}>
               <DrawerTrigger asChild>
                 <Button variant="outline" size="sm" className="lg:hidden gap-1.5 text-xs">
@@ -164,6 +168,7 @@ export default function RoutesPage() {
                           isSelected={route.id === selectedId}
                           onSelect={handleSelectRoute}
                           index={i}
+                          statusOverride={route.id === selectedId ? (computedStatus ?? undefined) : undefined}
                         />
                       ))}
                     </div>
@@ -215,6 +220,7 @@ export default function RoutesPage() {
                       isSelected={route.id === selectedId}
                       onSelect={handleSelectRoute}
                       index={i}
+                      statusOverride={route.id === selectedId ? (computedStatus ?? undefined) : undefined}
                     />
                   ))
                 ) : (
@@ -251,8 +257,8 @@ export default function RoutesPage() {
                 transition={{ duration: 0.25 }}
                 className="p-4 lg:p-6 xl:p-8 max-w-4xl mx-auto space-y-5"
               >
-                <RouteHeader route={selectedRoute} />
-                <WeatherVerdict route={selectedRoute} />
+                <RouteHeader route={selectedRoute} statusOverride={computedStatus ?? undefined} />
+                <WeatherVerdict route={selectedRoute} onStatusComputed={handleStatusComputed} />
                 <CCTVGallery feeds={cctvFeeds} loading={cctvLoading} />
                 <div className="h-4" />
               </motion.div>

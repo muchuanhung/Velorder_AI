@@ -63,13 +63,24 @@ interface CCTVGalleryProps {
 
 export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
   const [orderedVisibleIds, setOrderedVisibleIds] = useState<string[]>([]);
-  const [selectedTownship, setSelectedTownship] = useState<string>("全部");
+  const [selectedTownships, setSelectedTownships] = useState<Set<string>>(new Set());
 
   const townships = [...new Set(feeds.map((f) => f.township).filter(Boolean))] as string[];
-  const filteredFeeds =
-    selectedTownship === "全部"
-      ? feeds
-      : feeds.filter((f) => f.township === selectedTownship);
+  const showAll = selectedTownships.size === 0;
+  const filteredFeeds = showAll
+    ? feeds
+    : feeds.filter((f) => f.township && selectedTownships.has(f.township));
+
+  const toggleTownship = useCallback((t: string) => {
+    setSelectedTownships((prev) => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => setSelectedTownships(new Set()), []);
 
   const registerVisibility = useCallback((id: string, visible: boolean) => {
     setOrderedVisibleIds((prev) => {
@@ -88,7 +99,7 @@ export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
 
   useEffect(() => {
     setOrderedVisibleIds([]);
-    setSelectedTownship("全部");
+    setSelectedTownships(new Set());
   }, [feeds]);
 
   if (feeds.length === 0 && !loading) return null;
@@ -129,19 +140,34 @@ export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
       </div>
 
       {townships.length > 0 && (
-        <div className="px-4 pb-3 pt-0">
-          <select
-            value={selectedTownship}
-            onChange={(e) => setSelectedTownship(e.target.value)}
-            className="w-full max-w-[200px] h-8 rounded-md border border-border/50 bg-background/50 text-sm text-foreground px-3 focus:outline-none focus:ring-1 focus:ring-strava/40"
-          >
-            <option value="全部">全部行政區</option>
+        <div className="px-4 pb-3 pt-0 -mx-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 touch-pan-x">
+            <button
+              type="button"
+              onClick={selectAll}
+              className={`shrink-0 min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
+                showAll
+                  ? "bg-strava text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
+              }`}
+            >
+              全部
+            </button>
             {townships.sort().map((t) => (
-              <option key={t} value={t}>
+              <button
+                key={t}
+                type="button"
+                onClick={() => toggleTownship(t)}
+                className={`shrink-0 min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
+                  selectedTownships.has(t)
+                    ? "bg-strava text-primary-foreground"
+                    : "bg-secondary/50 text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
+                }`}
+              >
                 {t}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       )}
 
@@ -152,7 +178,7 @@ export function CCTVGallery({ feeds, loading }: CCTVGalleryProps) {
           </div>
         ) : filteredFeeds.length === 0 ? (
           <div className="col-span-2 flex items-center justify-center py-8 text-muted-foreground text-sm">
-            {selectedTownship === "全部" ? "此路線附近無監視器" : `${selectedTownship} 無監視器`}
+            {showAll ? "此路線附近無監視器" : `${[...selectedTownships].join("、")} 無監視器`}
           </div>
         ) : (
           filteredFeeds.map((feed, i) => (

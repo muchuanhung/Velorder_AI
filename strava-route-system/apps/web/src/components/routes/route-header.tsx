@@ -10,10 +10,12 @@ import { getSvgPath } from "@/lib/routes/polyline";
 
 interface RouteHeaderProps {
   route: Route;
+  statusOverride?: Route["status"];
 }
 
-export function RouteHeader({ route }: RouteHeaderProps) {
-  const statusColor = getStatusColor(route.status);
+export function RouteHeader({ route, statusOverride }: RouteHeaderProps) {
+  const status = statusOverride ?? route.status;
+  const statusColor = getStatusColor(status);
   const svgPath = getSvgPath(route.gpxPreviewPath);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
@@ -125,7 +127,7 @@ export function RouteHeader({ route }: RouteHeaderProps) {
               className="mr-1.5 h-2 w-2 rounded-full inline-block animate-pulse"
               style={{ backgroundColor: statusColor }}
             />
-            {route.status === "safe" ? "Clear" : route.status === "caution" ? "Caution" : "Risky"}
+            {status === "safe" ? "Clear" : status === "caution" ? "Caution" : "Risky"}
           </Badge>
         </div>
 
