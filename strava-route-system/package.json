@@ -9,7 +9,7 @@
     "check-types": "turbo run check-types"
   },
   "devDependencies": {
-    "next": "16.0.10",
+    "next": "16.1.6",
     "prettier": "^3.6.2",
     "turbo": "^2.6.1",
     "typescript": "5.9.2"
@@ -17,5 +17,16 @@
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=18"
+  },
+  "pnpm": {
+    "overrides": {
+      "fast-xml-parser": "4.5.4",
+      "minimatch@3.1.2": "3.1.4",
+      "minimatch@9.0.5": "9.0.7",
+      "immutable": "5.1.5",
+      "js-yaml": "4.1.1",
+      "ajv": "6.14.0",
+      "@tootallnate/once": "3.0.1"
+    }
   }
 }
