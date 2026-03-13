@@ -30,6 +30,7 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { ProUpgradeModal } from "@/components/ui/pro-ugrade-modal";
+import { useSubscription } from "@/hooks/use-subscription";
 
 // --- Types ---
 
@@ -88,13 +89,15 @@ function NavLink({
   collapsed,
   isActive,
   onPremiumClick,
+  isPro,
 }: {
   item: NavItem;
   collapsed: boolean;
   isActive: boolean;
   onPremiumClick?: () => void;
+  isPro?: boolean;
 }) {
-  const isPremium = item.premium;
+  const isPremium = item.premium && !isPro;
 
   const inner = isPremium ? (
     <button
@@ -174,11 +177,13 @@ function NavGroupSection({
   collapsed,
   pathname,
   onPremiumClick,
+  isPro,
 }: {
   group: NavGroup;
   collapsed: boolean;
   pathname: string;
   onPremiumClick?: () => void;
+  isPro?: boolean;
 }) {
   const isGroupActive =
     group.basePath === "/"
@@ -229,6 +234,7 @@ function NavGroupSection({
                   collapsed={false}
                   isActive={childActive}
                   onPremiumClick={onPremiumClick}
+                  isPro={isPro}
                 />
               );
             })}
@@ -246,6 +252,7 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [proModalOpen, setProModalOpen] = useState(false);
+  const { isPro } = useSubscription();
 
   return (
     <TooltipProvider>
@@ -312,6 +319,7 @@ export function Sidebar() {
                   collapsed={collapsed}
                   pathname={pathname}
                   onPremiumClick={() => setProModalOpen(true)}
+                  isPro={isPro}
                 />
               );
             }
@@ -328,13 +336,14 @@ export function Sidebar() {
                 collapsed={collapsed}
                 isActive={isActive}
                 onPremiumClick={() => setProModalOpen(true)}
+                isPro={isPro}
               />
             );
           })}
         </nav>
 
         {/* Pro upgrade card */}
-        {!collapsed && (
+        {!collapsed && !isPro && (
           <div className="mx-3 mb-3 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3">
             <div className="mb-2 flex items-center gap-2">
               <Crown className="h-4 w-4 fill-amber-400/30 text-amber-400" />

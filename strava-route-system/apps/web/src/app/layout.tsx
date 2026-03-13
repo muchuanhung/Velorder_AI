@@ -2,11 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
-import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { LocationProvider } from "@/contexts/LocationContext";
-import { PwaProvider } from "@/components/pwa/pwa-provider";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Providers } from "@/components/providers";
 import "@/global.css";
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -41,17 +37,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="zh-TW" suppressHydrationWarning>
+    <html lang="zh-TW" className="dark" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="routecast-theme">
-          <TooltipProvider>
-            <AuthProvider>
-              <LocationProvider>
-                <PwaProvider>{children}</PwaProvider>
-              </LocationProvider>
-            </AuthProvider>
-          </TooltipProvider>
-        </ThemeProvider>
+        <Providers>{children}</Providers>
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

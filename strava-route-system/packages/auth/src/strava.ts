@@ -75,11 +75,6 @@ export async function exchangeStravaToken(code: string) {
   // 記錄 rate limit 資訊
   const { logRateLimit } = await import('./rate-limit');
   logRateLimit(res.headers, '/oauth/token');
-  
-  console.log('Strava token exchange success', {
-    expiresAt: payload.expires_at,
-    hasAthlete: Boolean(payload.athlete)
-  });
 
   return payload;
 }
@@ -136,13 +131,6 @@ export async function getStravaAthlete(accessToken: string) {
   }
 
   const athlete = (await res.json()) as StravaAthlete;
-  console.log('Strava athlete fetched successfully', {
-    id: athlete.id,
-    name: `${athlete.firstname} ${athlete.lastname}`,
-    username: athlete.username,
-    city: athlete.city,
-    country: athlete.country
-  });
 
   return athlete;
 }

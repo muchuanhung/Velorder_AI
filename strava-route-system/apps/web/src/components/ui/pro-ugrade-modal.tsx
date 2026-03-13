@@ -86,11 +86,32 @@ export function ProUpgradeModal({
     "yearly"
   );
   const [subscribing, setSubscribing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubscribe() {
+  async function handleSubscribe(planOverride?: "day" | "monthly" | "yearly") {
+    const planId = planOverride ?? selectedPlan;
     setSubscribing(true);
-    // simulate Stripe redirect
-    setTimeout(() => setSubscribing(false), 2000);
+    setError(null);
+    try {
+      const res = await fetch("/api/stripe/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? "建立結帳失敗");
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      throw new Error("未取得結帳連結");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "發生錯誤，請稍後再試");
+      setSubscribing(false);
+    }
   }
 
   return (
@@ -216,6 +237,11 @@ export function ProUpgradeModal({
 
                 {/* CTA */}
                 <div className="px-6 pb-6 space-y-3">
+                  {error && (
+                    <p className="text-sm text-destructive text-center">
+                      {error}
+                    </p>
+                  )}
                   {/* Subscribe button with shimmer */}
                   <Button
                     className="group relative h-12 w-full overflow-hidden bg-[#0ea5e9] text-sm font-bold text-white hover:bg-[#0284c7]"
@@ -249,7 +275,9 @@ export function ProUpgradeModal({
                   {/* 試用體驗 */}
                   <button
                     type="button"
-                    className="w-full text-center text-sm font-medium text-[#0ea5e9] transition-colors hover:text-[#0284c7]"
+                    onClick={() => handleSubscribe("day")}
+                    disabled={subscribing}
+                    className="w-full text-center text-sm font-medium text-[#0ea5e9] transition-colors hover:text-[#0284c7] disabled:opacity-50"
                   >
                     試用體驗 7 天
                   </button>
