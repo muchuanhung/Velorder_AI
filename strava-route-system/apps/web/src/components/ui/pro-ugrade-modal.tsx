@@ -245,7 +245,7 @@ export function ProUpgradeModal({
                   {/* Subscribe button with shimmer */}
                   <Button
                     className="group relative h-12 w-full overflow-hidden bg-[#0ea5e9] text-sm font-bold text-white hover:bg-[#0284c7]"
-                    onClick={handleSubscribe}
+                    onClick={() => handleSubscribe()}
                     disabled={subscribing}
                   >
                     {/* Shimmer sweep */}
