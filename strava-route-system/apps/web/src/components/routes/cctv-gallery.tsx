@@ -27,6 +27,7 @@ const MAX_CONCURRENT_IFRAMES = 6;
 
 const BLOCKED_IFRAME_DOMAINS = ["atis.ntpc.gov.tw"];
 
+/** 需限制並發 iframe 數量，且頁面有白邊（用 scale 裁切隱藏） */
 const RATE_LIMITED_IFRAME_DOMAINS = ["hls.bote.gov.taipei"];
 
 function isBlockedByCSP(url: string | undefined): boolean {
@@ -40,6 +41,16 @@ function isBlockedByCSP(url: string | undefined): boolean {
 }
 
 function isRateLimited(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname;
+    return RATE_LIMITED_IFRAME_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch {
+    return false;
+  }
+}
+
+function hasWhiteBorderInEmbed(url: string | undefined): boolean {
   if (!url) return false;
   try {
     const host = new URL(url).hostname;
@@ -220,6 +231,8 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
     !isBlockedByCSP(feed.videoUrl) &&
     (!needsSlot || hasSlot);
 
+  const needsScaleFix = hasWhiteBorderInEmbed(feed.videoUrl);
+
   // Deterministic "image" generated via SVG noise pattern
   const seed = feed.imageSeed;
   const hue1 = (seed * 37) % 360;
@@ -235,13 +248,15 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
     >
       {/* Camera view placeholder */}
       <Dialog>
-        <div className="relative h-32 bg-[#0a1020] overflow-hidden">
+        <div className="relative h-32 overflow-hidden">
           {showCardIframe ? (
             <iframe
               src={feed.videoUrl}
               title={feed.label}
-              className="absolute inset-0 w-full h-full border-0"
-              allow="fullscreen"
+              className={`absolute inset-0 w-full h-full border-0 bg-[#0a1020] origin-center ${
+                needsScaleFix ? "scale-[1.5]" : ""
+              }`}
+              allow="autoplay; fullscreen"
             />
           ) : (
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 128" preserveAspectRatio="none">
@@ -343,8 +358,10 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
               <iframe
                 src={feed.videoUrl}
                 title={feed.label}
-                className="absolute inset-0 w-full h-full border-0"
-                allow="fullscreen"
+                className={`absolute inset-0 w-full h-full border-0 bg-[#0a1020] origin-center ${
+                  hasWhiteBorderInEmbed(feed.videoUrl) ? "scale-[1.5]" : ""
+                }`}
+                allow="autoplay; fullscreen"
               />
             ) : (
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 640 320" preserveAspectRatio="none">

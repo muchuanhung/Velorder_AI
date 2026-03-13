@@ -7,10 +7,6 @@ import {
   listActiveStravaTokensFirestore,
   type StravaTokenRecord,
 } from "@/lib/background/strava-token-store.firestore";
-import {
-  buildRouteCandidates,
-  cacheRouteRecommendation,
-} from "@/lib/background/route-recommendation";
 import { fetchAllCCTV, TDX_SYNC_CITIES } from "@/lib/tdx/client";
 import { persistCCTVFirestore } from "@/lib/background/tdx-cctv.firestore";
 
@@ -20,18 +16,6 @@ type StravaSyncEvent = {
     userId: string;
     athleteId: number;
     accessToken: string;
-  };
-};
-
-type RouteGenerateEvent = {
-  name: "route/generate";
-  data: {
-    userId: string;
-    startPoint: [number, number];
-    preferences: {
-      distance: number;
-      elevation: "low" | "medium" | "high";
-    };
   };
 };
 
@@ -47,26 +31,6 @@ export const syncActivities = inngest.createFunction(
       persistActivitiesFirestore({
         userId: event.data.userId,
         activities,
-      })
-    );
-  }
-);
-
-export const generateRoute = inngest.createFunction(
-  { id: "route-generate" },
-  { event: "route/generate" },
-  async ({ event, step }) => {
-    const candidates = await step.run("build-candidates", () =>
-      buildRouteCandidates({
-        startPoint: event.data.startPoint,
-        preferences: event.data.preferences,
-      })
-    );
-
-    await step.run("cache-recommendation", () =>
-      cacheRouteRecommendation({
-        userId: event.data.userId,
-        routes: candidates,
       })
     );
   }
@@ -124,7 +88,6 @@ export const syncTDXCCTV = inngest.createFunction(
 
 export const allInngestFunctions = [
   syncActivities,
-  generateRoute,
   syncAllUsers,
   syncTDXCCTV,
 ];

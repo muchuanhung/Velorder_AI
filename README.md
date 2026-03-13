@@ -60,7 +60,6 @@
 | 事件 | 觸發點 | 處理內容 |
 |------|--------|----------|
 | `strava/sync-activities` | 使用者完成 `/api/strava` OAuth callback 後即時送出 | 由 `inngest/functions.ts` 呼叫 Strava API 拉取最新活動並暫存，確保授權完馬上開始同步 |
-| `route/generate` | `POST /api/routes/generate`（需登入） | 將使用者輸入的起點與偏好排入背景工作，計算候選路線並暫存給 UI 讀取 |
 | `strava/sync-all` | Inngest Cron `0 * * * *`（每小時） | 讀取目前有效的 Strava token，批次送出 `strava/sync-activities` 事件確保資料保持新鮮 |
 
 ### 建置與執行
@@ -76,7 +75,6 @@
 2. 安裝依賴並啟動 Next.js：`pnpm install && pnpm --filter web dev`
 3. 另開終端執行 Inngest Dev Server：`pnpm --filter web inngest:dev`
 4. 登入後點擊「連結 Strava」，授權完成會自動送出 `strava/sync-activities`
-5. 若要測試路線計算，可對 `/api/routes/generate` 發送 `POST` 請求（body 包含 `startPoint` 與 `preferences`），工作會由 `route/generate` function 背景執行
-6. Cron 任務 `strava/sync-all` 預設每小時觸發，可於 Inngest 儀表板手動觸發以驗證批次同步
+5. Cron 任務 `strava/sync-all` 預設每小時觸發，可於 Inngest 儀表板手動觸發以驗證批次同步
 
 > 註：目前資料仍暫存於記憶體，實務上可替換為 Prisma/Postgres，以符合雲端部署需求。
