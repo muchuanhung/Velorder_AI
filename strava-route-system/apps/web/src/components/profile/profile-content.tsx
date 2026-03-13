@@ -10,8 +10,6 @@ import { PasswordChange } from "@/components/profile/password-change";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getProxiedAvatarUrl } from "@/lib/avatar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-
 function formatJoinedDate(creationTime: string | undefined): string {
   if (!creationTime) return "—";
   return new Date(creationTime).toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -56,7 +54,6 @@ export function ProfileContent() {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle className="hidden lg:flex" />
           <Button
             type="button"
             variant="outline"

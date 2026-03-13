@@ -9,7 +9,6 @@ import {
   Route,
   User,
   Menu,
-  X,
   ChevronDown,
   Flame,
   Lock,
@@ -31,7 +30,6 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import { ProUpgradeModal } from "@/components/ui/pro-ugrade-modal";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 // --- Types ---
 
@@ -251,21 +249,18 @@ export function Sidebar() {
 
   return (
     <TooltipProvider>
-      {/* Mobile menu button & theme toggle */}
-      <div className="fixed top-4 left-4 z-50 flex gap-1 lg:hidden">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
+      {/* Mobile menu button */}
+      {!mobileOpen && (
+        <div className="fixed top-4 left-4 z-50 flex gap-1 lg:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(true)}
+          >
             <Menu className="h-5 w-5" />
-          )}
-        </Button>
-        <ThemeToggle />
-      </div>
+          </Button>
+        </div>
+      )}
 
       {/* Mobile overlay */}
       {mobileOpen && (

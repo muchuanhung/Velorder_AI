@@ -20,7 +20,6 @@ import { useSignOut } from "@/components/auth/sign-out-button";
 import { getInitials } from "@/constants";
 import { getProxiedAvatarUrl } from "@/lib/avatar";
 import { useRouter } from "next/navigation";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Header() {
   const { user } = useAuth();
@@ -131,8 +130,6 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Theme toggle (desktop) */}
-        <ThemeToggle className="hidden lg:flex" />
         {/* Sync button */}
         <Button
           variant="outline"
@@ -196,8 +193,8 @@ export function Header() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/profile")}>個人資料</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/settings")}>設定</DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/connected-apps")}>連結的應用程式</DropdownMenuItem>
+            {/* <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/settings")}>設定</DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer text-foreground" onClick={() => router.push("/connected-apps")}>連結的應用程式</DropdownMenuItem> */}
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               className="cursor-pointer text-destructive"
