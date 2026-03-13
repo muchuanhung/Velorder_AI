@@ -49,6 +49,17 @@ async function main() {
   const icoBuf = await toIco(faviconBuffers);
   writeFileSync(join(publicDir, "favicon.ico"), icoBuf);
   console.log("已產生 favicon.ico");
+
+  // 更新 manifest 的 icon URL 加上 cache-busting，避免 PWA 安裝後圖示不更新
+  const manifestPath = join(publicDir, "manifest.json");
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+  const v = Date.now();
+  manifest.icons = manifest.icons.map((icon) => ({
+    ...icon,
+    src: `${icon.src}${icon.src.includes("?") ? "&" : "?"}v=${v}`,
+  }));
+  writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log("已更新 manifest.json (cache-busting)");
 }
 
 main().catch((e) => {
