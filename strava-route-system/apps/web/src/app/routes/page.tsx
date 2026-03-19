@@ -11,8 +11,8 @@ import {
   Footprints,
   Mountain,
   X,
-  Loader2,
 } from "lucide-react";
+import Spinner from "@/components/ui/Spinner";
 import { ProductLogo } from "@/components/ui/product-logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -40,6 +40,8 @@ export default function RoutesPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<FilterType>("全部");
   const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [switchingRoute, setSwitchingRoute] = useState(false);
   const [computedStatus, setComputedStatus] = useState<Route["status"] | null>(null);
   const [computedBestTime, setComputedBestTime] = useState<string>("");
 
@@ -55,6 +57,20 @@ export default function RoutesPage() {
     setComputedStatus(null);
     setComputedBestTime("");
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!switchingRoute) return;
+    const t = setTimeout(() => setSwitchingRoute(false), 400);
+    return () => clearTimeout(t);
+  }, [switchingRoute, selectedId]);
+
+  useEffect(() => {
+    if (mobileListOpen) {
+      setDrawerLoading(true);
+      const t = setTimeout(() => setDrawerLoading(false), 300);
+      return () => clearTimeout(t);
+    }
+  }, [mobileListOpen]);
 
   useEffect(() => {
     if (routes.length > 0 && !selectedId) {
@@ -73,6 +89,8 @@ export default function RoutesPage() {
   });
 
   function handleSelectRoute(id: string) {
+    if (id === selectedId) return;
+    setSwitchingRoute(true);
     setSelectedId(id);
     setMobileListOpen(false);
   }
@@ -81,8 +99,7 @@ export default function RoutesPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-strava" />
-          <p className="text-sm text-muted-foreground">載入路線中...</p>
+          <Spinner size="lg" dotClassName="bg-strava" />
         </div>
       </div>
     );
@@ -145,10 +162,15 @@ export default function RoutesPage() {
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="bg-card/95 backdrop-blur-xl border-border max-h-[85vh]">
-                <DrawerHeader className="pb-2">
+                <DrawerHeader className={drawerLoading ? "sr-only" : "pb-2"}>
                   <DrawerTitle className="text-foreground">選擇一條路線</DrawerTitle>
                 </DrawerHeader>
                 <div className="px-4 pb-6 overflow-y-auto">
+                  {drawerLoading ? (
+                    <div className="flex flex-col items-center justify-center gap-4 py-12">
+                      <Spinner size="lg" dotClassName="bg-strava" />
+                    </div>
+                  ) : (
                   <div className="space-y-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -179,6 +201,7 @@ export default function RoutesPage() {
                       ))}
                     </div>
                   </div>
+                  )}
                 </div>
               </DrawerContent>
             </Drawer>
@@ -252,7 +275,12 @@ export default function RoutesPage() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto relative">
+          {switchingRoute && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-sm">
+              <Spinner size="lg" dotClassName="bg-strava" />
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {selectedRoute && (
               <motion.div
