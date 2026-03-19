@@ -13,11 +13,18 @@ function mapCondition(c: CWBWeatherCondition): SegmentCondition {
   return c as SegmentCondition;
 }
 
+export interface RainfallPeriod {
+  pop: number;
+  label: string;
+  endLabel?: string;
+}
+
 export interface SegmentWeather {
   rainProbability: number;
   windSpeed: number;
   temperature: number;
   condition: SegmentCondition;
+  rainfall12h?: RainfallPeriod[];
 }
 
 type WeatherMap = Map<string, SegmentWeather>;
@@ -67,10 +74,11 @@ export function useSegmentsWeather(segments: RouteSegment[]): {
           temperature: number;
           windSpeedKmh: number;
           condition: CWBWeatherCondition;
-          rainfall12h?: Array<{ pop: number }>;
+          rainfall12h?: Array<{ pop: number; label: string; endLabel?: string }>;
         };
         if (!res.ok || data.error) throw new Error(data.error ?? `CWB ${res.status}`);
-        const pop = data.rainfall12h?.[0]?.pop ?? 0;
+        const rainfall12h = data.rainfall12h ?? [];
+        const pop = rainfall12h[0]?.pop ?? 0;
         return {
           key,
           weather: {
@@ -78,6 +86,7 @@ export function useSegmentsWeather(segments: RouteSegment[]): {
             windSpeed: data.windSpeedKmh ?? 0,
             temperature: data.temperature ?? 0,
             condition: mapCondition(data.condition),
+            rainfall12h: rainfall12h.map((p) => ({ pop: p.pop, label: p.label, endLabel: p.endLabel })),
           },
         };
       });

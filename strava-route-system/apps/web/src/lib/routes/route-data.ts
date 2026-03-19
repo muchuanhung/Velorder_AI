@@ -158,4 +158,41 @@ export function computeRouteStatus(segments: RouteSegment[]): {
     status: "safe",
     verdictMessage: "天氣狀況良好，適合出發。",
   };
+}
+
+/** 降雨時段（來自 CWB rainfall12h） */
+export interface RainfallPeriod {
+  pop: number;
+  label: string;
+  endLabel?: string;
+}
+
+/**
+ * 依各區段 12 小時降雨機率，計算路線最佳騎乘時段
+ * 取各時段平均降雨機率最低的時段
+ */
+export function computeBestTimeToRide(
+  segments: (RouteSegment & { rainfall12h?: RainfallPeriod[] })[]
+): string {
+  const withRainfall = segments.filter((s) => s.rainfall12h && s.rainfall12h.length > 0);
+  if (withRainfall.length === 0) return "";
+
+  const len = Math.min(...withRainfall.map((s) => s.rainfall12h!.length));
+  if (len === 0) return "";
+
+  let bestIdx = 0;
+  let bestAvg = Infinity;
+  for (let i = 0; i < len; i++) {
+    const avg =
+      withRainfall.reduce((s, seg) => s + (seg.rainfall12h![i]?.pop ?? 0), 0) /
+      withRainfall.length;
+    if (avg < bestAvg) {
+      bestAvg = avg;
+      bestIdx = i;
+    }
+  }
+
+  const first = withRainfall[0]!.rainfall12h![bestIdx];
+  const end = first?.endLabel ?? "";
+  return first?.label && end ? `${first.label} - ${end}` : first?.label ?? "";
 }  

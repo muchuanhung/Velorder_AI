@@ -271,8 +271,9 @@ export async function GET(request: Request) {
       const pop = parseInt(v?.ProbabilityOfPrecipitation ?? v?.value ?? "0", 10) || 0;
       const start = t.StartTime ?? "";
       const end = t.EndTime ?? "";
-      const label = start ? new Date(start).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }) : "—";
-      return { startTime: start, endTime: end, pop, label };
+      const startLabel = start ? new Date(start).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }) : "—";
+      const endLabel = end ? new Date(end).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }) : "—";
+      return { startTime: start, endTime: end, pop, label: startLabel, endLabel };
     });
 
     const today = new Date().toISOString().slice(0, 10);

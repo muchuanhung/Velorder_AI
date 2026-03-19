@@ -16,15 +16,16 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import type { Route, RouteSegment } from "@/lib/routes/route-data";
-import { getStatusColor, computeRouteStatus } from "@/lib/routes/route-data";
+import { getStatusColor, computeRouteStatus, computeBestTimeToRide } from "@/lib/routes/route-data";
 import { useSegmentsWeather } from "@/hooks/useSegmentsWeather";
 
 interface WeatherVerdictProps {
   route: Route;
   onStatusComputed?: (status: Route["status"], verdictMessage: string) => void;
+  onBestTimeComputed?: (bestTimeToRide: string) => void;
 }
 
-export function WeatherVerdict({ route, onStatusComputed }: WeatherVerdictProps) {
+export function WeatherVerdict({ route, onStatusComputed, onBestTimeComputed }: WeatherVerdictProps) {
   const hasSegments = route.segments.length > 0;
   const { weatherMap, loading: weatherLoading } = useSegmentsWeather(
     hasSegments ? route.segments : []
@@ -45,9 +46,18 @@ export function WeatherVerdict({ route, onStatusComputed }: WeatherVerdictProps)
     return { status: route.status as Route["status"], verdictMessage: route.verdictMessage || "尚無天氣資料" };
   }, [enrichedSegments, weatherLoading, route.status, route.verdictMessage]);
 
+  const bestTimeToRide = useMemo(
+    () => (enrichedSegments.length > 0 ? computeBestTimeToRide(enrichedSegments) : ""),
+    [enrichedSegments]
+  );
+
   useEffect(() => {
     onStatusComputed?.(status, verdictMessage);
   }, [status, verdictMessage, onStatusComputed]);
+
+  useEffect(() => {
+    onBestTimeComputed?.(bestTimeToRide);
+  }, [bestTimeToRide, onBestTimeComputed]);
 
   const statusColor = getStatusColor(status);
   const avgRain = hasSegments

@@ -41,13 +41,19 @@ export default function RoutesPage() {
   const [typeFilter, setTypeFilter] = useState<FilterType>("全部");
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [computedStatus, setComputedStatus] = useState<Route["status"] | null>(null);
+  const [computedBestTime, setComputedBestTime] = useState<string>("");
 
   const handleStatusComputed = useCallback((status: Route["status"]) => {
     setComputedStatus(status);
   }, []);
 
+  const handleBestTimeComputed = useCallback((bestTimeToRide: string) => {
+    setComputedBestTime(bestTimeToRide);
+  }, []);
+
   useEffect(() => {
     setComputedStatus(null);
+    setComputedBestTime("");
   }, [selectedId]);
 
   useEffect(() => {
@@ -257,8 +263,16 @@ export default function RoutesPage() {
                 transition={{ duration: 0.25 }}
                 className="p-4 lg:p-6 xl:p-8 max-w-4xl mx-auto space-y-5"
               >
-                <RouteHeader route={selectedRoute} statusOverride={computedStatus ?? undefined} />
-                <WeatherVerdict route={selectedRoute} onStatusComputed={handleStatusComputed} />
+                <RouteHeader
+                  route={selectedRoute}
+                  statusOverride={computedStatus ?? undefined}
+                  bestTimeToRide={computedBestTime || selectedRoute.bestTimeToRide}
+                />
+                <WeatherVerdict
+                  route={selectedRoute}
+                  onStatusComputed={handleStatusComputed}
+                  onBestTimeComputed={handleBestTimeComputed}
+                />
                 <CCTVGallery feeds={cctvFeeds} loading={cctvLoading} />
                 <div className="h-4" />
               </motion.div>
