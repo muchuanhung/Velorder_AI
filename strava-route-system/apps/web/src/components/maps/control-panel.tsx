@@ -1,6 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
+
+/** 暫時隱藏交通事故相關功能 */
+const HIDE_TRAFFIC_ACCIDENT = true;
 import {
   CloudRain,
   Car,
@@ -179,28 +182,30 @@ export function ControlPanel({
                 activeColor="#4169E1"
               />
 
-              <LayerButton
-                active={activeLayer === "traffic"}
-                onClick={() => onLayerChange("traffic")}
-                icon={Car}
-                label="交通事故"
-                description="各鄉鎮交通事故"
-                activeColor="#0ea5e9"
-              />
-
-              {/* Incident markers toggle */}
-              <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/20">
-                <div className="flex items-center gap-2">
-                  <Radio className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
-                    顯示道路狀況
-                  </span>
-                </div>
-                <Switch
-                  checked={showIncidents}
-                  onCheckedChange={onToggleIncidents}
-                />
-              </div>
+              {!HIDE_TRAFFIC_ACCIDENT && (
+                <>
+                  <LayerButton
+                    active={activeLayer === "traffic"}
+                    onClick={() => onLayerChange("traffic")}
+                    icon={Car}
+                    label="交通事故"
+                    description="各鄉鎮交通事故"
+                    activeColor="#0ea5e9"
+                  />
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/20">
+                    <div className="flex items-center gap-2">
+                      <Radio className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        顯示道路狀況
+                      </span>
+                    </div>
+                    <Switch
+                      checked={showIncidents}
+                      onCheckedChange={onToggleIncidents}
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <Separator className="bg-border/20" />
@@ -274,27 +279,31 @@ export function MobileControlBar({
             <CloudRain className="h-3.5 w-3.5" />
             降雨
           </button>
-          <button
-            type="button"
-            onClick={() => onLayerChange("traffic")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              activeLayer === "traffic"
-                ? "bg-strava/10 text-strava ring-1 ring-strava/30"
-                : "bg-secondary/30 text-muted-foreground"
-            }`}
-          >
-            <Car className="h-3.5 w-3.5" />
-            交通事故
-          </button>
-
-          <div className="flex items-center gap-1.5 ml-auto">
-            <Radio className="h-3 w-3 text-muted-foreground" />
-            <Switch
-              checked={showIncidents}
-              onCheckedChange={onToggleIncidents}
-              className="scale-90"
-            />
-          </div>
+          {!HIDE_TRAFFIC_ACCIDENT && (
+            <>
+              <button
+                type="button"
+                onClick={() => onLayerChange("traffic")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  activeLayer === "traffic"
+                    ? "bg-strava/10 text-strava ring-1 ring-strava/30"
+                    : "bg-secondary/30 text-muted-foreground"
+                }`}
+              >
+                <Car className="h-3.5 w-3.5" />
+                交通事故
+              </button>
+              <div className="flex items-center gap-1.5 ml-auto">
+                <Radio className="h-3 w-3 text-muted-foreground" />
+                <Switch
+                  checked={showIncidents}
+                  onCheckedChange={onToggleIncidents}
+                  className="scale-90"
+                />
+              </div>
+            </>
+          )}
+          {HIDE_TRAFFIC_ACCIDENT && <div className="ml-auto" />}
 
           {onLocate && (
             <button

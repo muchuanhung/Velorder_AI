@@ -36,6 +36,9 @@ import {
 } from "@/lib/maps/map-data";
 import { ProductLogo } from "@/components/ui/product-logo";
 
+/** 暫時隱藏交通事故相關功能 */
+const HIDE_TRAFFIC_ACCIDENT = true;
+
 function DrawerWeatherSummary() {
   const { data, loading } = useWeather();
   const temperature = data?.temperature ?? "—";
@@ -312,28 +315,30 @@ export default function MapsPage() {
                 Routecast
               </h1>
               <p className="text-[10px] text-muted-foreground">
-                Taiwan | 氣象、交通事故資訊地圖
+                Taiwan | {HIDE_TRAFFIC_ACCIDENT ? "氣象資訊地圖" : "氣象、交通事故資訊地圖"}
               </p>
             </div>
           </div>
 
           {/* Right: Status badges */}
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="border-border/30 bg-[#0c1220]/80 backdrop-blur-xl text-muted-foreground text-[10px] shadow-lg shadow-black/20 hidden sm:flex"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-success mr-1.5 animate-pulse" />
-              {accidentCount} 交通事故
-            </Badge>
-            <Badge
-              variant="outline"
-              className="border-border/30 bg-[#0c1220]/80 backdrop-blur-xl text-muted-foreground text-[10px] shadow-lg shadow-black/20 hidden sm:flex"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-warning mr-1.5" />
-              {constructionCount} 施工中
-            </Badge>
-          </div>
+          {!HIDE_TRAFFIC_ACCIDENT && (
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-border/30 bg-[#0c1220]/80 backdrop-blur-xl text-muted-foreground text-[10px] shadow-lg shadow-black/20 hidden sm:flex"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-success mr-1.5 animate-pulse" />
+                {accidentCount} 交通事故
+              </Badge>
+              <Badge
+                variant="outline"
+                className="border-border/30 bg-[#0c1220]/80 backdrop-blur-xl text-muted-foreground text-[10px] shadow-lg shadow-black/20 hidden sm:flex"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-warning mr-1.5" />
+                {constructionCount} 施工中
+              </Badge>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -435,35 +440,37 @@ export default function MapsPage() {
                   <DrawerWeatherSummary />
 
                   {/* Active incidents list */}
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-                      交通事故 ({tdxIncidents.length})
-                    </p>
-                    <div className="space-y-2">
-                      {tdxIncidents.slice(0, 4).map((incident) => (
-                        <div
-                          key={incident.id}
-                          className="flex items-start gap-2.5 rounded-lg bg-secondary/20 ring-1 ring-border/10 px-3 py-2"
-                        >
+                  {!HIDE_TRAFFIC_ACCIDENT && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">
+                        交通事故 ({tdxIncidents.length})
+                      </p>
+                      <div className="space-y-2">
+                        {tdxIncidents.slice(0, 4).map((incident) => (
                           <div
-                            className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
-                              incident.type === "accident"
-                                ? "bg-red-500"
-                                : "bg-[#fbbf24]"
-                            }`}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-foreground truncate">
-                              {incident.title}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                              {incident.location}
-                            </p>
+                            key={incident.id}
+                            className="flex items-start gap-2.5 rounded-lg bg-secondary/20 ring-1 ring-border/10 px-3 py-2"
+                          >
+                            <div
+                              className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
+                                incident.type === "accident"
+                                  ? "bg-red-500"
+                                  : "bg-[#fbbf24]"
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-foreground truncate">
+                                {incident.title}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                {incident.location}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Rain legend */}
                   {activeLayer === "rainfall" && (
