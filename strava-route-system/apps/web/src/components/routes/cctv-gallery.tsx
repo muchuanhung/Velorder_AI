@@ -324,7 +324,7 @@ function CCTVCard({ feed, index }: { feed: CCTVFeed; index: number }) {
           <DialogTrigger asChild>
             <button
               type="button"
-              className="absolute bottom-2 right-2 h-7 w-7 flex items-center justify-center rounded-md bg-background/30 backdrop-blur-sm text-muted-foreground hover:text-foreground hover:bg-background/50 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+              className="absolute bottom-2 right-2 h-7 w-7 flex items-center justify-center rounded-md bg-background/30 backdrop-blur-sm text-muted-foreground hover:text-foreground hover:bg-background/50 transition-all opacity-70 md:opacity-0 md:group-hover:opacity-100 cursor-pointer touch-manipulation"
               aria-label={`Expand ${feed.label} camera view`}
             >
               <Maximize2 className="h-3.5 w-3.5" />
