@@ -25,7 +25,7 @@ import type { CCTVFeed } from "@/lib/routes/route-data";
 
 const MAX_CONCURRENT_IFRAMES = 6;
 
-const BLOCKED_IFRAME_DOMAINS = ["atis.ntpc.gov.tw"];
+const BLOCKED_IFRAME_DOMAINS = ["atis.ntpc.gov.tw", "tw.live"];
 
 /** 需限制並發 iframe 數量，且頁面有白邊（用 scale 裁切隱藏） */
 const RATE_LIMITED_IFRAME_DOMAINS = ["hls.bote.gov.taipei"];

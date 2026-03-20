@@ -1,10 +1,13 @@
 /**
  * 依路線 bbox 查詢附近 CCTV（Firestore 篩選）
  * GET /api/cctv/near-route?minLon=&minLat=&maxLon=&maxLat=
+ *
+ * 靜態補充：TDX 未涵蓋的國家公園景點（如陽明山冷水坑、小油坑等）
  */
 
 import { NextResponse } from "next/server";
 import { getCCTVInBbox } from "@/lib/background/tdx-cctv.firestore";
+import { getStaticCCTVInBbox } from "@/lib/cctv/static-supplement";
 import { findTownshipDetailByLngLat } from "@/lib/maps/taiwan-towns-topojson";
 import type { CCTVFeed } from "@/lib/routes/route-data";
 
@@ -41,9 +44,13 @@ export async function GET(request: Request) {
 
   try {
     const bbox: [number, number, number, number] = [minLon, minLat, maxLon, maxLat];
-    const docs = await getCCTVInBbox(bbox, 30);
-    const feeds: CCTVFeed[] = docs.map(toCCTVFeed);
-    return NextResponse.json(feeds);
+    const [tdxDocs, staticFeeds] = await Promise.all([
+      getCCTVInBbox(bbox, 30),
+      Promise.resolve(getStaticCCTVInBbox(bbox)),
+    ]);
+    const tdxFeeds = tdxDocs.map(toCCTVFeed);
+    const merged = [...staticFeeds, ...tdxFeeds];
+    return NextResponse.json(merged);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });
