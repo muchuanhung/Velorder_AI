@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { RefreshCw, Loader2, ExternalLink } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
+import { ConnectWithStravaButton } from "@/components/ui/connect-with-strava-button";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -103,20 +104,11 @@ export function Header() {
           <p className="mt-1 text-muted-foreground">
             多人共用瀏覽器時，授權畫面會顯示目前登入的 Strava 帳號。<span className="text-amber-600 dark:text-amber-500 font-medium">若為他人帳號請勿點擊授權</span>，否則其活動資料將被連結至您的 app 帳號（資安風險）。請先登出 Strava 或使用無痕視窗後再點「前往授權」。
           </p>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setPendingStravaUrl(null)}>
               取消
             </Button>
-            <Button
-              size="sm"
-              className="bg-strava hover:bg-strava/90"
-              onClick={() => {
-                if (pendingStravaUrl) window.location.href = pendingStravaUrl;
-              }}
-            >
-              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-              前往 Strava 授權
-            </Button>
+            <ConnectWithStravaButton href={pendingStravaUrl!} height={40} />
           </div>
         </div>
       )}

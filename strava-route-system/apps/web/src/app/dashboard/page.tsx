@@ -8,6 +8,7 @@ import { ActivitiesTable } from "@/components/dashboard/activities-table";
 import { SyncBanner } from "@/components/dashboard/sync-banner";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { WeatherWidget } from "@/components/dashboard/weather/weather-widget";
+import { PoweredByStrava } from "@/components/ui/powered-by-strava";
 
 export default async function Dashboard() {
   const userId = await getCurrentUserId();
@@ -34,6 +35,9 @@ export default async function Dashboard() {
               <div className="order-3 xl:row-start-2 xl:col-start-2 xl:col-span-2">
                 <ActivitiesTable />
               </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <PoweredByStrava />
             </div>
           </div>
         </main>
