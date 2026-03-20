@@ -1,5 +1,23 @@
 # Strava API 品牌規範與 Athlete Capacity 審核
 
+## 審核期間關閉 Strava 功能
+
+若 Athlete Capacity 審核尚未通過，使用者連動 Strava 會遇到 403。建議暫時關閉：
+
+```bash
+# .env.local 或 Vercel 環境變數
+NEXT_PUBLIC_STRAVA_ENABLED=false
+```
+
+- Sync 按鈕會顯示「Strava 審核中」並停用
+- 點擊時顯示「Strava 連動功能審核中，敬請期待」
+- oauth-url、sync API 回傳 503
+- 審核通過後設為 `true` 或移除此變數即可恢復
+
+---
+
+## 品牌規範
+
 為通過 Strava Athlete Capacity 額度審核，須符合 [Strava API Brand Guidelines](https://strava.github.io/api/v3/guidelines/)。
 
 ## 1. Connect with Strava 按鈕

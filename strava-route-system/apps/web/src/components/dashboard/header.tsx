@@ -20,6 +20,7 @@ import { useSync } from "@/contexts/SyncContext";
 import { useSignOut } from "@/components/auth/sign-out-button";
 import { getInitials } from "@/constants";
 import { getProxiedAvatarUrl } from "@/lib/avatar";
+import { STRAVA_ENABLED, STRAVA_DISABLED_MESSAGE } from "@/lib/strava-feature";
 import { useRouter } from "next/navigation";
 
 export function Header() {
@@ -34,6 +35,10 @@ export function Header() {
 
   const handleSyncNow = async () => {
     if (!user?.uid) return;
+    if (!STRAVA_ENABLED) {
+      toast.info(STRAVA_DISABLED_MESSAGE);
+      return;
+    }
     setSyncing(true);
     try {
       const res = await fetch("/api/strava/sync", {
@@ -51,7 +56,11 @@ export function Header() {
         });
         const urlData = await urlRes.json();
         if (!urlRes.ok) {
-          toast.error((urlData.error as string) ?? "無法取得 Strava 授權網址，請稍後再試");
+          if (urlRes.status === 503) {
+            toast.info((urlData.error as string) ?? STRAVA_DISABLED_MESSAGE);
+          } else {
+            toast.error((urlData.error as string) ?? "無法取得 Strava 授權網址，請稍後再試");
+          }
           return;
         }
         if (urlData.oauthUrl) {
@@ -64,8 +73,12 @@ export function Header() {
 
       if (!res.ok) {
         setLastSyncStatus("error");
+        if (res.status === 503) {
+          toast.info((data.error as string) ?? STRAVA_DISABLED_MESSAGE);
+          return;
+        }
         if (res.status === 403) {
-          toast.error("登入狀態與頁面不符，請重新整理頁面後再試");
+          toast.error(STRAVA_DISABLED_MESSAGE);
           return;
         }
         const msg = (data.error as string) ?? "";
@@ -117,7 +130,8 @@ export function Header() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          歡迎回來! {displayName ?? email ?? "使用者"} 這是您的Strava活動數據概覽。
+          歡迎回來! {displayName ?? email ?? "使用者"} 
+          {/* {STRAVA_ENABLED ? "這是您的Strava活動數據概覽。" : "Strava 目前審核額度中，請稍後再試"} */}
         </p>
       </div>
 
@@ -128,15 +142,17 @@ export function Header() {
           size="sm"
           className="flex gap-2 border-border hover:bg-strava hover:text-primary-foreground hover:border-strava bg-transparent"
           onClick={handleSyncNow}
-          disabled={syncing}
-          title="Sync Now"
+          disabled={syncing || !STRAVA_ENABLED}
+          title={STRAVA_ENABLED ? "Sync Now" : STRAVA_DISABLED_MESSAGE}
         >
           {syncing ? (
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
           ) : (
             <RefreshCw className="h-4 w-4 shrink-0" />
           )}
-          <span className="hidden sm:inline">Sync Now</span>
+          <span className="hidden sm:inline">
+            {STRAVA_ENABLED ? "Sync Now" : STRAVA_DISABLED_MESSAGE}
+          </span>
         </Button>
 
         {/* Notifications */}

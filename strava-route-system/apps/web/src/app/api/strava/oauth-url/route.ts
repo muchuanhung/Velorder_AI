@@ -3,7 +3,15 @@ import { getAuthFromRequest } from '@/lib/auth/server';
 
 const HEADER_CLIENT_UID = 'x-client-uid';
 
+const STRAVA_ENABLED = process.env.NEXT_PUBLIC_STRAVA_ENABLED !== "false";
+
 export async function GET(request: Request) {
+  if (!STRAVA_ENABLED) {
+    return NextResponse.json(
+      { error: "Strava 連動功能審核中，敬請期待" },
+      { status: 503 }
+    );
+  }
   const auth = await getAuthFromRequest(request);
   if (!auth?.uid) {
     return NextResponse.json({ error: '未登入' }, { status: 401 });

@@ -24,7 +24,15 @@ import { getLastMonthYearMonth } from "@/constants";
 /** 前端傳送的當前 Firebase UID，必須與 cookie 一致，避免 cookie 錯人時誤回他人資料 */
 const HEADER_CLIENT_UID = "x-client-uid";
 
+const STRAVA_ENABLED = process.env.NEXT_PUBLIC_STRAVA_ENABLED !== "false";
+
 export async function POST(request: Request) {
+  if (!STRAVA_ENABLED) {
+    return NextResponse.json(
+      { error: "Strava 連動功能審核中，敬請期待" },
+      { status: 503 }
+    );
+  }
   try {
     const auth = await getAuthFromRequest(request);
     if (!auth?.uid) {
