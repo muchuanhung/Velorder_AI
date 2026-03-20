@@ -150,9 +150,14 @@ export function Header() {
           ) : (
             <RefreshCw className="h-4 w-4 shrink-0" />
           )}
-          <span className={STRAVA_ENABLED ? "hidden sm:inline" : "inline"}>
-            {STRAVA_ENABLED ? "Sync Now" : "Strava 審核中"}
-          </span>
+          {STRAVA_ENABLED ? (
+            <span className="hidden sm:inline">Sync Now</span>
+          ) : (
+            <>
+              <span className="inline sm:hidden">Strava 審核中</span>
+              <span className="hidden sm:inline">{STRAVA_DISABLED_MESSAGE}</span>
+            </>
+          )}
         </Button>
 
         {/* Notifications */}
