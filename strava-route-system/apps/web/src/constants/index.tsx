@@ -1,4 +1,4 @@
-import { CheckCircle2, Loader2, AlertCircle, Bike, Footprints, Mountain } from "lucide-react";
+import { CheckCircle2, Loader2, AlertCircle, Bike, Footprints, Mountain, Trophy } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import type { Route } from "@/lib/routes/route-data";
@@ -40,6 +40,7 @@ export const ROUTE_TYPE_ICONS: Record<Route["type"], LucideIcon> = {
   自行車: Bike,
   跑步: Footprints,
   健行: Mountain,
+  雪巴運動: Trophy,
   混合: Mountain,
 };
 

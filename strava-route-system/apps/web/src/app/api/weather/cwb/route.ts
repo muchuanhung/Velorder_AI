@@ -262,19 +262,33 @@ export async function GET(request: Request) {
     const uvIndex = parseInt(uvEl?.UVIndex ?? uvEl?.value ?? "0", 10) || 0;
     const uvLevel = uvEl?.UVExposureLevel ?? uvEl?.value ?? "—";
 
-    const popEl = getVal("12小時降雨機率");
+    // 優先使用 3 小時細分資料，無則回退 6h → 12h
+    const RAINFALL_ELEMENT_NAMES = ["3小時降雨機率", "6小時降雨機率", "12小時降雨機率"] as const;
+    const popElName = RAINFALL_ELEMENT_NAMES.find((n) =>
+      weatherElements.some((e) => e.ElementName === n)
+    ) ?? "12小時降雨機率";
+
+    const popEl = getVal(popElName);
     const popFirst = parseInt(popEl?.ProbabilityOfPrecipitation ?? popEl?.value ?? "0", 10) || 0;
 
-    const popTimes = weatherElements.find((e: WeatherElement) => e.ElementName === "12小時降雨機率")?.Time ?? [];
-    const rainfall12h = popTimes.slice(0, 12).map((t: { StartTime?: string; EndTime?: string; ElementValue?: Array<Record<string, string>> }) => {
-      const v = t.ElementValue?.[0];
-      const pop = parseInt(v?.ProbabilityOfPrecipitation ?? v?.value ?? "0", 10) || 0;
-      const start = t.StartTime ?? "";
-      const end = t.EndTime ?? "";
-      const startLabel = start ? new Date(start).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }) : "—";
-      const endLabel = end ? new Date(end).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }) : "—";
-      return { startTime: start, endTime: end, pop, label: startLabel, endLabel };
-    });
+    const popTimes =
+      weatherElements.find((e: WeatherElement) => e.ElementName === popElName)?.Time ?? [];
+    const maxPeriods = popElName === "3小時降雨機率" ? 24 : popElName === "6小時降雨機率" ? 12 : 12;
+    const rainfall12h = popTimes.slice(0, maxPeriods).map(
+      (t: { StartTime?: string; EndTime?: string; ElementValue?: Array<Record<string, string>> }) => {
+        const v = t.ElementValue?.[0];
+        const pop = parseInt(v?.ProbabilityOfPrecipitation ?? v?.value ?? "0", 10) || 0;
+        const start = t.StartTime ?? "";
+        const end = t.EndTime ?? "";
+        const startLabel = start
+          ? new Date(start).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })
+          : "—";
+        const endLabel = end
+          ? new Date(end).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })
+          : "—";
+        return { startTime: start, endTime: end, pop, label: startLabel, endLabel };
+      }
+    );
 
     const today = new Date().toISOString().slice(0, 10);
     const sunsetLocList = sunsetData?.records?.locations?.location;

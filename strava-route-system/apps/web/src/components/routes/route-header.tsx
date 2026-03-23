@@ -163,7 +163,7 @@ export function RouteHeader({ route, statusOverride, bestTimeToRide }: RouteHead
           <StatPill icon={Mountain} label="海拔" value={`${route.elevationGain}m`} />
           <StatPill icon={Clock} label="預估時間" value={route.estimatedTime} />
           {bestTimeToRide && (
-            <StatPill icon={Sun} label="最佳時間" value={bestTimeToRide} />
+            <StatPill icon={Sun} label="建議出發" value={bestTimeToRide} />
           )}
         </div>
       </div>

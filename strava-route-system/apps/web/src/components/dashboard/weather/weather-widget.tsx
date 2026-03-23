@@ -33,8 +33,8 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
   useEffect(() => setMounted(true), []);
 
   const rainfallData: RainfallDataPoint[] = data?.rainfall12h?.length
-    ? data.rainfall12h.map((r, i) => ({
-        hour: i === 0 ? "Now" : `${i}h`,
+    ? data.rainfall12h.slice(0, 16).map((r, i) => ({
+        hour: i === 0 ? "Now" : r.label,
         precipitation: r.pop,
         label: r.label,
       }))
@@ -118,7 +118,7 @@ function WeatherDetails({ onRefresh, isRefreshing, locationName, locationStatus,
               <div className="flex items-center gap-1.5">
                 <CloudRain className="h-3.5 w-3.5 text-[#60a5fa]" />
                 <span className="text-xs font-medium text-muted-foreground">
-                  未來12小時降雨機率
+                  降雨機率預報
                 </span>
               </div>
               {peakPop > 0 && (

@@ -11,9 +11,22 @@ interface Point {
   ele?: number;
 }
 
-function parseGpxType(xml: string): Route["type"] {
+/**
+ * 從 GPX XML 與檔名判斷路線類型
+ * 雪巴運動：檔名或 name/type 含 園區|YMS|Peaks of Taiwan|雪巴|Sherpa 等
+ */
+function parseGpxType(xml: string, routeId?: string): Route["type"] {
   const typeMatch = xml.match(/<type>\s*([^<]+)\s*<\/type>/i);
+  const nameMatch = xml.match(/<name>\s*([^<]+)\s*<\/name>/i);
+  const descMatch = xml.match(/<desc>\s*([^<]+)\s*<\/desc>/i);
   const raw = typeMatch?.[1]?.trim().toLowerCase() ?? "";
+  const name = (nameMatch?.[1] ?? "").toLowerCase();
+  const desc = (descMatch?.[1] ?? "").toLowerCase();
+  const combined = `${name} ${desc} ${(routeId ?? "").toLowerCase()}`;
+
+  if (/雪巴|sherpa|園區|ymss?|peaks of taiwan|grand cycling tour/i.test(combined) || /雪巴|sherpa/i.test(raw)) {
+    return "雪巴運動";
+  }
   if (/trail_run|trail run|hike|walk|健行|步/i.test(raw)) return "健行";
   if (/run|跑步|jog|road run/i.test(raw)) return "跑步";
   if (/cycle|cycling|ride|bike|騎|車|騎車|road|mtb/i.test(raw)) return "自行車";
@@ -66,7 +79,7 @@ function inferDifficulty(
   elevationGain: number,
   type: Route["type"]
 ): Route["difficulty"] {
-  if (type === "自行車") {
+  if (type === "自行車" || type === "雪巴運動") {
     if (distanceKm >= 150 && elevationGain >= 2000) return "極難";
     if (distanceKm >= 100 && elevationGain >= 1000) return "困難";
     if (distanceKm >= 50 && distanceKm < 100 && elevationGain < 1000) return "中等";
@@ -145,7 +158,7 @@ export function parseGpxToRoute(
 
   const distance = Math.round(distanceKm * 10) / 10;
   const polyline = encodePolyline(points);
-  const routeType = parseGpxType(xml);
+  const routeType = parseGpxType(xml, routeId);
 
   const lats = points.map((p) => p.lat);
   const lons = points.map((p) => p.lon);

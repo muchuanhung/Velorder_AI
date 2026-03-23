@@ -10,6 +10,7 @@ import {
   Bike,
   Footprints,
   Mountain,
+  Trophy,
   X,
 } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
@@ -32,7 +33,7 @@ import { WeatherVerdict } from "@/components/routes/weather-verdict";
 import { CCTVGallery } from "@/components/routes/cctv-gallery";
 import type { Route } from "@/lib/routes/route-data";
 
-type FilterType = "全部" | "自行車" | "跑步" | "健行";
+type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
 
 export default function RoutesPage() {
   const { routes, loading, error } = useRoutesFromStorage();
@@ -182,11 +183,12 @@ export default function RoutesPage() {
                         className="w-full h-9 pl-9 pr-3 rounded-lg bg-secondary/40 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-strava/40"
                       />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <FilterChip active={typeFilter === "全部"} onClick={() => setTypeFilter("全部")} label="全部" />
                       <FilterChip active={typeFilter === "自行車"} onClick={() => setTypeFilter("自行車")} label="自行車" icon={Bike} />
                       <FilterChip active={typeFilter === "跑步"} onClick={() => setTypeFilter("跑步")} label="跑步" icon={Footprints} />
                       <FilterChip active={typeFilter === "健行"} onClick={() => setTypeFilter("健行")} label="健行" icon={Mountain} />
+                      <FilterChip active={typeFilter === "雪巴運動"} onClick={() => setTypeFilter("雪巴運動")} label="雪巴運動" icon={Trophy} />
                     </div>
                     <div className="space-y-2">
                       {filteredRoutes.map((route, i) => (
@@ -231,11 +233,12 @@ export default function RoutesPage() {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <FilterChip active={typeFilter === "全部"} onClick={() => setTypeFilter("全部")} label="全部" />
               <FilterChip active={typeFilter === "自行車"} onClick={() => setTypeFilter("自行車")} label="自行車" icon={Bike} />
               <FilterChip active={typeFilter === "跑步"} onClick={() => setTypeFilter("跑步")} label="跑步" icon={Footprints} />
               <FilterChip active={typeFilter === "健行"} onClick={() => setTypeFilter("健行")} label="健行" icon={Mountain} />
+              <FilterChip active={typeFilter === "雪巴運動"} onClick={() => setTypeFilter("雪巴運動")} label="雪巴運動" icon={Trophy} />
             </div>
           </div>
           <ScrollArea className="flex-1">
@@ -327,7 +330,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+      className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
         active
           ? "bg-strava/10 text-strava ring-1 ring-strava/25"
           : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
