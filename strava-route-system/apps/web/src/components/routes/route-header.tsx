@@ -11,12 +11,13 @@ import { getSvgPath } from "@/lib/routes/polyline";
 interface RouteHeaderProps {
   route: Route;
   statusOverride?: Route["status"];
-  /** 依天氣計算的最佳騎乘時段，由 WeatherVerdict 提供 */
+  /** 覆寫路線資料中的建議時段 */
   bestTimeToRide?: string;
 }
 
 export function RouteHeader({ route, statusOverride, bestTimeToRide }: RouteHeaderProps) {
   const status = statusOverride ?? route.status;
+  const suggestTime = bestTimeToRide ?? route.bestTimeToRide;
   const statusColor = getStatusColor(status);
   const svgPath = getSvgPath(route.gpxPreviewPath);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
@@ -158,13 +159,11 @@ export function RouteHeader({ route, statusOverride, bestTimeToRide }: RouteHead
           </div>
         </div>
 
-        <div className={`grid gap-3 ${bestTimeToRide ? "grid-cols-4" : "grid-cols-3"}`}>
+        <div className={`grid gap-3 ${suggestTime ? "grid-cols-4" : "grid-cols-3"}`}>
           <StatPill icon={RouteIcon} label="距離" value={`${route.distance} km`} />
           <StatPill icon={Mountain} label="海拔" value={`${route.elevationGain}m`} />
           <StatPill icon={Clock} label="預估時間" value={route.estimatedTime} />
-          {bestTimeToRide && (
-            <StatPill icon={Sun} label="建議出發" value={bestTimeToRide} />
-          )}
+          {suggestTime ? <StatPill icon={Sun} label="建議出發" value={suggestTime} /> : null}
         </div>
       </div>
     </motion.div>

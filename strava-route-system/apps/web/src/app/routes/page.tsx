@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,10 +29,8 @@ import { useRoutesFromStorage } from "@/hooks/useRoutesFromStorage";
 import { useRouteCCTV } from "@/hooks/useRouteCCTV";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
-import { WeatherVerdict } from "@/components/routes/weather-verdict";
+import { ReconView } from "@/components/routes/recon-view";
 import { CCTVGallery } from "@/components/routes/cctv-gallery";
-import type { Route } from "@/lib/routes/route-data";
-
 type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
 
 export default function RoutesPage() {
@@ -43,21 +41,6 @@ export default function RoutesPage() {
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [switchingRoute, setSwitchingRoute] = useState(false);
-  const [computedStatus, setComputedStatus] = useState<Route["status"] | null>(null);
-  const [computedBestTime, setComputedBestTime] = useState<string>("");
-
-  const handleStatusComputed = useCallback((status: Route["status"]) => {
-    setComputedStatus(status);
-  }, []);
-
-  const handleBestTimeComputed = useCallback((bestTimeToRide: string) => {
-    setComputedBestTime(bestTimeToRide);
-  }, []);
-
-  useEffect(() => {
-    setComputedStatus(null);
-    setComputedBestTime("");
-  }, [selectedId]);
 
   useEffect(() => {
     if (!switchingRoute) return;
@@ -198,7 +181,6 @@ export default function RoutesPage() {
                           isSelected={route.id === selectedId}
                           onSelect={handleSelectRoute}
                           index={i}
-                          statusOverride={route.id === selectedId ? (computedStatus ?? undefined) : undefined}
                         />
                       ))}
                     </div>
@@ -252,7 +234,6 @@ export default function RoutesPage() {
                       isSelected={route.id === selectedId}
                       onSelect={handleSelectRoute}
                       index={i}
-                      statusOverride={route.id === selectedId ? (computedStatus ?? undefined) : undefined}
                     />
                   ))
                 ) : (
@@ -278,7 +259,7 @@ export default function RoutesPage() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto relative">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden relative">
           {switchingRoute && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-background/80 backdrop-blur-sm">
               <Spinner size="lg" dotClassName="bg-strava" />
@@ -292,19 +273,18 @@ export default function RoutesPage() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className="p-4 lg:p-6 xl:p-8 max-w-4xl mx-auto space-y-5"
+                className="p-4 lg:p-6 xl:p-8 max-w-4xl mx-auto w-full min-w-0 space-y-5"
               >
-                <RouteHeader
+                <RouteHeader route={selectedRoute} />
+
+                {/* Interactive Route Recon */}
+                <ReconView
                   route={selectedRoute}
-                  statusOverride={computedStatus ?? undefined}
-                  bestTimeToRide={computedBestTime || selectedRoute.bestTimeToRide}
+                  cctvFeeds={cctvFeeds}
+                  cctvLoading={cctvLoading}
                 />
-                <WeatherVerdict
-                  route={selectedRoute}
-                  onStatusComputed={handleStatusComputed}
-                  onBestTimeComputed={handleBestTimeComputed}
-                />
-                <CCTVGallery feeds={cctvFeeds} loading={cctvLoading} />
+
+                {/* <CCTVGallery feeds={cctvFeeds} loading={cctvLoading} /> */}
                 <div className="h-4" />
               </motion.div>
             )}

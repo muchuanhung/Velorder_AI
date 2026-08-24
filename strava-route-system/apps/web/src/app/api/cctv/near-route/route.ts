@@ -23,6 +23,8 @@ function toCCTVFeed(doc: { id: string; label: string; roadName?: string; county?
     id: doc.id,
     label: doc.label,
     location,
+    lat: doc.lat,
+    lon: doc.lon,
     township,
     lastUpdated: `同步於 ${new Date(doc.syncedAt).toLocaleString("zh-TW", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`,
     imageSeed: seed,

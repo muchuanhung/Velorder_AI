@@ -19,6 +19,8 @@ export interface CCTVFeed {
     label: string;
     location: string;
     lastUpdated: string;
+    lat?: number;
+    lon?: number;
     imageSeed: number;
     status: "online" | "offline" | "degraded";
     videoUrl?: string;
