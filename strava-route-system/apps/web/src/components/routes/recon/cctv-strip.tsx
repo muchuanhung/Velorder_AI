@@ -20,11 +20,18 @@ export function CctvStrip({
   onSelect: (km: number) => void;
 }) {
   const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
-  // 主畫面鏡頭改變時，把對應項目捲進可視範圍
+  // 主畫面鏡頭改變時，只在縮圖列內水平捲動；不可用 scrollIntoView，
+  // 它會連帶垂直捲動整頁，把最上層的判定列捲出畫面
   useEffect(() => {
-    if (!activeId) return;
-    itemRefs.current.get(activeId)?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    const el = activeId ? itemRefs.current.get(activeId) : null;
+    const scroller = scrollerRef.current;
+    if (!el || !scroller) return;
+    const elRect = el.getBoundingClientRect();
+    const boxRect = scroller.getBoundingClientRect();
+    const delta = elRect.left - boxRect.left - (boxRect.width - elRect.width) / 2;
+    scroller.scrollBy({ left: delta, behavior: "smooth" });
   }, [activeId]);
 
   if (loading && markers.length === 0) {
@@ -49,7 +56,7 @@ export function CctvStrip({
         沿途監視器
         <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">{markers.length}</span>
       </h3>
-      <div className="max-w-full overflow-x-auto overscroll-x-contain pb-1">
+      <div ref={scrollerRef} className="max-w-full overflow-x-auto overscroll-x-contain pb-1">
         <div className="flex w-max gap-2">
           {markers.map((m) => {
             const isActive = m.id === activeId;
