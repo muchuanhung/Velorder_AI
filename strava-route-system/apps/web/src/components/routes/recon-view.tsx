@@ -159,6 +159,8 @@ export type RouteStage = {
   rainProbability: number;
   temperature: number;
   windSpeed: number;
+  /** 是否已取得 CWB 天氣；false 時數值為預設 0，顯示端須呈現「無資料」 */
+  hasWeather?: boolean;
 };
 
 /** 單一路線上的 CCTV 錨點（供縮圖列與主畫面同步） */
@@ -193,8 +195,25 @@ function deriveStages(route: Route): RouteStage[] {
   const sampleKm = [0, totalKm * 0.25, totalKm * 0.5, totalKm * 0.75, totalKm].filter(
     (k, i, arr) => arr.indexOf(k) === i
   );
+  // 有 sampleKms 時依里程找最近的行政區；舊資料（無 sampleKms）退回原本的索引對應
+  const hasSampleKms = segs.some((s) => s.sampleKms && s.sampleKms.length > 0);
+  const segAtKm = (km: number, fallbackIdx: number) => {
+    if (!hasSampleKms) return segs[Math.min(fallbackIdx, segs.length - 1)] ?? segs[0];
+    let best = segs[0];
+    let bestDist = Infinity;
+    for (const seg of segs) {
+      for (const sk of seg.sampleKms ?? []) {
+        const d = Math.abs(sk - km);
+        if (d < bestDist) {
+          bestDist = d;
+          best = seg;
+        }
+      }
+    }
+    return best;
+  };
   return sampleKm.map((km, i) => {
-    const seg = segs[Math.min(i, segs.length - 1)] ?? segs[0];
+    const seg = segAtKm(km, i);
     return {
       id: `stage-${i}`,
       km,
@@ -202,6 +221,7 @@ function deriveStages(route: Route): RouteStage[] {
       rainProbability: seg?.rainProbability ?? 0,
       temperature: seg?.temperature ?? 0,
       windSpeed: seg?.windSpeed ?? 0,
+      hasWeather: seg?.hasWeather ?? false,
     };
   });
 }
@@ -638,12 +658,12 @@ export function ReconView({
               {/* Empty state */}
               {sharpTurns.length === 0 && upcomingAlerts.length === 0 && (
                 <div className="text-center py-8">
-                  <CheckCircle2 className="h-8 w-8 text-success/40 mx-auto mb-2" />
+                  <CheckCircle2 className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">
-                    Clear road ahead
+                    未偵測到陡坡
                   </p>
                   <p className="text-[10px] text-muted-foreground/60 mt-1">
-                    No alerts in your path
+                    路況事件資料尚未接入
                   </p>
                 </div>
               )}
@@ -1077,18 +1097,25 @@ function CCTVDisplay({
 }
 
 function WeatherStats({ stage, km }: { stage: RouteStage; km: number }) {
-  const rainColor =
-    stage.rainProbability >= 60
-      ? "#ef4444"
+  const hasWeather = stage.hasWeather ?? false;
+  const rainClass = !hasWeather
+    ? "text-muted-foreground"
+    : stage.rainProbability >= 60
+      ? "text-destructive"
       : stage.rainProbability >= 35
-        ? "#f59e0b"
-        : "#22c55e";
+        ? "text-warning"
+        : "text-foreground";
+  const windClass = !hasWeather
+    ? "text-muted-foreground"
+    : stage.windSpeed >= 20
+      ? "text-warning"
+      : "text-muted-foreground";
 
   return (
     <div className="rounded-xl border border-border/40 bg-card/40 p-4">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium text-foreground">
-          {km.toFixed(1)} 公里 — 天氣狀況
+          {hasWeather ? `${km.toFixed(1)} km — 天氣` : "無天氣資料"}
         </h4>
         <Badge variant="outline" className="text-[10px] border-border/40">
           {stage.name}
@@ -1098,33 +1125,36 @@ function WeatherStats({ stage, km }: { stage: RouteStage; km: number }) {
       <div className="grid grid-cols-3 gap-4">
         {/* Temperature */}
         <div className="rounded-lg bg-secondary/30 p-3 text-center">
-          <Thermometer className="h-5 w-5 mx-auto mb-1.5 text-strava" />
+          <Thermometer className="h-5 w-5 mx-auto mb-1.5 text-muted-foreground" />
           <p className="text-lg font-bold text-foreground tabular-nums">
-            {stage.temperature}°C
+            {hasWeather ? `${stage.temperature}°C` : "—"}
           </p>
-          <p className="text-[10px] text-muted-foreground">Temperature</p>
+          <p className="text-[10px] text-muted-foreground">氣溫</p>
         </div>
 
         {/* Wind */}
         <div className="rounded-lg bg-secondary/30 p-3 text-center">
-          <Wind
-            className="h-5 w-5 mx-auto mb-1.5"
-            style={{ color: stage.windSpeed >= 20 ? "#f59e0b" : "#a78bfa" }}
-          />
+          <Wind className={cn("h-5 w-5 mx-auto mb-1.5", windClass)} />
           <p className="text-lg font-bold text-foreground tabular-nums">
-            {stage.windSpeed}
-            <span className="text-xs font-normal text-muted-foreground ml-0.5">km/h</span>
+            {hasWeather ? (
+              <>
+                {stage.windSpeed}
+                <span className="text-xs font-normal text-muted-foreground ml-0.5">km/h</span>
+              </>
+            ) : (
+              "—"
+            )}
           </p>
-          <p className="text-[10px] text-muted-foreground">Wind Speed</p>
+          <p className="text-[10px] text-muted-foreground">風速</p>
         </div>
 
         {/* Rain */}
         <div className="rounded-lg bg-secondary/30 p-3 text-center">
-          <CloudRain className="h-5 w-5 mx-auto mb-1.5" style={{ color: rainColor }} />
-          <p className="text-lg font-bold tabular-nums" style={{ color: rainColor }}>
-            {stage.rainProbability}%
+          <CloudRain className={cn("h-5 w-5 mx-auto mb-1.5", rainClass)} />
+          <p className={cn("text-lg font-bold tabular-nums", rainClass)}>
+            {hasWeather ? `${stage.rainProbability}%` : "—"}
           </p>
-          <p className="text-[10px] text-muted-foreground">Rain Chance</p>
+          <p className="text-[10px] text-muted-foreground">降雨</p>
         </div>
       </div>
     </div>

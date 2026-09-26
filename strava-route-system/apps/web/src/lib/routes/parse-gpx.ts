@@ -55,7 +55,7 @@ export function parseGpxPoints(xml: string): { points: Point[]; name: string } {
   };
 }
 
-function haversineKm(
+export function haversineKm(
   lat1: number,
   lon1: number,
   lat2: number,

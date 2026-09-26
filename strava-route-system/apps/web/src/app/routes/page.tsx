@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/drawer";
 import { useRoutesFromStorage } from "@/hooks/useRoutesFromStorage";
 import { useRouteCCTV } from "@/hooks/useRouteCCTV";
+import { useRouteWeather } from "@/hooks/useRouteWeather";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
@@ -64,6 +65,11 @@ export default function RoutesPage() {
 
   const selectedRoute = routes.find((r) => r.id === selectedId) || routes[0];
   const { feeds: cctvFeeds, loading: cctvLoading } = useRouteCCTV(selectedRoute ?? null);
+  const weather = useRouteWeather(selectedRoute ?? null);
+  const reconRoute = useMemo(
+    () => (selectedRoute ? { ...selectedRoute, segments: weather.segments } : null),
+    [selectedRoute, weather.segments]
+  );
   const filteredRoutes = routes.filter((r) => {
     const matchesSearch =
       r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -181,6 +187,7 @@ export default function RoutesPage() {
                           isSelected={route.id === selectedId}
                           onSelect={handleSelectRoute}
                           index={i}
+                          statusOverride={route.id === selectedRoute?.id ? weather.status : null}
                         />
                       ))}
                     </div>
@@ -234,6 +241,7 @@ export default function RoutesPage() {
                       isSelected={route.id === selectedId}
                       onSelect={handleSelectRoute}
                       index={i}
+                      statusOverride={route.id === selectedRoute?.id ? weather.status : null}
                     />
                   ))
                 ) : (
@@ -275,11 +283,16 @@ export default function RoutesPage() {
                 transition={{ duration: 0.25 }}
                 className="p-4 lg:p-6 xl:p-8 max-w-4xl mx-auto w-full min-w-0 space-y-5"
               >
-                <RouteHeader route={selectedRoute} />
+                <RouteHeader
+                  route={selectedRoute}
+                  statusOverride={weather.status}
+                  weatherState={weather.state}
+                  bestTimeToRide={weather.bestTimeToRide}
+                />
 
                 {/* Interactive Route Recon */}
                 <ReconView
-                  route={selectedRoute}
+                  route={reconRoute ?? selectedRoute}
                   cctvFeeds={cctvFeeds}
                   cctvLoading={cctvLoading}
                 />

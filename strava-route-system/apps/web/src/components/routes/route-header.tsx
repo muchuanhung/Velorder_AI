@@ -4,21 +4,24 @@ import { motion } from "framer-motion";
 import { Mountain, Route as RouteIcon, Clock, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Route } from "@/lib/routes/route-data";
-import { getStatusColor } from "@/lib/routes/route-data";
+import { getStatusColor, getStatusLabel } from "@/lib/routes/route-data";
+import type { RouteWeatherState } from "@/hooks/useRouteWeather";
 import { ROUTE_TYPE_ICONS } from "@/constants";
 import { getSvgPath } from "@/lib/routes/polyline";
 
 interface RouteHeaderProps {
   route: Route;
-  statusOverride?: Route["status"];
+  /** 由天氣計算的狀態；null 代表尚無資料（route.status 為 GPX 寫死值，不使用） */
+  statusOverride?: Route["status"] | null;
+  weatherState?: RouteWeatherState;
   /** 覆寫路線資料中的建議時段 */
   bestTimeToRide?: string;
 }
 
-export function RouteHeader({ route, statusOverride, bestTimeToRide }: RouteHeaderProps) {
-  const status = statusOverride ?? route.status;
+export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRide }: RouteHeaderProps) {
+  const status = statusOverride ?? null;
   const suggestTime = bestTimeToRide ?? route.bestTimeToRide;
-  const statusColor = getStatusColor(status);
+  const statusColor = status ? getStatusColor(status) : undefined;
   const svgPath = getSvgPath(route.gpxPreviewPath);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
@@ -121,17 +124,26 @@ export function RouteHeader({ route, statusOverride, bestTimeToRide }: RouteHead
 
         {/* Top badge */}
         <div className="absolute top-3 left-3 flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="border-0 text-xs font-semibold capitalize px-2.5 py-1 backdrop-blur-sm"
-            style={{ color: statusColor, backgroundColor: `${statusColor}20` }}
-          >
-            <span
-              className="mr-1.5 h-2 w-2 rounded-full inline-block animate-pulse"
-              style={{ backgroundColor: statusColor }}
-            />
-            {status === "safe" ? "Clear" : status === "caution" ? "Caution" : "Risky"}
-          </Badge>
+          {status ? (
+            <Badge
+              variant="outline"
+              className="border-0 text-xs font-semibold px-2.5 py-1 backdrop-blur-sm"
+              style={{ color: statusColor, backgroundColor: `${statusColor}20` }}
+            >
+              <span
+                className="mr-1.5 h-2 w-2 rounded-full inline-block animate-pulse"
+                style={{ backgroundColor: statusColor }}
+              />
+              {getStatusLabel(status)}
+            </Badge>
+          ) : (
+            <Badge
+              variant="outline"
+              className="border-0 text-xs font-semibold px-2.5 py-1 backdrop-blur-sm bg-background/40 text-muted-foreground"
+            >
+              {weatherState === "loading" ? "天氣載入中" : "無天氣資料"}
+            </Badge>
+          )}
         </div>
 
         {/* Distance label */}

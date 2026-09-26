@@ -5,7 +5,7 @@ import { Mountain, Route as RouteIcon, Clock, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Route } from "@/lib/routes/route-data";
-import { getStatusColor, getDifficultyColor } from "@/lib/routes/route-data";
+import { getStatusColor, getStatusLabel, getDifficultyColor } from "@/lib/routes/route-data";
 import { ROUTE_TYPE_ICONS } from "@/constants";
 
 interface RouteCardProps {
@@ -13,12 +13,13 @@ interface RouteCardProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   index: number;
-  statusOverride?: Route["status"];
+  /** null／未提供代表尚未評估，不顯示狀態（route.status 為 GPX 寫死值） */
+  statusOverride?: Route["status"] | null;
 }
 
 export function RouteCard({ route, isSelected, onSelect, index, statusOverride }: RouteCardProps) {
-  const status = statusOverride ?? route.status;
-  const statusColor = getStatusColor(status);
+  const status = statusOverride ?? null;
+  const statusColor = status ? getStatusColor(status) : undefined;
   const diffColor = getDifficultyColor(route.difficulty);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
@@ -48,20 +49,22 @@ export function RouteCard({ route, isSelected, onSelect, index, statusOverride }
           </div>
           <span className="text-[11px] text-muted-foreground">{route.nameZh}</span>
         </div>
-        <Badge
-          variant="outline"
-          className="shrink-0 text-[10px] px-2 py-0.5 font-semibold capitalize border-0"
-          style={{
-            color: statusColor,
-            backgroundColor: `${statusColor}15`,
-          }}
-        >
-          <span
-            className="mr-1.5 h-1.5 w-1.5 rounded-full inline-block"
-            style={{ backgroundColor: statusColor }}
-          />
-          {status}
-        </Badge>
+        {status && (
+          <Badge
+            variant="outline"
+            className="shrink-0 text-[10px] px-2 py-0.5 font-semibold border-0"
+            style={{
+              color: statusColor,
+              backgroundColor: `${statusColor}15`,
+            }}
+          >
+            <span
+              className="mr-1.5 h-1.5 w-1.5 rounded-full inline-block"
+              style={{ backgroundColor: statusColor }}
+            />
+            {getStatusLabel(status)}
+          </Badge>
+        )}
       </div>
 
       {/* Stats row */}

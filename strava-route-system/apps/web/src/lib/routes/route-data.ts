@@ -12,6 +12,10 @@ export interface RouteSegment {
   segmentLabel?: string;
   /** 該路段 GPX 軌跡的 bbox，供 CCTV 查詢使用 */
   segmentBbox?: [number, number, number, number];
+  /** 此行政區在路線上被取樣到的里程（km），供依里程對應天氣 */
+  sampleKms?: number[];
+  /** 是否已取得 CWB 天氣；false 時 rain/wind/temp 為預設 0，不可當作實際數值顯示 */
+  hasWeather?: boolean;
 }
 
 export interface CCTVFeed {
@@ -57,6 +61,17 @@ export function getStatusColor(status: Route["status"]): string {
     }
   }
   
+  export function getStatusLabel(status: Route["status"]): string {
+    switch (status) {
+      case "safe":
+        return "安全";
+      case "caution":
+        return "注意";
+      case "risky":
+        return "危險";
+    }
+  }
+
   export function getDifficultyColor(d: Route["difficulty"]): string {
     switch (d) {
       case "簡單":
