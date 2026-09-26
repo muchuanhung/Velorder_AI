@@ -346,6 +346,9 @@ function weatherHazards(stages: RouteStage[], totalKm: number): RawHazard[] {
     if (wind) byKind.wind.push({ kind: "wind", level: wind, startKm, endKm, value: s.windSpeed });
     if (s.condition === "stormy") {
       byKind.storm.push({ kind: "storm", level: "risky", startKm, endKm, value: 0 });
+    } else if (s.condition === "rainy" && !rain) {
+      // 預報有雨但降雨機率未達門檻，與 computeRouteStatus 一致列為注意
+      byKind.rain.push({ kind: "rain", level: "caution", startKm, endKm, value: s.rainProbability });
     }
   });
 

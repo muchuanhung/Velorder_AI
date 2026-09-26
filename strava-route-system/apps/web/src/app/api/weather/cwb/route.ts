@@ -52,6 +52,29 @@ type CWBLocation = {
   WeatherElement?: WeatherElement[];
 };
 
+/** 預報最晚時段距今不足此時間即視為舊資料（鄉鎮預報正常涵蓋約 3 天） */
+const STALE_HORIZON_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Next 的 fetch 快取過期後，第一個請求仍會拿到舊資料（背景才更新），
+ * 冷門行政區可能拿到數週前的預報。以預報時段判斷是否過期。
+ */
+function isForecastStale(forecastData: unknown, now = Date.now()): boolean {
+  const locations = (forecastData as { records?: { Locations?: unknown } })?.records?.Locations;
+  const locs = (Array.isArray(locations) ? locations : locations ? [locations] : []) as {
+    Location?: CWBLocation[];
+  }[];
+  let latest = 0;
+  for (const el of locs[0]?.Location?.[0]?.WeatherElement ?? []) {
+    for (const t of (el.Time ?? []) as Array<Record<string, unknown>>) {
+      const raw = t.EndTime ?? t.DataTime ?? t.StartTime;
+      const ts = typeof raw === "string" ? Date.parse(raw) : NaN;
+      if (Number.isFinite(ts) && ts > latest) latest = ts;
+    }
+  }
+  return latest > 0 && latest < now + STALE_HORIZON_MS;
+}
+
 function pickLocOrFirst(
   arr: CWBLocation[] | undefined,
   district?: string
@@ -172,8 +195,9 @@ export async function GET(request: Request) {
   const format = "format=JSON";
 
   try {
+    const forecastUrl = `${CWB_BASE}/F-D0047-${datasetId}?${auth}&${format}`;
     const [forecastRes, sunsetRes, rainRes] = await Promise.all([
-      fetch(`${CWB_BASE}/F-D0047-${datasetId}?${auth}&${format}`, {
+      fetch(forecastUrl, {
         next: { revalidate: 3600 },
       }),
       fetch(`${CWB_BASE}/A-B0062-001?${auth}&${format}`, {
@@ -199,7 +223,12 @@ export async function GET(request: Request) {
       );
     }
 
-    const forecastData = await forecastRes.json();
+    let forecastData = await forecastRes.json();
+    // 快取給的是舊預報就不走快取重抓，避免把過期預報當成現在
+    if (isForecastStale(forecastData)) {
+      const freshRes = await fetch(forecastUrl, { cache: "no-store" });
+      if (freshRes.ok) forecastData = await freshRes.json();
+    }
     let rainfallMmPerHr: number | null = null;
     if (rainRes.ok) {
       try {

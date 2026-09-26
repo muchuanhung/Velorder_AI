@@ -107,16 +107,16 @@ export function computeRouteStatus(segments: RouteSegment[]): {
     return { status: "safe", verdictMessage: "尚無行政區天氣資料" };
   }
 
-  const avgRain =
-    segments.reduce((s, seg) => s + seg.rainProbability, 0) / segments.length;
+  // 取最高值：任一路段高降雨就該示警，平均會稀釋單一路段的風險
+  const maxRain = Math.max(...segments.map((s) => s.rainProbability));
   const maxWind = Math.max(...segments.map((s) => s.windSpeed));
   const hasStormy = segments.some((s) => s.condition === "stormy");
   const hasRainy = segments.some((s) => s.condition === "rainy");
 
   // risky: 高降雨、強風、雷雨
-  if (avgRain >= 60 || maxWind >= 35 || hasStormy) {
+  if (maxRain >= 60 || maxWind >= 35 || hasStormy) {
     const reasons: string[] = [];
-    if (avgRain >= 60) reasons.push(`平均降雨機率 ${Math.round(avgRain)}%`);
+    if (maxRain >= 60) reasons.push(`最高降雨機率 ${maxRain}%`);
     if (maxWind >= 35) reasons.push(`最大風速 ${maxWind} km/h`);
     if (hasStormy) reasons.push("有雷雨");
     return {
@@ -126,9 +126,9 @@ export function computeRouteStatus(segments: RouteSegment[]): {
   }
 
   // caution: 中降雨、風速偏高、有雨
-  if (avgRain >= 40 || maxWind >= 25 || hasRainy) {
+  if (maxRain >= 40 || maxWind >= 25 || hasRainy) {
     const reasons: string[] = [];
-    if (avgRain >= 40) reasons.push(`降雨機率偏高 ${Math.round(avgRain)}%`);
+    if (maxRain >= 40) reasons.push(`降雨機率偏高 ${maxRain}%`);
     if (maxWind >= 25) reasons.push(`風速 ${maxWind} km/h`);
     if (hasRainy) reasons.push("部分路段有雨");
     return {
