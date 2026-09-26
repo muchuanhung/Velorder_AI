@@ -1,11 +1,18 @@
 import { defineConfig, devices } from "@playwright/test";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { AUTH_STATE_PATH } from "./tests/setup/auth-state";
 
-// 測試帳號（E2E_USER_EMAIL／E2E_USER_PASSWORD）放在 .env.local，已被 .gitignore 排除
-try {
-  process.loadEnvFile(".env.local");
-} catch {
-  // 沒有 .env.local 時 dashboard 測試會自動跳過
+const configDir = dirname(fileURLToPath(import.meta.url));
+
+// 測試帳號（E2E_USER_EMAIL／E2E_USER_PASSWORD）放在 apps/web 或 monorepo 根目錄的 .env.local，
+// 兩處都已被 .gitignore 排除；先讀到的值優先，都沒有時 dashboard 測試自動跳過
+for (const file of [join(configDir, ".env.local"), join(configDir, "../../.env.local")]) {
+  try {
+    process.loadEnvFile(file);
+  } catch {
+    // 檔案不存在就略過
+  }
 }
 
 /** 只跑 unit 時不需要 server，避免每次都要先 build */
