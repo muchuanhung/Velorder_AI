@@ -30,15 +30,13 @@
       "cache": false,
       "persistent": true
     },
+    "test": {
+      "cache": false,
+      "passThroughEnv": ["E2E_USER_EMAIL", "E2E_USER_PASSWORD"]
+    },
     "@repo/auth#build": {
       "outputs": [
         "dist/**"
-      ]
-    },
-    "strava-route-system#build": {
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**"
       ]
     }
   }
