@@ -190,9 +190,10 @@ function NavGroupSection({
       ? pathname === "/"
       : pathname.startsWith(group.basePath);
 
-  const [open, setOpen] = useState(false);
+  // 預設展開：路線示警是核心路徑，不該藏在收合的群組裡
+  const [open, setOpen] = useState(true);
   useEffect(() => {
-    setOpen(isGroupActive);
+    if (isGroupActive) setOpen(true);
   }, [isGroupActive]);
 
   return (

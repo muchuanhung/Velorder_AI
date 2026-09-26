@@ -1,97 +1,67 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, CheckCircle2, X } from "lucide-react";
+import Link from "next/link";
+import { Loader2, CheckCircle2, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
 import { useSync } from "@/contexts/SyncContext";
 
-const SYNC_PROGRESS_DURATION_MS = 2000;
-const SYNC_PROGRESS_TICK_MS = 50;
-
 /**
- * 集中管理 SyncBanner 的顯示與進度動畫：
- * - 開始同步時重置 dismissed，讓 banner 再次顯示
- * - 同步中時進度條 0→100% 循環動畫
- * - 由使用者點擊 Dismiss 按鈕隱藏
+ * Strava 同步狀態列：
+ * - 同步中：只顯示進行中（API 為單次請求，沒有真實進度可顯示）
+ * - 完成：顯示筆數，並提供前往路線示警的入口
+ * - 失敗由 Header 的 toast 通知，這裡不重複顯示
  */
-function useSyncBanner() {
+export function SyncBanner() {
+  const { syncing, lastSyncCount, lastSyncStatus } = useSync();
   const [dismissed, setDismissed] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const { syncing, lastSyncCount } = useSync();
 
+  // 開始新一輪同步時重新顯示
   useEffect(() => {
     if (syncing) setDismissed(false);
   }, [syncing]);
 
-  useEffect(() => {
-    if (!syncing) {
-      setProgress(0);
-      return;
-    }
-    const step = (100 / SYNC_PROGRESS_DURATION_MS) * SYNC_PROGRESS_TICK_MS;
-    const t = setInterval(() => {
-      setProgress((p) => (p + step >= 100 ? 0 : p + step));
-    }, SYNC_PROGRESS_TICK_MS);
-    return () => clearInterval(t);
-  }, [syncing]);
-
-  return { dismissed, progress, syncing, lastSyncCount, setDismissed };
-}
-
-export function SyncBanner() {
-  const { dismissed, progress, syncing, lastSyncCount, setDismissed } = useSyncBanner();
-
   if (dismissed) return null;
-  if (!syncing && lastSyncCount === null) return null;
+  if (!syncing && lastSyncStatus !== "completed") return null;
 
   return (
     <div
-      className={cn(
-        "relative overflow-hidden rounded-lg border px-4 py-3",
-        syncing
-          ? "bg-strava/5 border-strava/20"
-          : "bg-success/5 border-success/20"
-      )}
+      role="status"
+      aria-live="polite"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3"
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {syncing ? (
-            <RefreshCw className="h-4 w-4 text-strava animate-spin" />
-          ) : (
-            <CheckCircle2 className="h-4 w-4 text-success" />
-          )}
-          <div className="space-y-0.5">
-            <p className="text-sm font-medium text-foreground">
-              {syncing ? "正在同步 Strava 活動..." : "同步完成！"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {syncing && (
-            <div className="hidden sm:block w-32 shrink-0">
-              <Progress value={progress} className="h-2 bg-secondary [&>div]:bg-strava" />
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 shrink-0"
-            onClick={() => setDismissed(true)}
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Dismiss</span>
+      <p className="flex items-center gap-2 text-sm text-foreground">
+        {syncing ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+            正在同步 Strava 活動…
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
+            已同步 {lastSyncCount ?? 0} 筆活動
+          </>
+        )}
+      </p>
+      <div className="flex items-center gap-1">
+        {!syncing && (
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/routes">
+              查看路線示警
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </Button>
-        </div>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => setDismissed(true)}
+          aria-label="關閉"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-      
-      {/* Mobile progress bar */}
-      {syncing && (
-        <div className="mt-3 sm:hidden">
-          <Progress value={progress} className="h-2 bg-secondary [&>div]:bg-strava" />
-        </div>
-      )}
     </div>
   );
 }

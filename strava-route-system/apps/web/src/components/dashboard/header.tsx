@@ -99,6 +99,7 @@ export function Header() {
       emitSyncComplete();
     } catch {
       setLastSyncStatus("error");
+      toast.error("同步失敗，請檢查網路連線後再試");
     } finally {
       setSyncing(false);
     }
@@ -143,7 +144,7 @@ export function Header() {
           className="flex gap-2 border-border hover:bg-strava hover:text-primary-foreground hover:border-strava bg-transparent"
           onClick={handleSyncNow}
           disabled={syncing || !STRAVA_ENABLED}
-          title={STRAVA_ENABLED ? "Sync Now" : STRAVA_DISABLED_MESSAGE}
+          title={STRAVA_ENABLED ? "同步 Strava" : STRAVA_DISABLED_MESSAGE}
         >
           {syncing ? (
             <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
@@ -151,7 +152,7 @@ export function Header() {
             <RefreshCw className="h-4 w-4 shrink-0" />
           )}
           {STRAVA_ENABLED ? (
-            <span className="hidden sm:inline">Sync Now</span>
+            <span className="hidden sm:inline">同步 Strava</span>
           ) : (
             <>
               <span className="inline sm:hidden">Strava 審核中</span>
@@ -159,26 +160,6 @@ export function Header() {
             </>
           )}
         </Button>
-
-        {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuContent align="end" className="w-80 bg-popover border-border">
-            <DropdownMenuLabel className="text-foreground">Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-              <span className="font-medium text-foreground">New activity synced</span>
-              <span className="text-xs text-muted-foreground">Morning Run - 8.45 km</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-              <span className="font-medium text-foreground">Weekly goal achieved!</span>
-              <span className="text-xs text-muted-foreground">You&apos;ve hit 50 km this week</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex flex-col items-start gap-1 cursor-pointer">
-              <span className="font-medium text-foreground">Sync completed</span>
-              <span className="text-xs text-muted-foreground">324 activities imported</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         {/* User menu */}
         <DropdownMenu>
