@@ -22,43 +22,9 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { CCTVFeed } from "@/lib/routes/route-data";
+import { isBlockedByCSP, isRateLimited, hasWhiteBorderInEmbed } from "@/lib/cctv/embed-policy";
 
 const MAX_CONCURRENT_IFRAMES = 6;
-
-const BLOCKED_IFRAME_DOMAINS = ["atis.ntpc.gov.tw", "tw.live"];
-
-/** 需限制並發 iframe 數量，且頁面有白邊（用 scale 裁切隱藏） */
-const RATE_LIMITED_IFRAME_DOMAINS = ["hls.bote.gov.taipei"];
-
-function isBlockedByCSP(url: string | undefined): boolean {
-  if (!url) return false;
-  try {
-    const host = new URL(url).hostname;
-    return BLOCKED_IFRAME_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
-  } catch {
-    return false;
-  }
-}
-
-function isRateLimited(url: string | undefined): boolean {
-  if (!url) return false;
-  try {
-    const host = new URL(url).hostname;
-    return RATE_LIMITED_IFRAME_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
-  } catch {
-    return false;
-  }
-}
-
-function hasWhiteBorderInEmbed(url: string | undefined): boolean {
-  if (!url) return false;
-  try {
-    const host = new URL(url).hostname;
-    return RATE_LIMITED_IFRAME_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
-  } catch {
-    return false;
-  }
-}
 
 type VisibilityContextValue = {
   registerVisibility: (id: string, visible: boolean) => void;

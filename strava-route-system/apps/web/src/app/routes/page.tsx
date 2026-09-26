@@ -31,7 +31,6 @@ import { useRouteWeather } from "@/hooks/useRouteWeather";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
-import { CCTVGallery } from "@/components/routes/cctv-gallery";
 type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
 
 export default function RoutesPage() {
@@ -64,7 +63,11 @@ export default function RoutesPage() {
   }, [routes, selectedId]);
 
   const selectedRoute = routes.find((r) => r.id === selectedId) || routes[0];
-  const { feeds: cctvFeeds, loading: cctvLoading } = useRouteCCTV(selectedRoute ?? null);
+  const {
+    feeds: cctvFeeds,
+    loading: cctvLoading,
+    error: cctvError,
+  } = useRouteCCTV(selectedRoute ?? null);
   const weather = useRouteWeather(selectedRoute ?? null);
   const reconRoute = useMemo(
     () => (selectedRoute ? { ...selectedRoute, segments: weather.segments } : null),
@@ -295,9 +298,9 @@ export default function RoutesPage() {
                   route={reconRoute ?? selectedRoute}
                   cctvFeeds={cctvFeeds}
                   cctvLoading={cctvLoading}
+                  cctvError={cctvError}
                 />
 
-                {/* <CCTVGallery feeds={cctvFeeds} loading={cctvLoading} /> */}
                 <div className="h-4" />
               </motion.div>
             )}
