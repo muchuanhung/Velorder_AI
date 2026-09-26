@@ -35,7 +35,7 @@
         "dist/**"
       ]
     },
-    "my-v0-project#build": {
+    "strava-route-system#build": {
       "outputs": [
         ".next/**",
         "!.next/cache/**"

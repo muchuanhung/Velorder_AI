@@ -81,7 +81,6 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 
 function normalizeLatLon(lat?: number, lon?: number): { lat: number; lon: number } | null {
   if (lat == null || lon == null) return null;
-  // 台灣常見範圍：緯度約 21-26.5，經度約 120-122.5（容忍一點）
   const latLooksLon = lat >= 110 && lat <= 140;
   const lonLooksLat = lon >= 15 && lon <= 40;
   if (latLooksLon && lonLooksLat) {
@@ -90,10 +89,6 @@ function normalizeLatLon(lat?: number, lon?: number): { lat: number; lon: number
   return { lat, lon };
 }
 
-/**
- * 將 CCTV 的座標映射到 route polyline 的累積公里數。
- * 做法：先找最近的 polyline 點，再在相鄰少數線段做投影插值。
- */
 function mapLatLonToKm(
   lat: number,
   lon: number,
