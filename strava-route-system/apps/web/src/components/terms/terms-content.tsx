@@ -33,7 +33,7 @@ function SectionHeading({
 }: {
   id: string;
   number: number;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   subtitle?: string;
 }) {
@@ -395,11 +395,11 @@ export function TermsContent() {
           <div className="space-y-3">
             <ProhibitedItem
               title="資料爬取與自動蒐集"
-              description="使用機器人、爬蟲或任何自動化方式存取、蒐集或擷取 Routecast 之資料，包括但不限於使用者檔案、活動資料、分析結果或任何彙整資料集。"
+              description="使用機器人、爬蟲或任何自動化方式��取、蒐集或擷取 Routecast 之資料，包括但不限於使用者檔案、活動資料、分析結果或任何彙整資料集。"
             />
             <ProhibitedItem
               title="逆向工程"
-              description="嘗試反編譯、反組譯、逆向工程或以其他方式取得本服務之原始碼、演算法或專有分析引擎，包括任何機器學習模型、統計方法或資料處理流程。"
+              description="嘗試反編譯、反組譯、逆向工程或以其他方式取得本服務之原始碼、演算法或專有分析引擎，包括任何���器學習模型、統計方法或資料處理流程。"
             />
             <ProhibitedItem
               title="未經授權之 API 存取"
@@ -559,7 +559,7 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            在法律允許之最大範圍內，ROUTECAST 及其負責人、董事、員工或代理人概不對任何間接、附帶、特別、衍生或懲罰性損害負責，包括但不限於：
+            在法律允許之���大範圍內，ROUTECAST 及其負責人、董事、員工或代理人概不對任何間接、附帶、特別、衍生或懲罰性損害負責，包括但不限於：
           </p>
 
           <BulletList

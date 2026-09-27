@@ -1,1 +1,19 @@
 @import "../global.css";
+
+.route-terrain-card { overflow: hidden; border: 1px solid color-mix(in srgb, var(--border) 70%, transparent); border-radius: 1.25rem; background: #eef0e6; color: #25382e; box-shadow: 0 18px 50px rgba(48, 67, 50, .08); }
+.route-terrain-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem .9rem; }
+.route-terrain-header h2 { margin: .2rem 0 0; font-size: clamp(1.1rem, 2vw, 1.55rem); font-weight: 700; letter-spacing: -.03em; }
+.eyebrow { margin: 0; color: #6c7f6a; font: 600 .65rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; }
+.terrain-readout { display: flex; flex-direction: column; align-items: flex-end; color: #6c7f6a; font: .68rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; text-transform: uppercase; }
+.terrain-readout span:first-child { color: #315f4b; font-size: 1rem; font-weight: 700; }
+.daylight-terrain { position: relative; height: min(48vw, 420px); min-height: 270px; cursor: grab; }
+.daylight-terrain:active { cursor: grabbing; }
+.daylight-terrain canvas { display: block; }
+.terrain-caption { position: absolute; bottom: .8rem; left: 1rem; display: flex; flex-wrap: wrap; gap: .8rem; color: #6d7d6b; font: .63rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; pointer-events: none; }
+.terrain-controls { display: flex; align-items: center; gap: 1rem; padding: .9rem 1.25rem 1.1rem; border-top: 1px solid rgba(49,95,75,.12); }
+.terrain-legend { display: flex; flex-wrap: wrap; gap: .7rem; color: #506354; font-size: .7rem; white-space: nowrap; }
+.terrain-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.legend-dot { width: .45rem; height: .45rem; border-radius: 50%; display: inline-block; }
+.legend-dot.safe { background: #315f4b; } .legend-dot.caution { background: #b97828; } .legend-dot.risky { background: #a44235; }
+.terrain-scrubber { flex: 1; min-width: 120px; accent-color: #315f4b; }
+@media (max-width: 640px) { .route-terrain-header { padding: .9rem 1rem .7rem; } .daylight-terrain { height: 62vw; min-height: 260px; } .terrain-controls { align-items: stretch; flex-direction: column; gap: .75rem; padding: .75rem 1rem 1rem; } .terrain-caption { right: 1rem; } }

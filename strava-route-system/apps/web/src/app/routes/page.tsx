@@ -31,6 +31,7 @@ import { useRouteWeather } from "@/hooks/useRouteWeather";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
+import { DaylightTerrain, TerrainLegend, TerrainScrubber } from "@/components/routes/daylight-terrain";
 type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
 
 export default function RoutesPage() {
@@ -41,6 +42,7 @@ export default function RoutesPage() {
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [switchingRoute, setSwitchingRoute] = useState(false);
+  const [playhead, setPlayhead] = useState(0.34);
 
   useEffect(() => {
     if (!switchingRoute) return;
@@ -292,6 +294,18 @@ export default function RoutesPage() {
                   weatherState={weather.state}
                   bestTimeToRide={weather.bestTimeToRide}
                 />
+
+                <section className="route-terrain-card" aria-labelledby="terrain-title">
+                  <div className="route-terrain-header">
+                    <div>
+                      <p className="eyebrow">日光地形 / DAYLIGHT TERRAIN</p>
+                      <h2 id="terrain-title">{selectedRoute.nameZh || selectedRoute.name}</h2>
+                    </div>
+                    <div className="terrain-readout"><span>{selectedRoute.distance.toFixed(1)} km</span><span>目前位置</span></div>
+                  </div>
+                  <DaylightTerrain route={reconRoute ?? selectedRoute} playhead={playhead} />
+                  <div className="terrain-controls"><TerrainLegend /><TerrainScrubber value={playhead} onChange={setPlayhead} /></div>
+                </section>
 
                 {/* Interactive Route Recon */}
                 <ReconView

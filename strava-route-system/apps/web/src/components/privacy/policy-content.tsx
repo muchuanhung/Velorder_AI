@@ -29,7 +29,7 @@ function SectionHeading({
   subtitle,
 }: {
   id: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   subtitle?: string;
 }) {
@@ -55,7 +55,7 @@ function InfoCard({
   title,
   description,
 }: {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
 }) {
