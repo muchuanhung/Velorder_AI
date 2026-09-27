@@ -55,11 +55,12 @@ test.describe("isActive", () => {
 
 test.describe("categoryOf", () => {
   test("依 EventType 分類", () => {
-    expect([1, 2, 3, 4, 7, 8, 9].map(categoryOf)).toEqual([
+    expect([1, 2, 3, 4, 5, 7, 8, 9].map(categoryOf)).toEqual([
       "accident",
       "construction",
       "congestion",
       "control",
+      "disaster",
       "activity",
       "obstacle",
       "other",
@@ -110,5 +111,13 @@ test.describe("eventHazards", () => {
     const hazards = eventHazards(matched);
     expect(hazards).toHaveLength(1);
     expect(hazards[0]).toMatchObject({ kind: "event", level: "caution", label: "事故：交通事故" });
+  });
+
+  test("災害（淹水等）判為危險", () => {
+    const polyline = buildRoutePolylineKm(makeRoute());
+    const matched = matchEventsToRoute([event({ id: "flood", type: 5, subType: 509, title: "淹水" })], polyline, {
+      now: NOW,
+    });
+    expect(eventHazards(matched)[0]).toMatchObject({ level: "risky", label: "災害：淹水" });
   });
 });

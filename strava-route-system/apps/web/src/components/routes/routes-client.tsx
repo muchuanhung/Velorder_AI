@@ -66,9 +66,15 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
   const { feeds: cctvFeeds, loading: cctvLoading, error: cctvError } = useRouteCCTV(selectedRoute ?? null);
   const weather = useRouteWeather(selectedRoute ?? null);
   const roadEvents = useRouteEvents(selectedRoute ?? null);
-  // 卡片與標頭的狀態要和判定列一致：天氣安全但有事故／管制時，升為注意
-  const routeStatus =
-    weather.status === "safe" && roadEvents.events.some((e) => e.affectsVerdict) ? "caution" : weather.status;
+  // 卡片與標頭的狀態要和判定列一致：取天氣與路況事件中較嚴重者（災害為危險，事故／管制為注意）
+  const routeStatus = worseStatus(
+    weather.status,
+    roadEvents.events.some((e) => e.category === "disaster")
+      ? "risky"
+      : roadEvents.events.some((e) => e.affectsVerdict)
+        ? "caution"
+        : null
+  );
   const reconRoute = useMemo(
     () => (selectedRoute ? { ...selectedRoute, segments: weather.segments } : null),
     [selectedRoute, weather.segments]
@@ -230,6 +236,14 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
       </div>
     </div>
   );
+}
+
+const STATUS_RANK: Record<Route["status"], number> = { safe: 0, caution: 1, risky: 2 };
+
+/** 天氣尚無資料（null）時維持 null，標頭顯示「無天氣資料」；路況事件只會把狀態往嚴重的方向調 */
+function worseStatus(weather: Route["status"] | null, events: Route["status"] | null): Route["status"] | null {
+  if (weather === null || events === null) return weather;
+  return STATUS_RANK[events] > STATUS_RANK[weather] ? events : weather;
 }
 
 function RouteFilters({

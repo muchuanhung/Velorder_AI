@@ -2,15 +2,29 @@
  * TDX 即時道路事件的純函式：解析、分級、對應到路線
  * 不依賴 React 與伺服器，可單元測試；伺服器端抓取在 lib/tdx/road-events.server.ts。
  *
- * 分級（依 2026-09 實際資料歸納：EventSubType 百位數 = EventType）：
+ * EventType 代碼（EventSubType 百位數 = EventType）：
+ * - 官方確認（運研所《交通事件資訊整合服務擴充與事件偵測技術精進計畫》事件類別對應表）：
+ *   1 事故、3 壅塞、5 災害（509 淹水）、7 其他（706 異常停留）
+ * - 依 2026-09 實際資料歸納、尚無官方代碼：2 施工、4 特殊管制、8 交通障礙（拋錨）
+ *
+ * 分級：
+ * - 災害(5)：淹水、坍方等，代碼已確認 → 判「危險」
  * - 事故(1)、特殊管制(4)、交通障礙(8)：今天突發的狀況 → 判「注意」
- * - 施工(2)、壅塞(3)、活動(7)：列出但不影響判定
+ * - 施工(2)、壅塞(3)、活動／其他(7)：列出但不影響判定
  * - 例行道路維護（2/298，道管中心許可、無到期時間、數量大）→ 收合成一行，避免洗版
  */
 
 import { mapLatLonToKm, type Hazard, type RoutePolylineKm } from "@/lib/routes/recon-geo";
 
-export type RoadEventCategory = "accident" | "control" | "obstacle" | "construction" | "congestion" | "activity" | "other";
+export type RoadEventCategory =
+  | "accident"
+  | "disaster"
+  | "control"
+  | "obstacle"
+  | "construction"
+  | "congestion"
+  | "activity"
+  | "other";
 
 export interface RoadEvent {
   id: string;
@@ -39,11 +53,12 @@ export interface RouteEvent extends RoadEvent {
 
 export const CATEGORY_LABEL: Record<RoadEventCategory, string> = {
   accident: "事故",
+  disaster: "災害",
   control: "管制",
   obstacle: "交通障礙",
   construction: "施工",
   congestion: "壅塞",
-  activity: "活動",
+  activity: "活動／其他",
   other: "路況",
 };
 
@@ -61,6 +76,8 @@ export function categoryOf(type: number): RoadEventCategory {
       return "congestion";
     case 4:
       return "control";
+    case 5:
+      return "disaster";
     case 7:
       return "activity";
     case 8:
@@ -70,7 +87,7 @@ export function categoryOf(type: number): RoadEventCategory {
   }
 }
 
-const VERDICT_CATEGORIES = new Set<RoadEventCategory>(["accident", "control", "obstacle"]);
+const VERDICT_CATEGORIES = new Set<RoadEventCategory>(["disaster", "accident", "control", "obstacle"]);
 
 type TdxRawEvent = {
   EventID?: string;
@@ -150,14 +167,14 @@ export function matchEventsToRoute(
   return out.sort((a, b) => a.km - b.km);
 }
 
-/** 影響判定的事件 → 示警（一律「注意」：代碼對照未經官方文件確認，不判危險） */
+/** 影響判定的事件 → 示警：災害判「危險」（代碼已官方確認）；其餘判「注意」 */
 export function eventHazards(routeEvents: RouteEvent[]): Hazard[] {
   return routeEvents
     .filter((e) => e.affectsVerdict)
     .map((e) => ({
       id: `event-${e.id}`,
       kind: "event" as const,
-      level: "caution" as const,
+      level: e.category === "disaster" ? ("risky" as const) : ("caution" as const),
       startKm: e.km,
       endKm: e.km,
       label: `${CATEGORY_LABEL[e.category]}：${e.title}`,
