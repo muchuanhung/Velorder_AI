@@ -12,10 +12,16 @@ import { cn } from "@/lib/utils";
 
 /** 只有注意／危險用警示色；安全不做大面積綠 */
 const STATUS_BADGE: Record<Route["status"], { badge: string; dot: string }> = {
-  safe: { badge: "bg-background/80 text-foreground", dot: "bg-success" },
-  caution: { badge: "bg-warning text-black", dot: "bg-black/70" },
+  safe: { badge: "bg-card text-foreground", dot: "bg-success" },
+  caution: { badge: "bg-warning text-warning-foreground", dot: "bg-warning-foreground/70" },
   risky: { badge: "bg-destructive text-destructive-foreground", dot: "bg-destructive-foreground" },
 };
+
+/** 從 SVG path（M x y L x y …）取出起點與終點座標 */
+function pathEndpoints(d: string): { start: [number, number]; end: [number, number] } | null {
+  const pts = [...d.matchAll(/[ML]\s*(-?[\d.]+)[\s,]+(-?[\d.]+)/g)].map((m) => [Number(m[1]), Number(m[2])] as [number, number]);
+  return pts.length >= 2 ? { start: pts[0]!, end: pts[pts.length - 1]! } : null;
+}
 
 interface RouteHeaderProps {
   route: Route;
@@ -30,6 +36,7 @@ export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRid
   const status = statusOverride ?? null;
   const suggestTime = bestTimeToRide ?? route.bestTimeToRide;
   const svgPath = getSvgPath(route.gpxPreviewPath);
+  const ends = pathEndpoints(svgPath);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
 
   // Build elevation profile SVG
@@ -57,77 +64,44 @@ export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRid
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="rounded-xl border border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden"
+      className="overflow-hidden rounded-2xl border border-border bg-card"
     >
-      {/* GPX Map Preview */}
-      <div className="relative h-44 bg-[#0a1628] overflow-hidden">
-        {/* Grid pattern */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="route-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#route-grid)" className="text-foreground" />
-        </svg>
+      {/* 路線預覽：日光主題，顏色全走設計 token（暗色模式自動切換） */}
+      <div className="relative h-44 overflow-hidden bg-accent">
+        {/* 底部海拔剖面 */}
+        <div className="absolute inset-x-0 bottom-0 h-16" aria-hidden>
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} className="size-full" preserveAspectRatio="none">
+            <path d={areaPath} className="fill-primary/10" />
+            <polyline
+              points={elevPoints}
+              className="fill-none stroke-primary/40"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        </div>
 
-        {/* Route path visualization */}
-        <svg
-          viewBox="0 0 200 120"
-          className="absolute inset-0 w-full h-full"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            <linearGradient id="route-glow" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.2" />
-              <stop offset="50%" stopColor="#0ea5e9" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.2" />
-            </linearGradient>
-            <filter id="route-blur">
-              <feGaussianBlur stdDeviation="3" />
-            </filter>
-          </defs>
-          {/* Glow layer */}
-          <path
-            d={svgPath}
-            fill="none"
-            stroke="url(#route-glow)"
-            strokeWidth="8"
-            strokeLinecap="round"
-            filter="url(#route-blur)"
-          />
-          {/* Main route line */}
+        {/* 路線軌跡：底下一層卡片色描邊，讓線條在任何底色上都清楚 */}
+        <svg viewBox="0 0 200 120" className="absolute inset-0 size-full" preserveAspectRatio="xMidYMid meet" aria-hidden>
+          <path d={svgPath} className="fill-none stroke-card" strokeWidth={5} strokeLinecap="round" strokeLinejoin="round" />
           <motion.path
             d={svgPath}
-            fill="none"
-            stroke="#0ea5e9"
-            strokeWidth="2.5"
+            className="fill-none stroke-primary"
+            strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
             initial={{ pathLength: 0 }}
             animate={{ pathLength: 1 }}
             transition={{ duration: 1.8, ease: "easeInOut" }}
           />
-          {/* Start/end dots */}
-          <circle cx="10" cy="95" r="4" fill="#22c55e" opacity="0.9" />
-          <circle cx="10" cy="95" r="7" fill="#22c55e" opacity="0.2" />
-          <circle cx="175" cy="55" r="4" fill="#0ea5e9" opacity="0.9" />
-          <circle cx="175" cy="55" r="7" fill="#0ea5e9" opacity="0.2" />
+          {/* 起點與終點：取自實際軌跡 */}
+          {ends && (
+            <>
+              <circle cx={ends.start[0]} cy={ends.start[1]} r={4} className="fill-success stroke-card" strokeWidth={1.5} />
+              <circle cx={ends.end[0]} cy={ends.end[1]} r={4} className="fill-primary stroke-card" strokeWidth={1.5} />
+            </>
+          )}
         </svg>
-
-        {/* Elevation mini-profile at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 opacity-40">
-          <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-full" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="elev-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d={areaPath} fill="url(#elev-fill)" />
-            <polyline points={elevPoints} fill="none" stroke="#0ea5e9" strokeWidth="1" opacity="0.6" />
-          </svg>
-        </div>
 
         {/* Top badge */}
         <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -142,7 +116,7 @@ export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRid
           ) : (
             <Badge
               variant="outline"
-              className="border-0 text-xs font-semibold px-2.5 py-1 bg-background/80 text-muted-foreground"
+              className="border-0 text-xs font-semibold px-2.5 py-1 bg-card text-muted-foreground"
             >
               {weatherState === "loading" ? "天氣載入中" : "無天氣資料"}
             </Badge>
@@ -153,7 +127,7 @@ export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRid
         <div className="absolute top-3 right-3">
           <Badge
             variant="outline"
-            className="border-foreground/10 bg-background/30 text-foreground/80 backdrop-blur-sm text-xs px-2 py-1"
+            className="border-border bg-card text-muted-foreground text-xs px-2 py-1"
           >
             <RouteIcon className="h-3 w-3 mr-1" />
             {route.distance} km
