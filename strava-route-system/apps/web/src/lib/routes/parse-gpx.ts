@@ -3,6 +3,7 @@
  */
 
 import { encodePolyline } from "./polyline";
+import { repairSteppedElevation } from "./elevation";
 import type { Route } from "./route-data";
 
 interface Point {
@@ -143,7 +144,7 @@ export function parseGpxToRoute(
   const hasEle = points.some((p) => p.ele != null);
   const segs = Math.max(5, Math.floor(distanceKm / 2));
   const elevationProfile: [number, number][] = hasEle
-    ? points.map((p, i) => [cumulDist[i] ?? 0, p.ele ?? 0])
+    ? repairSteppedElevation(points.map((p, i) => [cumulDist[i] ?? 0, p.ele ?? 0]))
     : Array.from({ length: segs + 1 }, (_, i) => [(distanceKm * i) / segs, 0]);
 
   const elevationGain = hasEle
