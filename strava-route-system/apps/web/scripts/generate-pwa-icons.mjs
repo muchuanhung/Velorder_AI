@@ -36,8 +36,17 @@ async function main() {
     console.log(`已產生 icon-${size}.png`);
   }
 
+  // icon-maskable-512.png：滿版底色，圖形在 80% 安全區內，給 Android 遮罩裁切
+  const maskableSvg = readFileSync(join(publicDir, "icon-maskable.svg"));
+  writeFileSync(
+    join(publicDir, "icon-maskable-512.png"),
+    await sharp(maskableSvg).resize(512, 512).png().toBuffer()
+  );
+  console.log("已產生 icon-maskable-512.png");
+
   // apple-icon.png (180x180)
-  const appleBuf = await sharp(svg).resize(180, 180).png().toBuffer();
+  // iOS 會自行裁圓角並把透明處填黑，因此先用品牌綠填滿透明圓角
+  const appleBuf = await sharp(svg).resize(180, 180).flatten({ background: "#2f5d3e" }).png().toBuffer();
   writeFileSync(join(publicDir, "apple-icon.png"), appleBuf);
   console.log("已產生 apple-icon.png");
 
@@ -50,13 +59,14 @@ async function main() {
   writeFileSync(join(publicDir, "favicon.ico"), icoBuf);
   console.log("已產生 favicon.ico");
 
-  // 更新 manifest 的 icon URL 加上 cache-busting，避免 PWA 安裝後圖示不更新
+  // 更新 manifest 的 icon URL 加上 cache-busting，避免 PWA 安裝後圖示不更新；
+  // 先去掉舊的查詢字串，否則每次建置都會多疊一個 ?v=
   const manifestPath = join(publicDir, "manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
   const v = Date.now();
   manifest.icons = manifest.icons.map((icon) => ({
     ...icon,
-    src: `${icon.src}${icon.src.includes("?") ? "&" : "?"}v=${v}`,
+    src: `${icon.src.split("?")[0]}?v=${v}`,
   }));
   writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log("已更新 manifest.json (cache-busting)");
