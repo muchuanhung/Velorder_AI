@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Share } from "lucide-react";
 
 /** 註冊 Service Worker */
 function useServiceWorker() {
@@ -64,13 +65,14 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-border bg-card p-4 shadow-lg">
+      {/* 頁面有底部分頁列（手機）時，停在分頁列上方，避免蓋住導覽 */}
+      <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-border bg-card p-4 shadow-lg [body:has([data-bottom-nav])_&]:bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] md:[body:has([data-bottom-nav])_&]:bottom-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-medium text-foreground">將 Routecast 加入主畫面</p>
             {isIOS ? (
               <p className="mt-1 text-sm text-muted-foreground">
-                點選分享按鈕 <span className="inline-block">⎋</span>，然後選擇「加入主畫面」
+                點選分享按鈕 <Share className="inline size-4 align-text-bottom" aria-label="分享" />，然後選擇「加入主畫面」
               </p>
             ) : (
               <p className="mt-1 text-sm text-muted-foreground">像 App 一樣使用，更快更方便</p>

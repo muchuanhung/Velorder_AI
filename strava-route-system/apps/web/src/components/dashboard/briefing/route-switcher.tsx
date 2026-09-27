@@ -15,13 +15,13 @@ export function RouteSwitcher({ routes, currentId }: { routes: { id: string; nam
                 href={`/dashboard?route=${encodeURIComponent(r.id)}`}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-10 items-center rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors",
+                  "inline-flex min-h-10 max-w-64 items-center rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-muted-foreground hover:text-foreground"
                 )}
               >
-                {r.name}
+                <span className="truncate">{r.name}</span>
               </Link>
             </li>
           );
