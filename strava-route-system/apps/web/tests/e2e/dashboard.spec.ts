@@ -21,6 +21,8 @@ test.describe("Dashboard 今日判讀", () => {
 
   test("切換路線會更新網址並標示目前路線", async ({ page }) => {
     await page.goto("/dashboard");
+    // 先等串流內容到齊，否則切換器還沒出現就會被誤判為「沒有切換器」而跳過
+    await expect(page.getByRole("heading", { level: 2, name: VERDICT_WORD })).toBeVisible({ timeout: 30_000 });
     const switcher = page.getByRole("navigation", { name: "切換路線" });
     test.skip((await switcher.count()) === 0, "路線少於兩條，沒有切換器");
 

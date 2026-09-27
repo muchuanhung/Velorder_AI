@@ -122,8 +122,18 @@ export function matchEventsToRoute(
   { now = new Date(), maxDistKm = EVENT_MAX_DIST_KM }: { now?: Date; maxDistKm?: number } = {}
 ): RouteEvent[] {
   if (!polyline) return [];
+  // 先用路線範圍框（外擴 maxDistKm）排除遠處事件：台北一次就有數百筆，
+  // 逐筆對整條折線求距離在伺服器端是同步的重運算
+  const lats = polyline.points.map((p) => p[0]);
+  const lons = polyline.points.map((p) => p[1]);
+  const padLat = maxDistKm / 110.574;
+  const padLon = maxDistKm / (111.32 * Math.cos((Math.max(...lats.map(Math.abs)) * Math.PI) / 180));
+  const [minLat, maxLat] = [Math.min(...lats) - padLat, Math.max(...lats) + padLat];
+  const [minLon, maxLon] = [Math.min(...lons) - padLon, Math.max(...lons) + padLon];
+
   const out: RouteEvent[] = [];
   for (const e of events) {
+    if (e.lat < minLat || e.lat > maxLat || e.lon < minLon || e.lon > maxLon) continue;
     if (!isActive(e, now)) continue;
     const hit = mapLatLonToKm(e.lat, e.lon, polyline.points, polyline.cumulativeKm);
     if (!hit || hit.distKm > maxDistKm) continue;

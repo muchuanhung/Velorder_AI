@@ -71,11 +71,14 @@ export default defineConfig({
     },
     // 需要 .env.local 的測試帳號；未設定時整組跳過
     { name: "auth-setup", testDir: "./tests/setup", testMatch: /auth\.setup\.ts/ },
+    // Dashboard 在伺服器端解析 GPX、反查行政區、抓天氣與路況，快取未建立時很吃 CPU；
+    // 與其他 E2E（尤其 /lab 的軟體 GPU 渲染）同時跑會互相拖慢到逾時，因此排在最後：
+    // 桌機／手機 → lab → dashboard。單獨跑 dashboard 可加 --no-deps 跳過前面的組
     {
       name: "e2e-dashboard",
       testDir: "./tests/e2e",
       testMatch: /dashboard/,
-      dependencies: ["auth-setup"],
+      dependencies: ["auth-setup", "e2e-lab-desktop", "e2e-lab-mobile"],
       use: { ...devices["Desktop Chrome"], storageState: AUTH_STATE_PATH },
     },
   ],
