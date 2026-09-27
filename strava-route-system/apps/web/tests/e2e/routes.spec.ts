@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { CCTV_FEED, makeRoute, segment } from "../fixtures/route";
+import { CCTV_FEED, makeRoute, segment, slopeProfile } from "../fixtures/route";
 import { stubCctv, stubRoutes, stubWeather } from "./stubs";
 
 // 大安區在起點；士林區涵蓋 10 km 之後，對應的示警從 7.5 km 開始
@@ -70,5 +70,29 @@ test.describe("/routes 路線偵察", () => {
     await stubCctv(page, "error");
     await page.goto("/routes");
     await expect(page.getByText("監視器載入失敗")).toBeVisible();
+  });
+});
+
+test.describe("/routes 與 Dashboard 判定一致", () => {
+  test("只有陡坡、天氣良好時判定為安全，陡坡列為路線特性", async ({ page }) => {
+    const steep = makeRoute({ elevationProfile: slopeProfile(0.16), segments: ROUTE.segments });
+    await stubRoutes(page, [steep]);
+    await stubWeather(page, { 大安區: 10, 士林區: 10 });
+    await stubCctv(page, [CCTV_FEED]);
+    await page.goto("/routes");
+
+    await expect(verdictBar(page)).toContainText("安全");
+    await expect(page.getByText("路線特性")).toBeVisible();
+    await expect(page.getByRole("button", { name: /陡升 16%/ })).toBeVisible();
+  });
+
+  test("?route= 直接打開指定路線", async ({ page }) => {
+    const second = makeRoute({ id: "second-route", name: "Second Route", segments: ROUTE.segments });
+    await stubRoutes(page, [ROUTE, second]);
+    await stubWeather(page, { 大安區: 10, 士林區: 10 });
+    await stubCctv(page, [CCTV_FEED]);
+    await page.goto("/routes?route=second-route");
+
+    await expect(page.getByRole("heading", { level: 2, name: "Second Route" })).toBeVisible();
   });
 });

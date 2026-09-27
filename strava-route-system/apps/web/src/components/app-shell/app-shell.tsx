@@ -9,7 +9,7 @@ const NAV: { id: AppSection; label: string; href: string; icon: LucideIcon }[] =
   { id: "dashboard", label: "今日判讀", href: "/dashboard", icon: LayoutDashboard },
   { id: "routes", label: "路線", href: "/routes", icon: Route },
   { id: "maps", label: "地圖", href: "/maps", icon: Map },
-  { id: "profile", label: "我的", href: "/profile", icon: User },
+  { id: "profile", label: "個人資料", href: "/profile", icon: User },
 ];
 
 /**

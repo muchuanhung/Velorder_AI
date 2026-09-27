@@ -1,15 +1,18 @@
-import { Sidebar } from "@/components/dashboard/sidebar";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCurrentUserId } from "@/lib/auth/server";
+import { AppShell } from "@/components/app-shell/app-shell";
 import { ProfileContent } from "@/components/profile/profile-content";
 
-export default function ProfilePage() {
+export const metadata: Metadata = { title: "個人資料｜Routecast" };
+
+export default async function ProfilePage() {
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login");
+
   return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="lg:pl-64 transition-all duration-300">
-        <div className="p-4 pt-16 lg:pt-8 lg:p-8">
-          <ProfileContent />
-        </div>
-      </main>
-    </div>
+    <AppShell current="profile">
+      <ProfileContent />
+    </AppShell>
   );
 }

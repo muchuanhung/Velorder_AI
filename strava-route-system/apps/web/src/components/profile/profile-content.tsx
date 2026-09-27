@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowLeft, LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "../ui/separator";
 import { ProfileHeader } from "@/components/profile/profile-header";
@@ -16,55 +15,27 @@ function formatJoinedDate(creationTime: string | undefined): string {
 }
 
 export function ProfileContent() {
-  const router = useRouter();
   const { user } = useAuth();
   const handleSignOut = useSignOut();
 
-  const handleBack = () => {
-    if (typeof window !== "undefined" && document.referrer?.startsWith(window.location.origin)) {
-      router.back();
-    } else {
-      router.push("/dashboard");
-    }
-  };
-
   return (
     <div className="mx-auto max-w-2xl space-y-8">
-      {/* Page heading */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-muted-foreground hover:text-foreground"
-            aria-label="返回上一頁"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">
-              個人資料
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              管理您的密碼及帳號資訊
-            </p>
-          </div>
+      {/* 導覽由 AppShell 提供，這裡不再放返回鈕；登出在手機也要看得到（舊側欄已移除） */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">個人資料</h1>
+          <p className="text-sm text-muted-foreground">管理您的密碼及帳號資訊</p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="hidden gap-2 border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground sm:flex"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4" />
-            登出
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-2 border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-4 w-4" />
+          登出
+        </Button>
       </div>
 
       <Separator className="bg-border" />
