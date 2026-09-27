@@ -74,7 +74,7 @@ test.describe("/routes 路線偵察", () => {
 });
 
 test.describe("/routes 與 Dashboard 判定一致", () => {
-  test("只有陡坡、天氣良好時判定為安全，陡坡列為路線特性", async ({ page }) => {
+  test("只有陡坡、天氣良好時判定為安全，且不列出陡坡", async ({ page }) => {
     const steep = makeRoute({ elevationProfile: slopeProfile(0.16), segments: ROUTE.segments });
     await stubRoutes(page, [steep]);
     await stubWeather(page, { 大安區: 10, 士林區: 10 });
@@ -82,8 +82,8 @@ test.describe("/routes 與 Dashboard 判定一致", () => {
     await page.goto("/routes");
 
     await expect(verdictBar(page)).toContainText("安全");
-    await expect(page.getByText("路線特性")).toBeVisible();
-    await expect(page.getByRole("button", { name: /陡升 16%/ })).toBeVisible();
+    await expect(page.getByText("沿途沒有天氣示警")).toBeVisible();
+    await expect(page.getByText(/陡升|陡降/)).toHaveCount(0);
   });
 
   test("?route= 直接打開指定路線", async ({ page }) => {
@@ -94,5 +94,13 @@ test.describe("/routes 與 Dashboard 判定一致", () => {
     await page.goto("/routes?route=second-route");
 
     await expect(page.getByRole("heading", { level: 2, name: "Second Route" })).toBeVisible();
+  });
+
+  test("標題列有私人路線（Pro）入口", async ({ page }) => {
+    await stubRoutes(page, [ROUTE]);
+    await stubWeather(page, { 大安區: 10, 士林區: 10 });
+    await stubCctv(page, [CCTV_FEED]);
+    await page.goto("/routes");
+    await expect(page.getByRole("link", { name: /私人路線/ })).toHaveAttribute("href", "/routes/private");
   });
 });
