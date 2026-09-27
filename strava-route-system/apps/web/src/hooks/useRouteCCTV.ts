@@ -16,11 +16,12 @@ export function useRouteCCTV(route: Route | null): {
 
   useEffect(() => {
     setError(false);
-    if (!route?.bbox) {
-      setFeeds([]);
-      return;
-    }
+    // 換路線時先清空，避免載入期間顯示上一條路線的鏡頭
+    setFeeds([]);
+    if (!route?.bbox) return;
     const [minLon, minLat, maxLon, maxLat] = route.bbox;
+    // 快速切換路線時，較晚回來的舊請求不可覆蓋新路線的結果
+    let cancelled = false;
     setLoading(true);
     fetch(
       `/api/cctv/near-route?minLon=${minLon}&minLat=${minLat}&maxLon=${maxLon}&maxLat=${maxLat}`
@@ -34,12 +35,20 @@ export function useRouteCCTV(route: Route | null): {
         if (data?.error) throw new Error(data.error);
         return data.feeds ?? [];
       })
-      .then((f: CCTVFeed[]) => setFeeds(f))
+      .then((f: CCTVFeed[]) => {
+        if (!cancelled) setFeeds(f);
+      })
       .catch(() => {
+        if (cancelled) return;
         setFeeds([]);
         setError(true);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [route?.id, route?.bbox]);
 
   return { feeds, loading, error };

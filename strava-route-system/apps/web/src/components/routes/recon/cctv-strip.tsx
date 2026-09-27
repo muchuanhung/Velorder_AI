@@ -56,7 +56,8 @@ export function CctvStrip({
         沿途監視器
         <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">{markers.length}</span>
       </h3>
-      <div ref={scrollerRef} className="max-w-full overflow-x-auto overscroll-x-contain pb-1">
+      {/* relative：讓縮圖內 sr-only（絕對定位）以此為包含區塊並被裁切，否則會撐寬整頁 */}
+      <div ref={scrollerRef} className="relative max-w-full overflow-x-auto overscroll-x-contain pb-1">
         <div className="flex w-max gap-2">
           {markers.map((m) => {
             const isActive = m.id === activeId;

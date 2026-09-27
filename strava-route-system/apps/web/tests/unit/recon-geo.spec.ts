@@ -1,6 +1,26 @@
 import { test, expect } from "@playwright/test";
-import { computeHazards, deriveStages, summarizeVerdict } from "@/lib/routes/recon-geo";
+import { computeHazards, deriveStages, mapLatLonToKm, summarizeVerdict } from "@/lib/routes/recon-geo";
 import { flatProfile, makeRoute, segment, slopeProfile, withWeather } from "../fixtures/route";
+
+test.describe("mapLatLonToKm", () => {
+  // 沿經線往北 2 km 的直線路線
+  const points: [number, number][] = [
+    [25.0, 121.55],
+    [25.0 + 2 / 110.574, 121.55],
+  ];
+  const cumulativeKm = [0, 2];
+
+  test("路線東側 100 m 的點：離路 0.1 km（不可放大 57 倍）", () => {
+    const dLon = 0.1 / (111.32 * Math.cos((25.009 * Math.PI) / 180));
+    const r = mapLatLonToKm(25.0 + 1 / 110.574, 121.55 + dLon, points, cumulativeKm)!;
+    expect(r.km).toBeCloseTo(1, 2);
+    expect(r.distKm).toBeCloseTo(0.1, 2);
+  });
+
+  test("路線上的點：離路 0", () => {
+    expect(mapLatLonToKm(25.0 + 0.5 / 110.574, 121.55, points, cumulativeKm)!.distKm).toBeCloseTo(0, 4);
+  });
+});
 
 function hazardsOf(route: ReturnType<typeof makeRoute>) {
   const stages = deriveStages(route);

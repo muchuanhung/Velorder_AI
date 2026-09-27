@@ -107,7 +107,8 @@ export function mapLatLonToKm(
 
   // 對整條 polyline 的每個線段做投影，取距離最小的那段，
   // 避免「後段彎曲時只看附近窗口會投錯里程」的問題。
-  const Rm = 6371000; // meters
+  // 經緯度差是「度」，必須先轉弧度再乘地球半徑；漏轉會讓離路距離放大 57.3 倍
+  const Rm = 6371000 * (Math.PI / 180); // 每度的公尺數
   let bestKm: number | null = null;
   let bestDistKm = Infinity;
 
