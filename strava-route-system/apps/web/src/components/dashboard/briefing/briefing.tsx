@@ -16,7 +16,7 @@ export async function Briefing({ routeId }: { routeId?: string }) {
     );
   }
 
-  const { featured, alternative, routes, weatherCoverage } = data;
+  const { featured, alternative, routes, weatherCoverage, eventsFailed } = data;
 
   return (
     <div className="space-y-6">
@@ -30,6 +30,10 @@ export async function Briefing({ routeId }: { routeId?: string }) {
         天氣：中央氣象署鄉鎮預報
         {weatherCoverage.ok < weatherCoverage.total &&
           `（${weatherCoverage.total - weatherCoverage.ok} 個行政區暫時取不到資料）`}
+        ・路況：TDX 即時道路事件
+        {eventsFailed === null
+          ? "（暫時取不到）"
+          : eventsFailed.length > 0 && `（${eventsFailed.join("、")}暫時取不到）`}
         ・判讀僅供參考，出發前請再確認現場狀況。
       </p>
     </div>

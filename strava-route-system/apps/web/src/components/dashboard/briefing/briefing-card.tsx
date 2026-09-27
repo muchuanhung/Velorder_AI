@@ -29,7 +29,7 @@ const LEVEL: Record<
   },
   clear: {
     word: "安全",
-    advice: "沿途沒有天氣示警，適合出發。",
+    advice: "沿途沒有示警，適合出發。",
     icon: ShieldCheck,
     sign: "border border-border bg-background text-foreground [&_h2]:text-success",
     muted: "text-muted-foreground",

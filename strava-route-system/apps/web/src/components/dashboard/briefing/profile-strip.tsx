@@ -13,7 +13,7 @@ function downsample(points: [number, number][]): [number, number][] {
 }
 
 /**
- * 海拔剖面＋天氣示警區段。
+ * 海拔剖面＋示警區段（天氣與路況事件）。
  * 示警帶用狀態色半透明底，文字等級另由示警清單提供，不只靠顏色。
  */
 export function ProfileStrip({

@@ -5,6 +5,7 @@
 
 import { loadRoutes } from "@/lib/routes/load-routes.server";
 import { getDistrictWeather } from "@/lib/cwb/district-weather.server";
+import { getRoadEvents } from "@/lib/tdx/road-events.server";
 import {
   briefRoute,
   mapCwbCondition,
@@ -23,6 +24,8 @@ export type DashboardBriefing =
       routes: { id: string; name: string }[];
       /** 有天氣資料的行政區數 / 總數 */
       weatherCoverage: { ok: number; total: number };
+      /** 路況事件取不到的縣市；null 代表整個事件服務失敗 */
+      eventsFailed: string[] | null;
     };
 
 export async function getDashboardBriefing(routeId?: string): Promise<DashboardBriefing> {
@@ -30,6 +33,12 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
   if (routes.length === 0) return { status: "no-routes" };
 
   const keys = routeDistrictKeys(routes);
+  const counties = [...new Set(routes.flatMap((r) => r.segments.map((s) => s.county).filter((c): c is string => !!c)))];
+  // 天氣與路況事件平行取得；事件失敗不影響天氣判讀
+  const eventsPromise = getRoadEvents(counties).catch((e) => {
+    console.warn("路況事件取得失敗:", e instanceof Error ? e.message : e);
+    return null;
+  });
   const results = await Promise.allSettled(
     keys.map(async (key) => {
       const [county, district] = key.split("|") as [string, string];
@@ -52,7 +61,9 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
     else console.warn("行政區天氣取得失敗:", r.reason instanceof Error ? r.reason.message : r.reason);
   }
 
-  const briefings = routes.map((route) => briefRoute(route, lookup));
+  const eventsResult = await eventsPromise;
+  const now = new Date();
+  const briefings = routes.map((route) => briefRoute(route, lookup, eventsResult?.events ?? [], now));
   const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 
   return {
@@ -61,5 +72,6 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
     alternative: pickAlternative(featured, briefings),
     routes: briefings.map((b) => ({ id: b.id, name: b.name })),
     weatherCoverage: { ok: lookup.size, total: keys.length },
+    eventsFailed: eventsResult ? eventsResult.failed : null,
   };
 }

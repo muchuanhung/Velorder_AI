@@ -111,17 +111,29 @@ export function ElevationScrubber({
               tickFormatter={(v: number) => `${v.toFixed(0)} m`}
               width={48}
             />
-            {hazards.map((h) => (
-              <ReferenceArea
-                key={h.id}
-                x1={h.startKm}
-                x2={h.endKm}
-                fill={HAZARD_FILL[h.level]}
-                fillOpacity={0.18}
-                strokeOpacity={0}
-                ifOverflow="hidden"
-              />
-            ))}
+            {hazards.map((h) =>
+              h.endKm > h.startKm ? (
+                <ReferenceArea
+                  key={h.id}
+                  x1={h.startKm}
+                  x2={h.endKm}
+                  fill={HAZARD_FILL[h.level]}
+                  fillOpacity={0.18}
+                  strokeOpacity={0}
+                  ifOverflow="hidden"
+                />
+              ) : (
+                // 單點示警（路況事件）沒有寬度，改畫垂直虛線
+                <ReferenceLine
+                  key={h.id}
+                  x={h.startKm}
+                  stroke={HAZARD_FILL[h.level]}
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                  ifOverflow="hidden"
+                />
+              )
+            )}
             {/* 只為了取得 activePayload，不顯示浮動框 */}
             <Tooltip content={() => null} cursor={false} />
             <Area

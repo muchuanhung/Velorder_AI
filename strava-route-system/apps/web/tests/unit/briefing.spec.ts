@@ -48,8 +48,31 @@ test.describe("briefRoute", () => {
       segments: [segment("士林區", [0, 5, 10, 15, 20])],
     });
     const b = briefRoute(route, lookupOf({ 士林區: weather(10) }));
-    expect(b.weatherHazards).toHaveLength(0);
+    expect(b.hazards).toHaveLength(0);
     expect(b.verdict.level).toBe("clear");
+  });
+
+  test("路線上的事故讓天氣良好的路線判為注意；施工只列出不影響判定", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 5, 10, 15, 20])] });
+    const now = new Date("2026-09-27T12:00:00+08:00");
+    const base = {
+      description: "",
+      lon: 121.55,
+      source: "測試",
+      effectiveTime: null,
+      expireTime: null,
+      updatedTime: null,
+    };
+    const work = { ...base, id: "work", type: 2, subType: 205, title: "道路施工", lat: 25.05 + 8 / 111 };
+    const accident = { ...base, id: "acc", type: 1, subType: 101, title: "交通事故", lat: 25.05 + 5 / 111 };
+
+    const onlyWork = briefRoute(route, lookupOf({ 士林區: weather(10) }), [work], now);
+    expect(onlyWork.verdict.level).toBe("clear");
+    expect(onlyWork.roadEvents.map((e) => e.id)).toEqual(["work"]);
+
+    const withAccident = briefRoute(route, lookupOf({ 士林區: weather(10) }), [work, accident], now);
+    expect(withAccident.verdict.level).toBe("caution");
+    expect(withAccident.verdict.headline).toContain("事故：交通事故");
   });
 
   test("降雨達門檻判為危險，並帶出最高降雨與預報時段", () => {

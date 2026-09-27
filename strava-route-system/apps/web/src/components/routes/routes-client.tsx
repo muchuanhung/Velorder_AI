@@ -13,6 +13,7 @@ import type { Route } from "@/lib/routes/route-data";
 import { useRoutesFromStorage } from "@/hooks/useRoutesFromStorage";
 import { useRouteCCTV } from "@/hooks/useRouteCCTV";
 import { useRouteWeather } from "@/hooks/useRouteWeather";
+import { useRouteEvents } from "@/hooks/useRouteEvents";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
@@ -64,6 +65,10 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
   const selectedRoute = routes.find((r) => r.id === selectedId) || routes[0];
   const { feeds: cctvFeeds, loading: cctvLoading, error: cctvError } = useRouteCCTV(selectedRoute ?? null);
   const weather = useRouteWeather(selectedRoute ?? null);
+  const roadEvents = useRouteEvents(selectedRoute ?? null);
+  // 卡片與標頭的狀態要和判定列一致：天氣安全但有事故／管制時，升為注意
+  const routeStatus =
+    weather.status === "safe" && roadEvents.events.some((e) => e.affectsVerdict) ? "caution" : weather.status;
   const reconRoute = useMemo(
     () => (selectedRoute ? { ...selectedRoute, segments: weather.segments } : null),
     [selectedRoute, weather.segments]
@@ -115,7 +120,7 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
     isSelected: route.id === selectedId,
     onSelect: handleSelectRoute,
     index: i,
-    statusOverride: route.id === selectedRoute?.id ? weather.status : null,
+    statusOverride: route.id === selectedRoute?.id ? routeStatus : null,
   });
 
   return (
@@ -208,7 +213,7 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
             >
               <RouteHeader
                 route={selectedRoute}
-                statusOverride={weather.status}
+                statusOverride={routeStatus}
                 weatherState={weather.state}
                 bestTimeToRide={weather.bestTimeToRide}
               />
@@ -217,6 +222,7 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
                 cctvFeeds={cctvFeeds}
                 cctvLoading={cctvLoading}
                 cctvError={cctvError}
+                roadEvents={roadEvents}
               />
             </motion.div>
           )}

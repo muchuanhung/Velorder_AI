@@ -268,7 +268,8 @@ export function pickActiveMarker(markers: CctvMarker[], km: number): CctvMarker 
 // 示警
 // ---------------------------------------------------------------------------
 
-export type HazardKind = "rain" | "wind" | "storm" | "climb" | "descent";
+/** event：TDX 即時路況事件（事故、交通障礙、管制），由 lib/routes/road-events 產生 */
+export type HazardKind = "rain" | "wind" | "storm" | "climb" | "descent" | "event";
 export type HazardLevel = "caution" | "risky";
 
 export interface Hazard {
@@ -393,6 +394,8 @@ const KIND_LABEL: Record<HazardKind, (v: number) => string> = {
   storm: () => "雷雨",
   climb: (v) => `陡升 ${v}%`,
   descent: (v) => `陡降 ${v}%`,
+  // computeHazards 不產生 event；路況事件的標籤由 road-events 直接帶入
+  event: () => "路況事件",
 };
 
 /** 全線示警，依起點里程排序 */

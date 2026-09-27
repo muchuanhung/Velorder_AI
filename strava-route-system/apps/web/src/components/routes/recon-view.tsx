@@ -14,7 +14,9 @@ import {
   routeTotalKm,
   type ChartDataPoint,
 } from "@/lib/routes/recon-geo";
+import { eventHazards } from "@/lib/routes/road-events";
 import { useReconPosition } from "@/hooks/useReconPosition";
+import type { RouteEventsState } from "@/hooks/useRouteEvents";
 import { RouteVerdictBar } from "./recon/route-verdict-bar";
 import { HazardList } from "./recon/hazard-list";
 import { ElevationScrubber } from "./recon/elevation-scrubber";
@@ -30,6 +32,8 @@ interface ReconViewProps {
   cctvLoading?: boolean;
   /** CCTV 抓取失敗，用來區分「載入失敗」與「沿途無監視器」 */
   cctvError?: boolean;
+  /** 來自 useRouteEvents 的沿途路況事件 */
+  roadEvents?: RouteEventsState;
 }
 
 /**
@@ -41,6 +45,7 @@ export function ReconView({
   cctvFeeds: cctvFeedsProp,
   cctvLoading = false,
   cctvError = false,
+  roadEvents,
 }: ReconViewProps) {
   const routePolyline = useMemo(() => buildRoutePolylineKm(route), [route]);
 
@@ -55,9 +60,15 @@ export function ReconView({
 
   const stages = useMemo(() => deriveStages(route), [route]);
   const hazards = useMemo(() => computeHazards(route, stages), [route, stages]);
-  // 只看天氣，與 Dashboard 一致；陡坡是路線固定特性，不列入示警
-  const weatherHazards = useMemo(() => hazards.filter(isWeatherHazard), [hazards]);
-  const verdict = useMemo(() => summarizeVerdict(weatherHazards, stages), [weatherHazards, stages]);
+  // 判定看今天會變動的條件：天氣＋事故／管制／交通障礙，與 Dashboard 一致；陡坡不列入
+  const verdictHazards = useMemo(
+    () =>
+      [...hazards.filter(isWeatherHazard), ...eventHazards(roadEvents?.events ?? [])].sort(
+        (a, b) => a.startKm - b.startKm
+      ),
+    [hazards, roadEvents?.events]
+  );
+  const verdict = useMemo(() => summarizeVerdict(verdictHazards, stages), [verdictHazards, stages]);
 
   const chartData = useMemo<ChartDataPoint[]>(
     () => (route.elevationProfile ?? []).map(([km, elevation]) => ({ km, elevation })),
@@ -80,11 +91,11 @@ export function ReconView({
     <div className="w-full min-w-0 max-w-full space-y-6">
       <RouteVerdictBar verdict={verdict} />
 
-      <HazardList hazards={weatherHazards} positionKm={positionKm} onJump={moveTo} />
+      <HazardList hazards={verdictHazards} roadEvents={roadEvents} positionKm={positionKm} onJump={moveTo} />
 
       <ElevationScrubber
         data={chartData}
-        hazards={weatherHazards}
+        hazards={verdictHazards}
         positionKm={positionKm}
         totalKm={routeTotalKm(route)}
         elevation={currentElevation}

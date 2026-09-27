@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { CCTV_FEED, makeRoute, segment, slopeProfile } from "../fixtures/route";
-import { stubCctv, stubRoutes, stubWeather } from "./stubs";
+import { stubCctv, stubEvents, stubRoutes, stubWeather } from "./stubs";
 
 // 大安區在起點；士林區涵蓋 10 km 之後，對應的示警從 7.5 km 開始
 const ROUTE = makeRoute({
@@ -82,7 +82,7 @@ test.describe("/routes 與 Dashboard 判定一致", () => {
     await page.goto("/routes");
 
     await expect(verdictBar(page)).toContainText("安全");
-    await expect(page.getByText("沿途沒有天氣示警")).toBeVisible();
+    await expect(page.getByText("沿途沒有示警")).toBeVisible();
     await expect(page.getByText(/陡升|陡降/)).toHaveCount(0);
   });
 
@@ -102,5 +102,41 @@ test.describe("/routes 與 Dashboard 判定一致", () => {
     await stubCctv(page, [CCTV_FEED]);
     await page.goto("/routes");
     await expect(page.getByRole("link", { name: /私人路線/ })).toHaveAttribute("href", "/routes/private");
+  });
+});
+
+test.describe("/routes 路況事件分級", () => {
+  // 測試路線往北直走：lat = 25.05 + km / 111、lon 固定，事件放在路線上
+  const onRoute = (km: number) => ({ lat: 25.05 + km / 111, lon: 121.55 });
+  const base = { description: "", source: "測試", effectiveTime: null, expireTime: null, updatedTime: null };
+
+  test("事故判為注意；施工列在沿線路況；例行道路維護收合", async ({ page }) => {
+    await stubRoutes(page, [ROUTE]);
+    await stubEvents(page, [
+      { ...base, ...onRoute(3), id: "acc", type: 1, subType: 101, title: "交通事故" },
+      { ...base, ...onRoute(6), id: "work", type: 2, subType: 205, title: "道路施工", description: "外側車道施工" },
+      { ...base, ...onRoute(9), id: "r1", type: 2, subType: 298, title: "道路施工", description: "道路維護" },
+      { ...base, ...onRoute(12), id: "r2", type: 2, subType: 298, title: "道路施工", description: "道路維護" },
+    ]);
+    await stubWeather(page, { 大安區: 10, 士林區: 10 });
+    await stubCctv(page, [CCTV_FEED]);
+    await page.goto("/routes");
+
+    await expect(verdictBar(page)).toContainText("注意");
+    await expect(verdictBar(page)).toContainText("事故：交通事故");
+    await expect(page.getByRole("button", { name: /施工：外側車道施工/ })).toBeVisible();
+    await expect(page.getByText("沿線 2 處例行道路維護")).toBeVisible();
+    await expect(page.getByRole("button", { name: /施工：道路維護/ }).first()).toBeHidden();
+  });
+
+  test("路況事件取不到時如實告知，不影響天氣判定", async ({ page }) => {
+    await stubRoutes(page, [ROUTE]);
+    await stubEvents(page, "error");
+    await stubWeather(page, { 大安區: 10, 士林區: 10 });
+    await stubCctv(page, [CCTV_FEED]);
+    await page.goto("/routes");
+
+    await expect(verdictBar(page)).toContainText("安全");
+    await expect(page.getByText("路況事件暫時取不到，請稍後再試。")).toBeVisible();
   });
 });

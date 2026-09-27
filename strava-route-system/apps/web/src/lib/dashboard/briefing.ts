@@ -2,13 +2,15 @@
  * Dashboard「今日判讀」的純函式：天氣合併、判定、替代路線
  * 不依賴 React 與伺服器，可單元測試。
  *
- * 判定原則：今日判讀只看「今天的條件」（降雨、風、雷雨）；
- * 陡坡是路線固定的特性，不列入示警也不影響判讀，
+ * 判定原則：今日判讀只看「今天的條件」（降雨、風、雷雨，以及事故、管制、交通障礙）；
+ * 施工與壅塞只列出不影響判讀；陡坡是路線固定的特性，不列入示警也不影響判讀，
  * 否則陡的路線天天都是危險，示警會失去可信度。
  */
 
 import type { Route, RouteSegment } from "@/lib/routes/route-data";
+import { eventHazards, matchEventsToRoute, type RoadEvent, type RouteEvent } from "@/lib/routes/road-events";
 import {
+  buildRoutePolylineKm,
   computeHazards,
   deriveStages,
   isWeatherHazard,
@@ -72,9 +74,12 @@ export interface RouteBriefing {
   name: string;
   distanceKm: number;
   elevationGainM: number;
-  /** 今日判讀（只看天氣） */
+  /** 今日判讀：天氣＋事故／管制／交通障礙 */
   verdict: ReconVerdict;
-  weatherHazards: Hazard[];
+  /** 影響判定的示警，依里程排序 */
+  hazards: Hazard[];
+  /** 沿途路況事件（含不影響判定的施工、壅塞、例行維護） */
+  roadEvents: RouteEvent[];
   maxRain: number | null;
   maxWindKmh: number | null;
   temperature: { min: number; max: number } | null;
@@ -82,10 +87,18 @@ export interface RouteBriefing {
   elevationProfile: [number, number][];
 }
 
-export function briefRoute(route: Route, lookup: WeatherLookup): RouteBriefing {
+export function briefRoute(
+  route: Route,
+  lookup: WeatherLookup,
+  events: RoadEvent[] = [],
+  now: Date = new Date()
+): RouteBriefing {
   const enriched = applyWeather(route, lookup);
   const stages = deriveStages(enriched);
-  const weatherHazards = computeHazards(enriched, stages).filter(isWeatherHazard);
+  const roadEvents = matchEventsToRoute(events, buildRoutePolylineKm(route), { now });
+  const hazards = [...computeHazards(enriched, stages).filter(isWeatherHazard), ...eventHazards(roadEvents)].sort(
+    (a, b) => a.startKm - b.startKm
+  );
 
   const withWeather = enriched.segments.filter((s) => s.hasWeather);
   const temps = withWeather.map((s) => s.temperature);
@@ -98,8 +111,9 @@ export function briefRoute(route: Route, lookup: WeatherLookup): RouteBriefing {
     name: route.nameZh || route.name,
     distanceKm: routeTotalKm(route),
     elevationGainM: route.elevationGain,
-    verdict: summarizeVerdict(weatherHazards, stages),
-    weatherHazards,
+    verdict: summarizeVerdict(hazards, stages),
+    hazards,
+    roadEvents,
     maxRain: withWeather.length ? Math.max(...withWeather.map((s) => s.rainProbability)) : null,
     maxWindKmh: withWeather.length ? Math.max(...withWeather.map((s) => s.windSpeed)) : null,
     temperature: temps.length ? { min: Math.min(...temps), max: Math.max(...temps) } : null,
@@ -125,7 +139,7 @@ export function pickAlternative(current: RouteBriefing, all: RouteBriefing[]): R
     .sort(
       (a, b) =>
         SAFETY_RANK[a.verdict.level] - SAFETY_RANK[b.verdict.level] ||
-        a.weatherHazards.length - b.weatherHazards.length ||
+        a.hazards.length - b.hazards.length ||
         a.distanceKm - b.distanceKm
     );
   return candidates[0] ?? null;

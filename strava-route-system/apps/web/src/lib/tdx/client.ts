@@ -17,7 +17,9 @@
  *
  */
 
-const TOKEN_URL = "https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token";
+import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
+
+const TOKEN_URL ="https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token";
 const CCTV_BASE = "https://tdx.transportdata.tw/api/basic/v2/Road/Traffic/CCTV";
 
 /** TDX v2 API 回傳格式 */
@@ -46,8 +48,8 @@ type TDXCCTVResponse = { CCTVs?: TDXCCTVItem[] };
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
-/** OIDC Client Credentials，token 快取至過期前 1 分鐘 */
-async function getAccessToken(): Promise<string> {
+/** OIDC Client Credentials，token 快取至過期前 1 分鐘（CCTV 與路況事件共用） */
+export async function getAccessToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60000) {
     return cachedToken.token;
   }
@@ -66,6 +68,8 @@ async function getAccessToken(): Promise<string> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
     next: { revalidate: 0 },
+    // 網路卡住時快速失敗，避免拖住呼叫端（Dashboard 判讀、CCTV 同步）
+    signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -106,6 +110,13 @@ export const TDX_CITY_CODES: Record<string, string> = {
 };
 
 export const TDX_SYNC_CITIES = Object.keys(TDX_CITY_CODES) as (keyof typeof TDX_CITY_CODES)[];
+
+/** 路段縣市名（可能是 1982 年舊名，如「台北縣」）→ TDX 縣市代碼；查無回傳 null */
+export function tdxCityCode(county: string): string | null {
+  const name = normalizeCountyForCWB(county);
+  const hit = Object.entries(TDX_CITY_CODES).find(([k]) => k.replace(/台/g, "臺") === name);
+  return hit?.[1] ?? null;
+}
 
 /**
  * 取得單一縣市 CCTV（TDX v2：/City/{code}?$top=1000&$format=JSON）
