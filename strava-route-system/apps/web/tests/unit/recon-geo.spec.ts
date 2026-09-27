@@ -1,6 +1,25 @@
 import { test, expect } from "@playwright/test";
-import { computeHazards, deriveStages, mapLatLonToKm, summarizeVerdict } from "@/lib/routes/recon-geo";
+import {
+  computeHazards,
+  deriveStages,
+  isWeatherHazard,
+  mapLatLonToKm,
+  summarizeVerdict,
+} from "@/lib/routes/recon-geo";
 import { flatProfile, makeRoute, segment, slopeProfile, withWeather } from "../fixtures/route";
+
+test.describe("isWeatherHazard", () => {
+  test("降雨、風、雷雨算天氣；陡升陡降是路線特性", () => {
+    const route = makeRoute({
+      elevationProfile: slopeProfile(0.16),
+      segments: [segment("士林區", [0, 10, 20], withWeather(70, { windSpeed: 40, condition: "stormy" }))],
+    });
+    const hazards = computeHazards(route, deriveStages(route));
+    const kinds = (pred: (h: (typeof hazards)[number]) => boolean) => new Set(hazards.filter(pred).map((h) => h.kind));
+    expect(kinds(isWeatherHazard)).toEqual(new Set(["rain", "wind", "storm"]));
+    expect(kinds((h) => !isWeatherHazard(h))).toEqual(new Set(["climb"]));
+  });
+});
 
 test.describe("mapLatLonToKm", () => {
   // 沿經線往北 2 km 的直線路線

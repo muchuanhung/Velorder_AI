@@ -281,6 +281,9 @@ export interface Hazard {
   label: string;
 }
 
+/** 天氣類示警（降雨、風、雷雨）；陡坡屬路線特性，不列入出發判定 */
+export const isWeatherHazard = (h: Hazard) => h.kind === "rain" || h.kind === "wind" || h.kind === "storm";
+
 /** 天氣門檻，與 computeRouteStatus 一致 */
 export const RAIN_CAUTION = 40;
 export const RAIN_RISKY = 60;

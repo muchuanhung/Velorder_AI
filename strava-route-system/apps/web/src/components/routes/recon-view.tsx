@@ -8,6 +8,7 @@ import {
   pickInitialMarker,
   deriveStages,
   computeHazards,
+  isWeatherHazard,
   summarizeVerdict,
   nearestByKm,
   routeTotalKm,
@@ -54,7 +55,10 @@ export function ReconView({
 
   const stages = useMemo(() => deriveStages(route), [route]);
   const hazards = useMemo(() => computeHazards(route, stages), [route, stages]);
-  const verdict = useMemo(() => summarizeVerdict(hazards, stages), [hazards, stages]);
+  // 判定只看天氣，與 Dashboard 一致；陡坡另列為路線特性
+  const weatherHazards = useMemo(() => hazards.filter(isWeatherHazard), [hazards]);
+  const gradeHazards = useMemo(() => hazards.filter((h) => !isWeatherHazard(h)), [hazards]);
+  const verdict = useMemo(() => summarizeVerdict(weatherHazards, stages), [weatherHazards, stages]);
 
   const chartData = useMemo<ChartDataPoint[]>(
     () => (route.elevationProfile ?? []).map(([km, elevation]) => ({ km, elevation })),
@@ -77,11 +81,11 @@ export function ReconView({
     <div className="w-full min-w-0 max-w-full space-y-6">
       <RouteVerdictBar verdict={verdict} />
 
-      <HazardList hazards={hazards} positionKm={positionKm} onJump={moveTo} />
+      <HazardList hazards={weatherHazards} traits={gradeHazards} positionKm={positionKm} onJump={moveTo} />
 
       <ElevationScrubber
         data={chartData}
-        hazards={hazards}
+        hazards={weatherHazards}
         positionKm={positionKm}
         totalKm={routeTotalKm(route)}
         elevation={currentElevation}

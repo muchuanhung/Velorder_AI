@@ -11,6 +11,7 @@ import type { Route, RouteSegment } from "@/lib/routes/route-data";
 import {
   computeHazards,
   deriveStages,
+  isWeatherHazard,
   routeTotalKm,
   summarizeVerdict,
   type Hazard,
@@ -66,8 +67,6 @@ export function applyWeather(route: Route, lookup: WeatherLookup): Route {
   };
 }
 
-const WEATHER_KINDS = new Set<Hazard["kind"]>(["rain", "wind", "storm"]);
-
 export interface RouteBriefing {
   id: string;
   name: string;
@@ -89,8 +88,8 @@ export function briefRoute(route: Route, lookup: WeatherLookup): RouteBriefing {
   const enriched = applyWeather(route, lookup);
   const stages = deriveStages(enriched);
   const hazards = computeHazards(enriched, stages);
-  const weatherHazards = hazards.filter((h) => WEATHER_KINDS.has(h.kind));
-  const gradeHazards = hazards.filter((h) => !WEATHER_KINDS.has(h.kind));
+  const weatherHazards = hazards.filter(isWeatherHazard);
+  const gradeHazards = hazards.filter((h) => !isWeatherHazard(h));
 
   const withWeather = enriched.segments.filter((s) => s.hasWeather);
   const temps = withWeather.map((s) => s.temperature);
