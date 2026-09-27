@@ -1,0 +1,90 @@
+import Link from "next/link";
+import { LayoutDashboard, Map, Mountain, Route, User, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type AppSection = "dashboard" | "routes" | "maps" | "profile";
+
+const NAV: { id: AppSection; label: string; href: string; icon: LucideIcon }[] = [
+  { id: "dashboard", label: "今日判讀", href: "/dashboard", icon: LayoutDashboard },
+  { id: "routes", label: "路線", href: "/routes", icon: Route },
+  { id: "maps", label: "地圖", href: "/maps", icon: Map },
+  { id: "profile", label: "我的", href: "/profile", icon: User },
+];
+
+/**
+ * 全站外框：桌機頂部導覽、手機底部分頁列。
+ * 目前頁面由呼叫端以 current 傳入，整個外框是 Server Component、不需要客戶端 JS。
+ */
+export function AppShell({ current, children }: { current: AppSection; children: React.ReactNode }) {
+  return (
+    <div className="min-h-dvh">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"
+      >
+        跳到主要內容
+      </a>
+
+      <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
+          <Link href="/dashboard" className="flex items-center gap-2.5 font-black tracking-wide text-primary">
+            <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+              <Mountain className="size-[18px]" aria-hidden />
+            </span>
+            Routecast
+          </Link>
+          <nav aria-label="主要導覽" className="hidden h-full items-stretch gap-6 md:flex">
+            {NAV.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                aria-current={item.id === current ? "page" : undefined}
+                className={cn(
+                  "flex items-center border-b-2 text-sm font-medium transition-colors",
+                  item.id === current
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </header>
+
+      <main
+        id="main-content"
+        className="mx-auto max-w-6xl px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-6 sm:px-6 md:pb-12 md:pt-10"
+      >
+        {children}
+      </main>
+
+      <nav
+        aria-label="主要導覽"
+        className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-card pb-[env(safe-area-inset-bottom)] md:hidden"
+      >
+        {NAV.map((item) => {
+          const Icon = item.icon;
+          const active = item.id === current;
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex flex-1 flex-col items-center gap-1 py-2 text-xs",
+                active ? "font-bold text-primary" : "text-muted-foreground"
+              )}
+            >
+              <span className={cn("rounded-full px-4 py-1", active && "bg-accent")}>
+                <Icon className="size-5" aria-hidden />
+              </span>
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
