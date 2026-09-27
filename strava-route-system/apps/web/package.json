@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "test": "playwright test",
     "test:unit": "playwright test --project=unit",
-    "test:e2e": "playwright test --project=e2e-desktop --project=e2e-mobile --project=e2e-dashboard"
+    "test:e2e": "playwright test --project=e2e-desktop --project=e2e-mobile --project=e2e-lab-desktop --project=e2e-lab-mobile --project=e2e-dashboard"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -42,6 +42,8 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@react-three/drei": "10.7.9",
+    "@react-three/fiber": "9.8.1",
     "@repo/auth": "workspace:*",
     "@repo/ui": "workspace:*",
     "@stripe/stripe-js": "^8.9.0",
@@ -71,6 +73,7 @@
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
+    "three": "0.186.1",
     "vaul": "^1.1.2",
     "zod": "3.25.76"
   },
@@ -81,6 +84,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "0.186.0",
     "postcss": "^8.5",
     "sharp": "^0.33.5",
     "tailwindcss": "^4.1.9",

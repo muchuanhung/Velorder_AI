@@ -45,13 +45,28 @@ export default defineConfig({
     {
       name: "e2e-desktop",
       testDir: "./tests/e2e",
-      testIgnore: /dashboard/,
+      testIgnore: /dashboard|lab/,
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "e2e-mobile",
       testDir: "./tests/e2e",
-      testIgnore: /dashboard/,
+      testIgnore: /dashboard|lab/,
+      use: { ...devices["Pixel 7"] },
+    },
+    // /lab 的 WebGL 在 headless 以軟體 GPU 渲染，很吃 CPU；等其他 E2E 跑完再跑，避免互相拖慢而超時
+    {
+      name: "e2e-lab-desktop",
+      testDir: "./tests/e2e",
+      testMatch: /lab/,
+      dependencies: ["e2e-desktop", "e2e-mobile"],
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "e2e-lab-mobile",
+      testDir: "./tests/e2e",
+      testMatch: /lab/,
+      dependencies: ["e2e-desktop", "e2e-mobile"],
       use: { ...devices["Pixel 7"] },
     },
     // 需要 .env.local 的測試帳號；未設定時整組跳過
@@ -72,5 +87,7 @@ export default defineConfig({
         // 每次都重新 build，避免測到舊版本
         reuseExistingServer: false,
         timeout: 300_000,
+        // /lab 在正式 build 預設關閉，E2E 需要開啟才能測
+        env: { ...(process.env as Record<string, string>), NEXT_PUBLIC_LAB_ENABLED: "true" },
       },
 });

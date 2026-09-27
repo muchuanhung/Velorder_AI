@@ -33,7 +33,7 @@ function SectionHeading({
 }: {
   id: string;
   number: number;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   title: string;
   subtitle?: string;
 }) {
