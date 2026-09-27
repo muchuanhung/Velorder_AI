@@ -7,8 +7,10 @@ export function BriefingSkeleton() {
           <div key={i} className="h-10 w-28 animate-pulse rounded-full bg-muted" />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-2xl bg-muted sm:h-56" />
-      <div className="h-72 animate-pulse rounded-2xl bg-muted" />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <div className="h-[26rem] animate-pulse rounded-2xl bg-muted" />
+        <div className="h-72 animate-pulse rounded-2xl bg-muted" />
+      </div>
     </div>
   );
 }

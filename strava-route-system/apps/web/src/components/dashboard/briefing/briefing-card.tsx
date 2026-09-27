@@ -1,0 +1,147 @@
+import Link from "next/link";
+import { AlertTriangle, ArrowRight, HelpCircle, ShieldAlert, ShieldCheck, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { VerdictLevel } from "@/lib/routes/recon-geo";
+import type { RouteBriefing } from "@/lib/dashboard/briefing";
+
+/** 判定牌的顏色跟著狀態走：危險紅、注意琥珀；安全與未判定用中性底，絕不用品牌綠表示危險 */
+const LEVEL: Record<
+  VerdictLevel,
+  { word: string; advice: string; icon: LucideIcon; sign: string; muted: string; chip: string; striped?: boolean }
+> = {
+  risky: {
+    word: "危險",
+    advice: "建議改期，或改走替代路線。",
+    icon: ShieldAlert,
+    sign: "bg-destructive text-destructive-foreground",
+    muted: "text-destructive-foreground/85",
+    chip: "bg-destructive text-destructive-foreground",
+    striped: true,
+  },
+  caution: {
+    word: "注意",
+    advice: "可以出發，留意下列路段。",
+    icon: AlertTriangle,
+    sign: "bg-warning text-warning-foreground",
+    muted: "text-warning-foreground/85",
+    chip: "bg-warning text-warning-foreground",
+    striped: true,
+  },
+  clear: {
+    word: "安全",
+    advice: "沿途沒有天氣示警，適合出發。",
+    icon: ShieldCheck,
+    sign: "border border-border bg-background text-foreground [&_h2]:text-success",
+    muted: "text-muted-foreground",
+    chip: "bg-accent text-primary",
+  },
+  unknown: {
+    word: "未判定",
+    advice: "目前拿不到這條路線的天氣資料，無法判斷風險。",
+    icon: HelpCircle,
+    sign: "bg-muted text-foreground",
+    muted: "text-muted-foreground",
+    chip: "bg-muted text-foreground",
+  },
+};
+
+const tempRange = ({ min, max }: { min: number; max: number }) => (min === max ? `${min}°` : `${min}–${max}°`);
+
+/**
+ * 今日判讀主卡：路線名 → 判定牌 → 天氣列 → 替代路線與詳情入口。
+ * 做決定需要的資訊集中在同一張卡，替代路線緊接在判定下方。
+ */
+export function BriefingCard({ featured, alternative }: { featured: RouteBriefing; alternative: RouteBriefing | null }) {
+  const { verdict } = featured;
+  const s = LEVEL[verdict.level];
+  const Icon = s.icon;
+  const hasHazard = verdict.level === "risky" || verdict.level === "caution";
+
+  return (
+    <section
+      aria-labelledby="verdict-title"
+      className="flex flex-col gap-5 rounded-2xl border-2 border-primary bg-card p-5 shadow-[0_14px_30px_-18px_rgb(31_43_32/0.45)] sm:p-6"
+    >
+      <div>
+        <p className="text-xs text-muted-foreground">今日路線</p>
+        <p className="text-xl font-black leading-snug sm:text-2xl">{featured.name}</p>
+      </div>
+
+      {/* 判定牌：危險／注意時頂端加警示斜紋，像路邊告示牌，戶外一眼可辨 */}
+      <div className={cn("relative flex gap-4 overflow-hidden rounded-xl p-5", s.striped && "pt-7", s.sign)}>
+        {s.striped && (
+          <span
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-1.5 bg-[repeating-linear-gradient(-45deg,rgb(0_0_0/0.22)_0_6px,transparent_6px_12px)]"
+          />
+        )}
+        <Icon className="mt-1 size-8 shrink-0" aria-hidden />
+        <div className="min-w-0 space-y-2">
+          <h2 id="verdict-title" className="text-5xl font-black leading-none tracking-tight">
+            {s.word}
+          </h2>
+          {hasHazard ? (
+            <>
+              <p className="text-lg font-bold">{verdict.headline}</p>
+              <p className={cn("text-sm", s.muted)}>
+                {s.advice}
+                {verdict.note && `・${verdict.note}`}
+              </p>
+            </>
+          ) : (
+            <p className="text-base font-medium">{s.advice}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <WxItem label="氣溫" value={featured.temperature ? tempRange(featured.temperature) : null} />
+          <WxItem label="降雨" value={featured.maxRain != null ? `${featured.maxRain}%` : null} />
+          <WxItem label="風速" value={featured.maxWindKmh != null ? `${featured.maxWindKmh} km/h` : null} />
+        </dl>
+        {featured.periodLabel && (
+          <p className="text-xs text-muted-foreground">依 {featured.periodLabel} 預報・中央氣象署</p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-dashed border-border pt-4 text-sm">
+        {alternative && (
+          <Link
+            href={`/dashboard?route=${encodeURIComponent(alternative.id)}`}
+            className="group flex min-w-0 items-center gap-2"
+          >
+            <span
+              className={cn(
+                "shrink-0 rounded-md px-2 py-0.5 text-xs font-black tracking-widest",
+                LEVEL[alternative.verdict.level].chip
+              )}
+            >
+              {LEVEL[alternative.verdict.level].word}
+            </span>
+            <span className="min-w-0">
+              替代路線：<b className="group-hover:underline">{alternative.name}</b>
+              <span className="font-mono text-muted-foreground">（{alternative.distanceKm.toFixed(1)} km）</span>
+            </span>
+          </Link>
+        )}
+        <Link
+          href={`/routes?route=${encodeURIComponent(featured.id)}`}
+          className="ml-auto inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          查看路線示警
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function WxItem({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex items-baseline gap-1.5">
+      <dt>{label}</dt>
+      <dd className="font-mono font-semibold text-foreground">{value ?? "—"}</dd>
+    </div>
+  );
+}

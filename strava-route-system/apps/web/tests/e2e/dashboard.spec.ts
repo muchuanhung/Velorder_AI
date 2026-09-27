@@ -38,6 +38,16 @@ test.describe("Dashboard 今日判讀", () => {
     await expect(
       page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "今日判讀" }).first()
     ).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("link", { name: "個人資料" }).first()).toBeVisible();
+  });
+
+  test("「查看路線示警」帶著目前路線前往 /routes", async ({ page }) => {
+    await page.goto("/dashboard");
+    const link = page.getByRole("link", { name: "查看路線示警" });
+    await expect(link).toBeVisible({ timeout: 30_000 });
+    await expect(link).toHaveAttribute("href", /^\/routes\?route=/);
+    await link.click();
+    await expect(page).toHaveURL(/\/routes\?route=/);
   });
 });
 

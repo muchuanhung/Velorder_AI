@@ -1,7 +1,6 @@
 import { getDashboardBriefing } from "@/lib/dashboard/get-briefing.server";
-import { VerdictBoard } from "./verdict-board";
+import { BriefingCard } from "./briefing-card";
 import { HazardSummary } from "./hazard-summary";
-import { RouteCompare } from "./route-compare";
 import { RouteSwitcher } from "./route-switcher";
 
 /** 今日判讀主體：在伺服器端取得路線與天氣後一次輸出 */
@@ -22,15 +21,11 @@ export async function Briefing({ routeId }: { routeId?: string }) {
   return (
     <div className="space-y-6">
       <RouteSwitcher routes={routes} currentId={featured.id} />
-      <VerdictBoard briefing={featured} />
-      {alternative ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
-          <HazardSummary briefing={featured} />
-          <RouteCompare alternative={alternative} />
-        </div>
-      ) : (
+      {/* 桌機左主卡、右沿途示警；手機依序往下 */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+        <BriefingCard featured={featured} alternative={alternative} />
         <HazardSummary briefing={featured} />
-      )}
+      </div>
       <p className="text-xs text-muted-foreground">
         天氣：中央氣象署鄉鎮預報
         {weatherCoverage.ok < weatherCoverage.total &&
