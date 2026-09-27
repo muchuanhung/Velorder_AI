@@ -55,9 +55,8 @@ export function ReconView({
 
   const stages = useMemo(() => deriveStages(route), [route]);
   const hazards = useMemo(() => computeHazards(route, stages), [route, stages]);
-  // 判定只看天氣，與 Dashboard 一致；陡坡另列為路線特性
+  // 只看天氣，與 Dashboard 一致；陡坡是路線固定特性，不列入示警
   const weatherHazards = useMemo(() => hazards.filter(isWeatherHazard), [hazards]);
-  const gradeHazards = useMemo(() => hazards.filter((h) => !isWeatherHazard(h)), [hazards]);
   const verdict = useMemo(() => summarizeVerdict(weatherHazards, stages), [weatherHazards, stages]);
 
   const chartData = useMemo<ChartDataPoint[]>(
@@ -81,7 +80,7 @@ export function ReconView({
     <div className="w-full min-w-0 max-w-full space-y-6">
       <RouteVerdictBar verdict={verdict} />
 
-      <HazardList hazards={weatherHazards} traits={gradeHazards} positionKm={positionKm} onJump={moveTo} />
+      <HazardList hazards={weatherHazards} positionKm={positionKm} onJump={moveTo} />
 
       <ElevationScrubber
         data={chartData}

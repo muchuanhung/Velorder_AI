@@ -61,18 +61,13 @@ function HazardRows({
   );
 }
 
-/**
- * 第 2 層：天氣示警（決定判定），依里程排序；點擊跳到該處。
- * 陡坡是路線特性，另列在下方、不影響判定，與 Dashboard 一致。
- */
+/** 第 2 層：天氣示警（決定判定），依里程排序；點擊跳到該處 */
 export function HazardList({
   hazards,
-  traits = [],
   positionKm,
   onJump,
 }: {
   hazards: Hazard[];
-  traits?: Hazard[];
   positionKm: number;
   onJump: (km: number) => void;
 }) {
@@ -89,17 +84,6 @@ export function HazardList({
         <p className="text-sm text-muted-foreground">沿途沒有天氣示警</p>
       ) : (
         <HazardRows hazards={hazards} positionKm={positionKm} onJump={onJump} />
-      )}
-
-      {traits.length > 0 && (
-        <div className="space-y-2 pt-3">
-          <h4 className="text-sm font-semibold text-foreground">
-            路線特性
-            <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">{traits.length} 段陡坡</span>
-          </h4>
-          <p className="text-xs text-muted-foreground">陡坡不隨天氣變化，不列入今日判讀。</p>
-          <HazardRows hazards={traits} positionKm={positionKm} onJump={onJump} />
-        </div>
       )}
 
       <p className="text-xs text-muted-foreground">路況事件（事故、施工）資料尚未接入</p>

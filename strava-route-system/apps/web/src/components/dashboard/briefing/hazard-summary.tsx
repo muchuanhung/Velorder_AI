@@ -20,37 +20,9 @@ function HazardList({ hazards }: { hazards: Hazard[] }) {
   );
 }
 
-const TOP_TRAITS = 3;
-// Hazard 沒有保留數值，坡度從標籤（「陡升 12%」）取出
-const gradeOf = (h: Hazard) => Number(h.label.match(/\d+/)?.[0] ?? 0);
-
-/** 路線特性：只露出最陡的幾段，其餘收合（原生 details，不需客戶端 JS） */
-function GradeTraits({ hazards }: { hazards: Hazard[] }) {
-  const ranked = [...hazards].sort((a, b) => gradeOf(b) - gradeOf(a) || a.startKm - b.startKm);
-  const top = ranked.slice(0, TOP_TRAITS).sort((a, b) => a.startKm - b.startKm);
-  const rest = hazards.filter((h) => !top.includes(h));
-
-  return (
-    <div className="space-y-1 border-t border-border pt-4">
-      <h3 className="text-sm font-bold">路線特性・{hazards.length} 段陡坡</h3>
-      <p className="text-xs text-muted-foreground">陡坡不隨天氣變化，不列入今日判讀。以下為最陡的路段。</p>
-      <HazardList hazards={top} />
-      {rest.length > 0 && (
-        <details className="group">
-          <summary className="cursor-pointer py-2 text-sm font-medium text-primary">
-            <span className="group-open:hidden">顯示其餘 {rest.length} 段</span>
-            <span className="hidden group-open:inline">收合</span>
-          </summary>
-          <HazardList hazards={rest} />
-        </details>
-      )}
-    </div>
-  );
-}
-
-/** 沿途示警：今日天氣示警在上；陡坡屬路線特性，另列、不影響判讀 */
+/** 沿途示警：只列今天會變動的條件（天氣）；陡坡是路線固定特性，不列入 */
 export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
-  const { weatherHazards, gradeHazards } = briefing;
+  const { weatherHazards } = briefing;
 
   return (
     <section aria-labelledby="hazard-title" className="space-y-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -72,8 +44,6 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
           {briefing.verdict.level === "unknown" ? "沒有天氣資料，無法列出天氣示警。" : "沿途沒有天氣示警。"}
         </p>
       )}
-
-      {gradeHazards.length > 0 && <GradeTraits hazards={gradeHazards} />}
     </section>
   );
 }

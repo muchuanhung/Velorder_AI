@@ -3,7 +3,7 @@
  * 不依賴 React 與伺服器，可單元測試。
  *
  * 判定原則：今日判讀只看「今天的條件」（降雨、風、雷雨）；
- * 陡坡是路線本身的特性，另列「路線特性」，不影響判讀顏色，
+ * 陡坡是路線固定的特性，不列入示警也不影響判讀，
  * 否則陡的路線天天都是危險，示警會失去可信度。
  */
 
@@ -75,8 +75,6 @@ export interface RouteBriefing {
   /** 今日判讀（只看天氣） */
   verdict: ReconVerdict;
   weatherHazards: Hazard[];
-  /** 路線特性：陡坡，不影響今日判讀 */
-  gradeHazards: Hazard[];
   maxRain: number | null;
   maxWindKmh: number | null;
   temperature: { min: number; max: number } | null;
@@ -87,9 +85,7 @@ export interface RouteBriefing {
 export function briefRoute(route: Route, lookup: WeatherLookup): RouteBriefing {
   const enriched = applyWeather(route, lookup);
   const stages = deriveStages(enriched);
-  const hazards = computeHazards(enriched, stages);
-  const weatherHazards = hazards.filter(isWeatherHazard);
-  const gradeHazards = hazards.filter((h) => !isWeatherHazard(h));
+  const weatherHazards = computeHazards(enriched, stages).filter(isWeatherHazard);
 
   const withWeather = enriched.segments.filter((s) => s.hasWeather);
   const temps = withWeather.map((s) => s.temperature);
@@ -104,7 +100,6 @@ export function briefRoute(route: Route, lookup: WeatherLookup): RouteBriefing {
     elevationGainM: route.elevationGain,
     verdict: summarizeVerdict(weatherHazards, stages),
     weatherHazards,
-    gradeHazards,
     maxRain: withWeather.length ? Math.max(...withWeather.map((s) => s.rainProbability)) : null,
     maxWindKmh: withWeather.length ? Math.max(...withWeather.map((s) => s.windSpeed)) : null,
     temperature: temps.length ? { min: Math.min(...temps), max: Math.max(...temps) } : null,

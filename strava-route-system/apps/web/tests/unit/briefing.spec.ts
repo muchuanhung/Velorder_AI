@@ -42,13 +42,12 @@ test.describe("mapCwbCondition", () => {
 });
 
 test.describe("briefRoute", () => {
-  test("陡坡列為路線特性，不影響今日判讀", () => {
+  test("陡坡不列入示警，也不影響今日判讀", () => {
     const route = makeRoute({
       elevationProfile: slopeProfile(0.2),
       segments: [segment("士林區", [0, 5, 10, 15, 20])],
     });
     const b = briefRoute(route, lookupOf({ 士林區: weather(10) }));
-    expect(b.gradeHazards.length).toBeGreaterThan(0);
     expect(b.weatherHazards).toHaveLength(0);
     expect(b.verdict.level).toBe("clear");
   });
