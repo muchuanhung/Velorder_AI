@@ -60,7 +60,7 @@ export function ReconView({
 
   const stages = useMemo(() => deriveStages(route), [route]);
   const hazards = useMemo(() => computeHazards(route, stages), [route, stages]);
-  // 判定看今天會變動的條件：天氣＋事故／管制／交通障礙，與 Dashboard 一致；陡坡不列入
+  // 判定看今天會變動的條件：天氣＋路況事件（災害、事故、管制、異常告警），與 Dashboard 一致；陡坡不列入
   const verdictHazards = useMemo(
     () =>
       [...hazards.filter(isWeatherHazard), ...eventHazards(roadEvents?.events ?? [])].sort(

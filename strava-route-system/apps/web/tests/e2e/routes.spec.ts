@@ -110,7 +110,7 @@ test.describe("/routes 路況事件分級", () => {
   const onRoute = (km: number) => ({ lat: 25.05 + km / 111, lon: 121.55 });
   const base = { description: "", source: "測試", effectiveTime: null, expireTime: null, updatedTime: null };
 
-  test("事故判為注意；施工列在沿線路況；例行道路維護收合", async ({ page }) => {
+  test("事故判為注意；施工列在沿線路況；其他的施工收合", async ({ page }) => {
     await stubRoutes(page, [ROUTE]);
     await stubEvents(page, [
       { ...base, ...onRoute(3), id: "acc", type: 1, subType: 101, title: "交通事故" },
@@ -125,7 +125,7 @@ test.describe("/routes 路況事件分級", () => {
     await expect(verdictBar(page)).toContainText("注意");
     await expect(verdictBar(page)).toContainText("事故：交通事故");
     await expect(page.getByRole("button", { name: /施工：外側車道施工/ })).toBeVisible();
-    await expect(page.getByText("沿線 2 處例行道路維護")).toBeVisible();
+    await expect(page.getByText("沿線 2 處其他施工（多為道路維護）")).toBeVisible();
     await expect(page.getByRole("button", { name: /施工：道路維護/ }).first()).toBeHidden();
   });
 

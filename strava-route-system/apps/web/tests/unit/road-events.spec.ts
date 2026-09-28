@@ -54,15 +54,16 @@ test.describe("isActive", () => {
 });
 
 test.describe("categoryOf", () => {
-  test("依 EventType 分類", () => {
-    expect([1, 2, 3, 4, 5, 7, 8, 9].map(categoryOf)).toEqual([
+  test("依 TDX 道路事件 v1 官方 EventType 分類", () => {
+    expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map(categoryOf)).toEqual([
       "accident",
       "construction",
       "congestion",
       "control",
+      "weather",
       "disaster",
       "activity",
-      "obstacle",
+      "anomaly",
       "other",
     ]);
   });
@@ -83,7 +84,7 @@ test.describe("matchEventsToRoute", () => {
     expect(matchEventsToRoute([event({ expireTime: "2026-09-27T11:00:00+08:00" })], polyline, { now: NOW })).toHaveLength(0);
   });
 
-  test("分級：事故影響判定；施工只列出；例行道路維護收合", () => {
+  test("分級：事故影響判定；施工只列出；其他的施工（298）收合", () => {
     const matched = matchEventsToRoute(
       [
         event({ id: "acc", type: 1, subType: 101 }),
@@ -101,7 +102,7 @@ test.describe("matchEventsToRoute", () => {
 });
 
 test.describe("eventHazards", () => {
-  test("只有影響判定的事件變成示警，且一律為注意", () => {
+  test("只有影響判定的事件變成示警；事故為注意", () => {
     const polyline = buildRoutePolylineKm(makeRoute());
     const matched = matchEventsToRoute(
       [event({ id: "acc" }), event({ id: "work", type: 2, subType: 205, lat: latAtKm(8) })],
@@ -113,11 +114,18 @@ test.describe("eventHazards", () => {
     expect(hazards[0]).toMatchObject({ kind: "event", level: "caution", label: "事故：交通事故" });
   });
 
-  test("災害（淹水等）判為危險", () => {
+  test("災害（6，如 605 淹水）判危險；天氣（5）與預警性封閉（402）判注意", () => {
     const polyline = buildRoutePolylineKm(makeRoute());
-    const matched = matchEventsToRoute([event({ id: "flood", type: 5, subType: 509, title: "淹水" })], polyline, {
-      now: NOW,
-    });
-    expect(eventHazards(matched)[0]).toMatchObject({ level: "risky", label: "災害：淹水" });
+    const matched = matchEventsToRoute(
+      [
+        event({ id: "flood", type: 6, subType: 605, title: "淹水" }),
+        event({ id: "fog", type: 5, subType: 501, title: "濃霧", lat: latAtKm(8) }),
+        event({ id: "closed", type: 4, subType: 402, title: "預警性封閉", lat: latAtKm(12) }),
+      ],
+      polyline,
+      { now: NOW }
+    );
+    const byLabel = Object.fromEntries(eventHazards(matched).map((h) => [h.label, h.level]));
+    expect(byLabel).toEqual({ "災害：淹水": "risky", "天氣：濃霧": "caution", "管制：預警性封閉": "caution" });
   });
 });

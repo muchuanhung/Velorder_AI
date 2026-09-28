@@ -38,8 +38,8 @@ function NoticeList({ events }: { events: RouteEvent[] }) {
 }
 
 /**
- * 沿途示警：影響判定的條件（天氣、事故、管制、交通障礙）在上；
- * 施工、壅塞等只列出不影響判定，例行道路維護收合成一行（原生 details，不需客戶端 JS）。
+ * 沿途示警：影響判定的條件（天氣、災害、事故、管制、異常告警）在上；
+ * 施工、壅塞等只列出不影響判定，「其他的施工」收合成一行（原生 details，不需客戶端 JS）。
  * 陡坡是路線固定特性，不列入。
  */
 export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
@@ -78,7 +78,7 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
       {routine.length > 0 && (
         <details className="group border-t border-border pt-3">
           <summary className="cursor-pointer text-sm text-muted-foreground">
-            沿線 {routine.length} 處例行道路維護
+            沿線 {routine.length} 處其他施工（多為道路維護）
             <span className="ml-1 text-primary group-open:hidden">展開</span>
           </summary>
           <NoticeList events={routine} />

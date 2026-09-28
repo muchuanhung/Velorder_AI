@@ -97,8 +97,8 @@ function EventsStatus({ state }: { state: RouteEventsState }) {
 }
 
 /**
- * 第 2 層：會影響判定的示警（天氣、事故、管制、交通障礙），依里程排序；點擊跳到該處。
- * 其下為不影響判定的沿線路況，例行道路維護收合成一行。
+ * 第 2 層：會影響判定的示警（天氣、災害、事故、管制、異常告警），依里程排序；點擊跳到該處。
+ * 其下為不影響判定的沿線路況，「其他的施工」收合成一行。
  */
 export function HazardList({
   hazards,
@@ -141,7 +141,7 @@ export function HazardList({
       {routine.length > 0 && (
         <details className="group pt-1">
           <summary className="cursor-pointer py-1.5 text-sm text-muted-foreground">
-            沿線 {routine.length} 處例行道路維護
+            沿線 {routine.length} 處其他施工（多為道路維護）
             <span className="ml-1 text-primary group-open:hidden">展開</span>
           </summary>
           <NoticeRows events={routine} onJump={onJump} />

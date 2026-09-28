@@ -2,28 +2,30 @@
  * TDX 即時道路事件的純函式：解析、分級、對應到路線
  * 不依賴 React 與伺服器，可單元測試；伺服器端抓取在 lib/tdx/road-events.server.ts。
  *
- * EventType 代碼（EventSubType 百位數 = EventType）：
- * - 官方確認（運研所《交通事件資訊整合服務擴充與事件偵測技術精進計畫》事件類別對應表）：
- *   1 事故、3 壅塞、5 災害（509 淹水）、7 其他（706 異常停留）
- * - 依 2026-09 實際資料歸納、尚無官方代碼：2 施工、4 特殊管制、8 交通障礙（拋錨）
+ * EventType 代碼依 TDX「道路事件 v1」官方 API 規格
+ * （swagger 60abfa19-ffe3-4eef-a4b1-0539435dfca9，EventSubType 百位數 = EventType）：
+ *   1 交通事故、2 施工、3 壅塞、4 特殊管制（402 預警性封閉）、5 天氣（濃霧、豪雨、颱風…）、
+ *   6 災害（落石、坍方、淹水、土石流…）、7 活動、8 其它異常告警（散落物、坑洞、故障車…）
+ * 注意：運研所報告中地方自動偵測平台的編碼（5 = 災害）與 TDX 不同，不可混用。
  *
  * 分級：
- * - 災害(5)：淹水、坍方等，代碼已確認 → 判「危險」
- * - 事故(1)、特殊管制(4)、交通障礙(8)：今天突發的狀況 → 判「注意」
- * - 施工(2)、壅塞(3)、活動／其他(7)：列出但不影響判定
- * - 例行道路維護（2/298，道管中心許可、無到期時間、數量大）→ 收合成一行，避免洗版
+ * - 災害(6) → 判「危險」
+ * - 交通事故(1)、特殊管制(4)、天氣(5)、異常告警(8) → 判「注意」
+ * - 施工(2)、壅塞(3)、活動(7) → 列出但不影響判定
+ * - 其他的施工（298：多為道管中心的道路維護許可，無到期時間、數量大）→ 收合成一行，避免洗版
  */
 
 import { mapLatLonToKm, type Hazard, type RoutePolylineKm } from "@/lib/routes/recon-geo";
 
 export type RoadEventCategory =
   | "accident"
-  | "disaster"
-  | "control"
-  | "obstacle"
   | "construction"
   | "congestion"
+  | "control"
+  | "weather"
+  | "disaster"
   | "activity"
+  | "anomaly"
   | "other";
 
 export interface RoadEvent {
@@ -43,7 +45,7 @@ export interface RoadEvent {
 
 export interface RouteEvent extends RoadEvent {
   category: RoadEventCategory;
-  /** 例行道路維護：收合顯示 */
+  /** 其他的施工（298）：收合顯示 */
   routine: boolean;
   /** 是否影響出發判定 */
   affectsVerdict: boolean;
@@ -53,41 +55,37 @@ export interface RouteEvent extends RoadEvent {
 
 export const CATEGORY_LABEL: Record<RoadEventCategory, string> = {
   accident: "事故",
-  disaster: "災害",
-  control: "管制",
-  obstacle: "交通障礙",
   construction: "施工",
   congestion: "壅塞",
-  activity: "活動／其他",
+  control: "管制",
+  weather: "天氣",
+  disaster: "災害",
+  activity: "活動",
+  anomaly: "異常告警",
   other: "路況",
 };
 
 /** 事件離路線多近才算「在路線上」：事件發生在道路上，門檻比監視器（2 km）嚴 */
 export const EVENT_MAX_DIST_KM = 0.15;
-const ROUTINE_MAINTENANCE_SUBTYPE = 298;
+/** TDX 次類別 298「其他的施工」 */
+const OTHER_CONSTRUCTION_SUBTYPE = 298;
+
+const CATEGORY_BY_TYPE: Record<number, RoadEventCategory> = {
+  1: "accident",
+  2: "construction",
+  3: "congestion",
+  4: "control",
+  5: "weather",
+  6: "disaster",
+  7: "activity",
+  8: "anomaly",
+};
 
 export function categoryOf(type: number): RoadEventCategory {
-  switch (type) {
-    case 1:
-      return "accident";
-    case 2:
-      return "construction";
-    case 3:
-      return "congestion";
-    case 4:
-      return "control";
-    case 5:
-      return "disaster";
-    case 7:
-      return "activity";
-    case 8:
-      return "obstacle";
-    default:
-      return "other";
-  }
+  return CATEGORY_BY_TYPE[type] ?? "other";
 }
 
-const VERDICT_CATEGORIES = new Set<RoadEventCategory>(["disaster", "accident", "control", "obstacle"]);
+const VERDICT_CATEGORIES = new Set<RoadEventCategory>(["disaster", "accident", "control", "weather", "anomaly"]);
 
 type TdxRawEvent = {
   EventID?: string;
@@ -158,7 +156,7 @@ export function matchEventsToRoute(
     out.push({
       ...e,
       category,
-      routine: e.subType === ROUTINE_MAINTENANCE_SUBTYPE,
+      routine: e.subType === OTHER_CONSTRUCTION_SUBTYPE,
       affectsVerdict: VERDICT_CATEGORIES.has(category),
       km: hit.km,
       distKm: hit.distKm,
@@ -167,7 +165,7 @@ export function matchEventsToRoute(
   return out.sort((a, b) => a.km - b.km);
 }
 
-/** 影響判定的事件 → 示警：災害判「危險」（代碼已官方確認）；其餘判「注意」 */
+/** 影響判定的事件 → 示警：災害判「危險」；其餘（含 402 預警性封閉）判「注意」 */
 export function eventHazards(routeEvents: RouteEvent[]): Hazard[] {
   return routeEvents
     .filter((e) => e.affectsVerdict)

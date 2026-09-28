@@ -268,7 +268,7 @@ export function pickActiveMarker(markers: CctvMarker[], km: number): CctvMarker 
 // 示警
 // ---------------------------------------------------------------------------
 
-/** event：TDX 即時路況事件（事故、交通障礙、管制），由 lib/routes/road-events 產生 */
+/** event：TDX 即時路況事件（災害、事故、管制、天氣、異常告警），由 lib/routes/road-events 產生 */
 export type HazardKind = "rain" | "wind" | "storm" | "climb" | "descent" | "event";
 export type HazardLevel = "caution" | "risky";
 
