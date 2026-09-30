@@ -1,7 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { repairSteppedElevation } from "@/lib/routes/elevation";
-import { computeHazards, deriveStages } from "@/lib/routes/recon-geo";
-import { makeRoute } from "../fixtures/route";
 
 /**
  * 平均 10% 的爬坡，但海拔每 0.5 km 才跳一次 50 m（階梯紀錄）。
@@ -43,14 +41,25 @@ test.describe("repairSteppedElevation", () => {
     expect(repairSteppedElevation(input).map(([k]) => k)).toEqual(input.map(([k]) => k));
   });
 
-  test("階梯版 10% 爬坡修復後只判注意，不會出現假的危險", () => {
-    const raw = makeRoute({ elevationProfile: steppedClimb() });
-    const rawRisky = computeHazards(raw, deriveStages(raw)).some((h) => h.level === "risky");
-    expect(rawRisky).toBe(true); // 修復前：跳格處算出假陡坡
+  test("階梯版 10% 爬坡修復後，剖面上不再出現假的陡升", () => {
+    // 產品不做坡度示警，但剖面圖與 3D 仍直接顯示海拔：跳格會畫出不存在的陡坡
+    const rawMax = maxGrade(steppedClimb());
+    expect(rawMax).toBeGreaterThan(0.15); // 修復前：跳格處約 16%
 
-    const fixed = makeRoute({ elevationProfile: repairSteppedElevation(steppedClimb()) });
-    const hz = computeHazards(fixed, deriveStages(fixed));
-    expect(hz.some((h) => h.level === "risky")).toBe(false);
-    expect(hz.some((h) => h.kind === "climb" && h.level === "caution")).toBe(true);
+    const fixedMax = maxGrade(repairSteppedElevation(steppedClimb()));
+    expect(fixedMax).toBeLessThan(0.12);
+    expect(fixedMax).toBeGreaterThan(0.08); // 仍保留約 10% 的真實爬坡
   });
 });
+
+/** 以 0.3 km 水平窗口計算的最大坡度（比例），只給這支測試用 */
+function maxGrade(profile: [number, number][], windowKm = 0.3): number {
+  let max = 0;
+  for (let i = 0; i < profile.length; i++) {
+    const j = profile.findIndex(([km]) => km - profile[i]![0] >= windowKm - 1e-9);
+    if (j <= i) continue;
+    const grade = (profile[j]![1] - profile[i]![1]) / ((profile[j]![0] - profile[i]![0]) * 1000);
+    max = Math.max(max, Math.abs(grade));
+  }
+  return max;
+}

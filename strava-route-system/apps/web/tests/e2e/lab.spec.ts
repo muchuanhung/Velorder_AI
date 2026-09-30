@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { CCTV_FEED, makeRoute, segment, slopeProfile } from "../fixtures/route";
 import { stubCctv, stubRoutes, stubWeather } from "./stubs";
 
-// 5 km 處有一段 1 km 的 16% 陡坡；鏡頭在約 5.5 km
+// 5 km 處有一段 1 km 的 16% 陡坡（產品不做坡度示警，用來確認不會出現）；士林區降雨 70%；鏡頭在約 5.5 km
 const ROUTE = makeRoute({
   elevationProfile: slopeProfile(0.16),
   segments: [segment("大安區", [0]), segment("士林區", [10, 20])],
@@ -27,7 +27,7 @@ test.describe.configure({ timeout: 90_000 });
 
 test.beforeEach(async ({ page }) => {
   await stubRoutes(page, [ROUTE]);
-  await stubWeather(page, "error");
+  await stubWeather(page, { 大安區: 10, 士林區: 70 });
   await stubCctv(page, [CCTV_FEED]);
   await stubTerrain(page);
 });
@@ -38,7 +38,8 @@ test("桌機：3D 直接顯示，點監視器後所有面板跳到該處", async
 
   const stage = page.getByRole("region", { name: "三維地形與剖面" });
   await expect(stage.locator("canvas").first()).toBeVisible({ timeout: 45_000 }); // 負載高時動態載入 three.js＋建幾何可能超過 20 秒
-  await expect(page.getByRole("status").filter({ hasText: "危險" })).toContainText("陡升 16%");
+  await expect(page.getByRole("status").filter({ hasText: "危險" })).toContainText("降雨 70%");
+  await expect(page.getByText(/陡升|陡降/)).toHaveCount(0);
 
   const readout = page.getByRole("region", { name: "海拔與位置" });
   await expect(readout).toContainText("0.0 km");

@@ -159,6 +159,7 @@ export function RouteSimClient() {
 
   const sceneProps = {
     route: enriched,
+    hazards,
     markers,
     positionKm: km,
     activeMarkerId: activeMarker?.id ?? null,

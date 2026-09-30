@@ -83,27 +83,3 @@ export function sampleHeight(
     heights[(j + 1) * w + i + 1]! * fu * fv
   );
 }
-
-/** 每個剖面點的坡度（±windowKm 視窗），供路線著色 */
-export function pointGrades(profile: [number, number][], windowKm = 0.25): number[] {
-  if (profile.length < 2) return profile.map(() => 0);
-  const total = profile[profile.length - 1]![0];
-  const eleAt = (km: number) => {
-    if (km <= profile[0]![0]) return profile[0]![1];
-    let lo = 0;
-    let hi = profile.length - 1;
-    while (hi - lo > 1) {
-      const mid = (lo + hi) >> 1;
-      if (profile[mid]![0] <= km) lo = mid;
-      else hi = mid;
-    }
-    const [k0, e0] = profile[lo]!;
-    const [k1, e1] = profile[hi]!;
-    return k1 > k0 ? e0 + ((e1 - e0) * (km - k0)) / (k1 - k0) : e0;
-  };
-  return profile.map(([km]) => {
-    const a = Math.max(0, km - windowKm);
-    const b = Math.min(total, km + windowKm);
-    return b > a ? (eleAt(b) - eleAt(a)) / ((b - a) * 1000) : 0;
-  });
-}

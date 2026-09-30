@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
   flattenLowland,
-  pointGrades,
   prepareHeights,
   quantize,
   sampleHeight,
@@ -56,19 +55,5 @@ test.describe("地形前處理", () => {
     expect(out).toHaveLength(w * h);
     expect(max).toBeGreaterThan(400);
     expect(max).toBeLessThan(600);
-  });
-});
-
-test.describe("pointGrades", () => {
-  test("等坡度剖面：每點坡度一致", () => {
-    const profile = Array.from({ length: 51 }, (_, i): [number, number] => [i / 10, 100 + i * 8]); // 8 m / 100 m = 8%
-    for (const g of pointGrades(profile)) expect(g).toBeCloseTo(0.08, 5);
-  });
-
-  test("平路為 0、下坡為負", () => {
-    const flat = Array.from({ length: 11 }, (_, i): [number, number] => [i / 10, 50]);
-    expect(pointGrades(flat).every((g) => g === 0)).toBe(true);
-    const down = Array.from({ length: 11 }, (_, i): [number, number] => [i / 10, 500 - i * 12]);
-    expect(pointGrades(down).every((g) => g < 0)).toBe(true);
   });
 });

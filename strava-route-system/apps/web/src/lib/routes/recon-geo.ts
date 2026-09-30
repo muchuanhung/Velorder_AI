@@ -269,7 +269,7 @@ export function pickActiveMarker(markers: CctvMarker[], km: number): CctvMarker 
 // ---------------------------------------------------------------------------
 
 /** event：TDX 即時路況事件（災害、事故、管制、天氣、異常告警），由 lib/routes/road-events 產生 */
-export type HazardKind = "rain" | "wind" | "storm" | "climb" | "descent" | "event";
+export type HazardKind = "rain" | "wind" | "storm" | "event";
 export type HazardLevel = "caution" | "risky";
 
 export interface Hazard {
@@ -278,11 +278,14 @@ export interface Hazard {
   level: HazardLevel;
   startKm: number;
   endKm: number;
-  /** 例：「降雨 70%」「陡降 14%」 */
+  /** 例：「降雨 70%」「事故：交通事故」 */
   label: string;
 }
 
-/** 天氣類示警（降雨、風、雷雨）；陡坡屬路線特性，不列入出發判定 */
+/**
+ * 天氣類示警（降雨、風、雷雨），用來與路況事件（event）區分。
+ * 陡坡是路線固定特性，產品上不計算、不示警。
+ */
 export const isWeatherHazard = (h: Hazard) => h.kind === "rain" || h.kind === "wind" || h.kind === "storm";
 
 /** 天氣門檻，與 computeRouteStatus 一致 */
@@ -290,11 +293,6 @@ export const RAIN_CAUTION = 40;
 export const RAIN_RISKY = 60;
 export const WIND_CAUTION = 25;
 export const WIND_RISKY = 35;
-
-/** 坡度門檻（比例）與計算窗口 */
-export const GRADE_CAUTION = 0.1;
-export const GRADE_RISKY = 0.15;
-const GRADE_WINDOW_KM = 0.3;
 
 const LEVEL_RANK: Record<HazardLevel, number> = { caution: 1, risky: 2 };
 
@@ -360,48 +358,18 @@ function weatherHazards(stages: RouteStage[], totalKm: number): RawHazard[] {
   return [...mergeAdjacent(byKind.rain), ...mergeAdjacent(byKind.wind), ...mergeAdjacent(byKind.storm)];
 }
 
-/** 以 ≥ 0.3 km 的水平窗口計算坡度，避免取樣密度造成的雜訊 */
-function gradeHazards(profile: [number, number][]): RawHazard[] {
-  const raw: RawHazard[] = [];
-  let i = 0;
-  while (i < profile.length - 1) {
-    const [startKm, startEle] = profile[i]!;
-    let j = i + 1;
-    while (j < profile.length - 1 && profile[j]![0] - startKm < GRADE_WINDOW_KM) j++;
-    const [endKm, endEle] = profile[j]!;
-    const distKm = endKm - startKm;
-    if (distKm > 0) {
-      const grade = (endEle - startEle) / (distKm * 1000);
-      const abs = Math.abs(grade);
-      if (abs >= GRADE_CAUTION) {
-        raw.push({
-          kind: grade > 0 ? "climb" : "descent",
-          level: abs >= GRADE_RISKY ? "risky" : "caution",
-          startKm,
-          endKm,
-          value: Math.round(abs * 100),
-        });
-      }
-    }
-    i = j;
-  }
-  return mergeAdjacent(raw);
-}
-
 const KIND_LABEL: Record<HazardKind, (v: number) => string> = {
   rain: (v) => `降雨 ${v}%`,
   wind: (v) => `風速 ${v} km/h`,
   storm: () => "雷雨",
-  climb: (v) => `陡升 ${v}%`,
-  descent: (v) => `陡降 ${v}%`,
   // computeHazards 不產生 event；路況事件的標籤由 road-events 直接帶入
   event: () => "路況事件",
 };
 
-/** 全線示警，依起點里程排序 */
+/** 全線天氣示警，依起點里程排序（路況事件另由 road-events 產生） */
 export function computeHazards(route: Route, stages: RouteStage[]): Hazard[] {
   const totalKm = routeTotalKm(route);
-  const raw = [...weatherHazards(stages, totalKm), ...gradeHazards(route.elevationProfile ?? [])];
+  const raw = weatherHazards(stages, totalKm);
   return raw
     .sort((a, b) => a.startKm - b.startKm || LEVEL_RANK[b.level] - LEVEL_RANK[a.level])
     .map((h, i) => ({

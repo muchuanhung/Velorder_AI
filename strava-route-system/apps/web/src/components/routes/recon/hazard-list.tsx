@@ -1,6 +1,6 @@
 "use client";
 
-import { CloudRain, Wind, CloudLightning, TrendingUp, TrendingDown, TriangleAlert, Construction } from "lucide-react";
+import { CloudRain, Wind, CloudLightning, TriangleAlert, Construction } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Hazard, HazardKind } from "@/lib/routes/recon-geo";
 import { CATEGORY_LABEL, groupRouteEvents, type RouteEvent } from "@/lib/routes/road-events";
@@ -10,8 +10,6 @@ const KIND_ICON: Record<HazardKind, React.ComponentType<{ className?: string }>>
   rain: CloudRain,
   wind: Wind,
   storm: CloudLightning,
-  climb: TrendingUp,
-  descent: TrendingDown,
   event: TriangleAlert,
 };
 

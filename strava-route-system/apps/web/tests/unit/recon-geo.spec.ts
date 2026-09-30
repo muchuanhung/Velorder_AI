@@ -6,18 +6,25 @@ import {
   mapLatLonToKm,
   summarizeVerdict,
 } from "@/lib/routes/recon-geo";
-import { flatProfile, makeRoute, segment, slopeProfile, withWeather } from "../fixtures/route";
+import { makeRoute, segment, slopeProfile, withWeather } from "../fixtures/route";
 
-test.describe("isWeatherHazard", () => {
-  test("降雨、風、雷雨算天氣；陡升陡降是路線特性", () => {
+test.describe("computeHazards 只計算天氣", () => {
+  test("陡坡路線也只產生降雨、風、雷雨示警", () => {
     const route = makeRoute({
-      elevationProfile: slopeProfile(0.16),
+      elevationProfile: slopeProfile(0.2),
       segments: [segment("士林區", [0, 10, 20], withWeather(70, { windSpeed: 40, condition: "stormy" }))],
     });
     const hazards = computeHazards(route, deriveStages(route));
-    const kinds = (pred: (h: (typeof hazards)[number]) => boolean) => new Set(hazards.filter(pred).map((h) => h.kind));
-    expect(kinds(isWeatherHazard)).toEqual(new Set(["rain", "wind", "storm"]));
-    expect(kinds((h) => !isWeatherHazard(h))).toEqual(new Set(["climb"]));
+    expect(new Set(hazards.map((h) => h.kind))).toEqual(new Set(["rain", "wind", "storm"]));
+    expect(hazards.every(isWeatherHazard)).toBe(true);
+  });
+
+  test("陡坡、天氣良好：沒有任何示警", () => {
+    const route = makeRoute({
+      elevationProfile: slopeProfile(0.2),
+      segments: [segment("士林區", [0, 10, 20], withWeather(10))],
+    });
+    expect(computeHazards(route, deriveStages(route))).toEqual([]);
   });
 });
 
@@ -102,29 +109,6 @@ test.describe("computeHazards：天氣", () => {
   });
 });
 
-test.describe("computeHazards：坡度", () => {
-  test("12% 陡升為注意", () => {
-    const { hazards } = hazardsOf(makeRoute({ elevationProfile: slopeProfile(0.12) }));
-    expect(hazards).toContainEqual(expect.objectContaining({ kind: "climb", level: "caution", label: "陡升 12%" }));
-    expect(hazards.some((h) => h.level === "risky")).toBe(false);
-  });
-
-  test("16% 陡升為危險", () => {
-    const { hazards } = hazardsOf(makeRoute({ elevationProfile: slopeProfile(0.16) }));
-    expect(hazards).toContainEqual(expect.objectContaining({ kind: "climb", level: "risky", label: "陡升 16%" }));
-  });
-
-  test("12% 陡降為注意，不再是綠色的低嚴重度", () => {
-    const { hazards } = hazardsOf(makeRoute({ elevationProfile: slopeProfile(-0.12) }));
-    expect(hazards).toContainEqual(expect.objectContaining({ kind: "descent", level: "caution", label: "陡降 12%" }));
-  });
-
-  test("取樣雜訊（±3 m 起伏）不算陡坡", () => {
-    const bumpy = flatProfile().map(([km], i): [number, number] => [km, 100 + (i % 2 === 0 ? 3 : -3)]);
-    expect(hazardsOf(makeRoute({ elevationProfile: bumpy })).hazards).toEqual([]);
-  });
-});
-
 test.describe("summarizeVerdict", () => {
   test("完全沒有天氣資料時為未判定，不可顯示安全", () => {
     const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
@@ -148,20 +132,20 @@ test.describe("summarizeVerdict", () => {
 
   test("取最嚴重的示警作為判定，並列出其他示警數", () => {
     const route = makeRoute({
-      elevationProfile: slopeProfile(0.12),
-      segments: [segment("士林區", [0, 10, 20], withWeather(70))],
+      segments: [segment("士林區", [0, 10, 20], withWeather(70, { windSpeed: 40 }))],
     });
     const { stages, hazards } = hazardsOf(route);
     const verdict = summarizeVerdict(hazards, stages);
     expect(verdict.level).toBe("risky");
     expect(verdict.headline).toBe("0.0 km 起降雨 70%");
-    expect(verdict.note).toMatch(/^另有 \d+ 項示警$/);
+    expect(verdict.note).toBe("另有 1 項示警");
   });
 
-  test("只有坡度示警、沒有天氣時，仍提示尚無天氣資料", () => {
-    const route = makeRoute({ elevationProfile: slopeProfile(0.12), segments: [segment("士林區", [0, 10, 20])] });
-    const { stages, hazards } = hazardsOf(route);
-    const verdict = summarizeVerdict(hazards, stages);
+  test("只有路況事件、沒有天氣時，仍提示尚無天氣資料", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
+    const stages = deriveStages(route);
+    const event = { id: "e", kind: "event" as const, level: "caution" as const, startKm: 3, endKm: 3, label: "事故：交通事故" };
+    const verdict = summarizeVerdict([event], stages);
     expect(verdict.level).toBe("caution");
     expect(verdict.note).toContain("尚無天氣資料");
   });

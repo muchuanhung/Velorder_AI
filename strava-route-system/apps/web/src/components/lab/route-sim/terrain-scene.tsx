@@ -6,12 +6,11 @@ import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Line, OrbitControls, useCursor } from "@react-three/drei";
 import * as THREE from "three";
 import type { Route } from "@/lib/routes/route-data";
-import type { CctvMarker } from "@/lib/routes/recon-geo";
-import { GRADE_CAUTION, GRADE_RISKY, buildRoutePolylineKm } from "@/lib/routes/recon-geo";
+import type { CctvMarker, Hazard } from "@/lib/routes/recon-geo";
+import { buildRoutePolylineKm } from "@/lib/routes/recon-geo";
 import { createLocalProjection } from "@/lib/geo/local-projection";
 import {
   CONTOUR_STEP_M,
-  pointGrades,
   prepareHeights,
   quantize,
   sampleHeight,
@@ -37,6 +36,8 @@ export interface TerrainSceneProps {
   route: Route;
   /** null＝地形載入中：Canvas 保持掛載、只清空場景，避免換路線時整個畫布卸載重建 */
   terrain: TerrainGrid | null;
+  /** 判定用示警（天氣）：路線依此著色，與剖面、示警清單一致 */
+  hazards: Hazard[];
   markers: CctvMarker[];
   positionKm: number;
   activeMarkerId: string | null;
@@ -63,13 +64,23 @@ export default function TerrainScene(props: TerrainSceneProps) {
 }
 
 const yOf = (e: number) => (e / 1000) * EXAGGERATION;
-const levelOf = (g: number) => {
-  const a = Math.abs(g);
-  return a >= GRADE_RISKY ? "risky" : a >= GRADE_CAUTION ? "caution" : "ok";
-};
+/** 單點示警（路況事件）沒有長度，前後各延伸一點才看得到 */
+const POINT_HAZARD_HALF_KM = 0.2;
 
-/** 地形、台座、路線的幾何：只在路線或地形改變時重建 */
-function buildModel(route: Route, terrain: TerrainGrid, lowDetail: boolean) {
+/** 該里程最嚴重的示警等級 */
+function levelAtKm(hazards: Hazard[], km: number): keyof typeof ROUTE_COLOR {
+  let level: keyof typeof ROUTE_COLOR = "ok";
+  for (const h of hazards) {
+    const pad = h.endKm > h.startKm ? 0 : POINT_HAZARD_HALF_KM;
+    if (km < h.startKm - pad || km > h.endKm + pad) continue;
+    if (h.level === "risky") return "risky";
+    level = "caution";
+  }
+  return level;
+}
+
+/** 地形、台座、路線的幾何：只在路線、地形或示警改變時重建 */
+function buildModel(route: Route, terrain: TerrainGrid, lowDetail: boolean, hazards: Hazard[]) {
   const proj = createLocalProjection(terrain.bbox);
   const exX = proj.widthKm;
   const exZ = proj.depthKm;
@@ -125,7 +136,7 @@ function buildModel(route: Route, terrain: TerrainGrid, lowDetail: boolean) {
   skirtGeo.setAttribute("position", new THREE.Float32BufferAttribute(skirtPos, 3));
   skirtGeo.computeVertexNormals();
 
-  // ── 路線：貼地、依坡度著色 ──
+  // ── 路線：貼地、依示警著色（與判定同一套等級） ──
   const poly = buildRoutePolylineKm(route);
   const lift = (lowDetail ? 0.03 : 0.016) * EXAGGERATION;
   const routePts = (poly?.points ?? []).map(([lat, lon]) => {
@@ -133,31 +144,18 @@ function buildModel(route: Route, terrain: TerrainGrid, lowDetail: boolean) {
     return new THREE.Vector3(proj.x(lon), yOf(e) + lift, proj.z(lat));
   });
   const kms = poly?.cumulativeKm ?? [];
-  const profile = route.elevationProfile ?? [];
-  const grades = pointGrades(profile);
-  const gradeAtKm = (km: number) => {
-    let lo = 0;
-    let hi = profile.length - 1;
-    if (hi < 1) return 0;
-    while (hi - lo > 1) {
-      const mid = (lo + hi) >> 1;
-      if (profile[mid]![0] <= km) lo = mid;
-      else hi = mid;
-    }
-    return grades[lo] ?? 0;
-  };
 
   let routeGeo: THREE.TubeGeometry | null = null;
   if (routePts.length >= 2) {
     const tubular = Math.min(1500, routePts.length * 3);
     const radial = 8;
     routeGeo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(routePts), tubular, lowDetail ? 0.06 : 0.042, radial);
-    // TubeGeometry 以弧長取樣，換算成里程再查坡度
+    // TubeGeometry 以弧長取樣，換算成里程再查該處示警
     const totalKm = kms[kms.length - 1] ?? 0;
     const vcols = new Float32Array(routeGeo.attributes.position!.count * 3);
     const c = new THREE.Color();
     for (let seg = 0; seg <= tubular; seg++) {
-      c.set(ROUTE_COLOR[levelOf(gradeAtKm((seg / tubular) * totalKm))]);
+      c.set(ROUTE_COLOR[levelAtKm(hazards, (seg / tubular) * totalKm)]);
       for (let r = 0; r <= radial; r++) vcols.set([c.r, c.g, c.b], (seg * (radial + 1) + r) * 3);
     }
     routeGeo.setAttribute("color", new THREE.BufferAttribute(vcols, 3));
@@ -203,6 +201,7 @@ function nearestKm(model: Model, point: THREE.Vector3): number {
 function SceneContent({
   route,
   terrain,
+  hazards,
   markers,
   positionKm,
   activeMarkerId,
@@ -210,7 +209,10 @@ function SceneContent({
   onPickKm,
   lowDetail = false,
 }: TerrainSceneProps & { terrain: TerrainGrid }) {
-  const model = useMemo(() => buildModel(route, terrain, lowDetail), [route, terrain, lowDetail]);
+  const model = useMemo(
+    () => buildModel(route, terrain, lowDetail, hazards),
+    [route, terrain, lowDetail, hazards]
+  );
   useEffect(
     () => () => {
       model.terrainGeo.dispose();
