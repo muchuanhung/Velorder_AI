@@ -71,13 +71,15 @@ type CWBLocation = {
   WeatherElement?: WeatherElement[];
 };
 
-function pickLocOrFirst(arr: CWBLocation[] | undefined, district?: string): CWBLocation | undefined {
+/** 去掉鄉鎮市區後綴並統一「臺」：舊制「金山鄉」「三重市」可對上 CWB 的「金山區」「三重區」 */
+const districtStem = (name: string) => name.replace(/台/g, "臺").replace(/[鄉鎮市區]$/, "");
+
+/** 未指定 district 時取縣市第一個鄉鎮；有指定卻找不到時回 undefined，不改用別區天氣 */
+function pickLocation(arr: CWBLocation[] | undefined, district?: string): CWBLocation | undefined {
   if (!arr?.length) return undefined;
-  if (district) {
-    const found = arr.find((loc) => loc.LocationName?.includes(district));
-    if (found) return found;
-  }
-  return arr[0];
+  if (!district) return arr[0];
+  const target = districtStem(district);
+  return arr.find((loc) => loc.LocationName && districtStem(loc.LocationName) === target);
 }
 
 function getElementValue(elements: WeatherElement[] | undefined, name: string): Record<string, string> | undefined {
@@ -232,8 +234,9 @@ export async function getDistrictWeather(county: string, district?: string): Pro
   const locations = forecastData?.records?.Locations;
   const locs = Array.isArray(locations) ? locations : locations ? [locations] : [];
   const countyObj = locs[0] as { Location?: CWBLocation[] } | undefined;
-  const loc = pickLocOrFirst(countyObj?.Location, district) ?? countyObj?.Location?.[0];
-  if (!loc?.WeatherElement?.length) throw new CwbError("無法取得該地區預報", 404);
+  const loc = pickLocation(countyObj?.Location, district);
+  if (!loc) throw new CwbError(`找不到行政區：${cwbCounty}${district ?? ""}`, 404);
+  if (!loc.WeatherElement?.length) throw new CwbError("無法取得該地區預報", 404);
 
   const weatherElements: WeatherElement[] = loc.WeatherElement;
   const getVal = (name: string) => getElementValue(weatherElements, name);
