@@ -16,9 +16,18 @@ const NAV: { id: AppSection; label: string; href: string; icon: LucideIcon }[] =
  * 全站外框：桌機頂部導覽、手機底部分頁列。
  * 目前頁面由呼叫端以 current 傳入，整個外框是 Server Component、不需要客戶端 JS。
  */
-export function AppShell({ current, children }: { current: AppSection; children: React.ReactNode }) {
+export function AppShell({
+  current,
+  fullBleed = false,
+  children,
+}: {
+  current: AppSection;
+  /** 地圖等全版面頁：內容填滿頂列與底部分頁列之間，不加寬度限制與內距 */
+  fullBleed?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-dvh">
+    <div className={cn(fullBleed ? "flex h-dvh flex-col" : "min-h-dvh")}>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-2"
@@ -54,7 +63,11 @@ export function AppShell({ current, children }: { current: AppSection; children:
 
       <main
         id="main-content"
-        className="mx-auto max-w-6xl px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-6 sm:px-6 md:pb-12 md:pt-10"
+        className={cn(
+          fullBleed
+            ? "relative min-h-0 flex-1 pb-[calc(env(safe-area-inset-bottom)+4.25rem)] md:pb-0"
+            : "mx-auto max-w-6xl px-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] pt-6 sm:px-6 md:pb-12 md:pt-10"
+        )}
       >
         {children}
       </main>

@@ -219,6 +219,8 @@ export interface TownshipFromTopo {
   path: string;
   center: [number, number];
   rainProbability: number;
+  /** 是否取得該縣市降雨機率；false 時 rainProbability 為 0 但不代表不會下雨 */
+  hasRain: boolean;
   isCurrentDistrict: boolean;
 }
 
@@ -274,10 +276,9 @@ export function getTaiwanTownshipsFromTopojson(
     const cx = centers.reduce((s, c) => s + c[0], 0) / centers.length;
     const cy = centers.reduce((s, c) => s + c[1], 0) / centers.length;
 
-    const rainProbability =
-      countyRainfall != null && countyDisplay in countyRainfall
-        ? countyRainfall[countyDisplay] ?? 0
-        : 0;
+    const rain = countyRainfall?.[countyDisplay];
+    const hasRain = typeof rain === "number";
+    const rainProbability = hasRain ? rain : 0;
 
     results.push({
       id: toId(countyDisplay, town),
@@ -288,6 +289,7 @@ export function getTaiwanTownshipsFromTopojson(
       path: fullPath,
       center: [cx, cy],
       rainProbability,
+      hasRain,
       isCurrentDistrict: normalizeForMatch(nameZh) === normalizeForMatch(effectiveLocation),
     });
   }
