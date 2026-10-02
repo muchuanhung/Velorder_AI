@@ -5,6 +5,7 @@
 
 import { getCWBdatasetId, normalizeCountyForCWB } from "@/lib/cwb/county-map";
 import { isForecastStale } from "@/lib/cwb/forecast-freshness";
+import { parseRainfallStations, summarizeRainfall, type LatLon, type RainfallSummary } from "@/lib/cwb/rainfall-stations";
 
 const CWB_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
 /** 伺服器在 Vercel 上是 UTC；時段標籤與「今天」一律以台灣時間計算 */
@@ -47,6 +48,9 @@ export type CWBWeatherResponse = {
   rainfall12h: Array<{ startTime: string; endTime: string; pop: number; label: string; endLabel: string }>;
   verdict: string;
   verdictType: "good" | "caution" | "bad";
+  /** 即時時雨量（mm/hr）；rainfallScope 為 county 時是整個縣市測站的最大值，不代表該地點 */
+  rainfallMmPerHr: number | null;
+  rainfallScope: RainfallSummary["scope"];
 };
 
 /** 對應 HTTP 狀態的錯誤，供 API route 轉成回應 */
@@ -87,120 +91,6 @@ function getElementValue(elements: WeatherElement[] | undefined, name: string): 
   const item = elements.find((e) => e.ElementName === name);
   const firstTime = item?.Time?.[0];
   return firstTime?.ElementValue?.[0];
-}
-
-/** 優先使用路線附近測站的搜尋半徑（km） */
-const NEARBY_STATION_RADIUS_KM = 3.0;
-
-interface RainfallParseOptions {
-  /** 路線/路段附近的座標點，用於篩選附近測站 */
-  nearbyCoords?: Array<{ lat: number; lon: number }>;
-}
-
-interface RainfallParseResult {
-  /** 雨量值 (mm/hr)，null 表示無資料 */
-  rainfall: number | null;
-  /** 'nearby' = 使用路線附近測站; 'countywide' = 退回縣市全域; 'none' = 無資料 */
-  source: "nearby" | "countywide" | "none";
-  /** 使用的測站數量 */
-  stationCount: number;
-}
-
-/**
- * 簡易 haversine 距離計算（km）
- */
-function haversineKmSimple(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-/**
- * 從 O-A0002-002 回傳中取得雨量 (mm/hr)
- *
- * 行為說明：
- * 1. 若提供 nearbyCoords，優先取距離這些座標點 ≤3 km 內的測站，取其中最大雨量
- * 2. 若無附近測站（或未提供座標），退回該縣市全域的最大雨量
- * 3. 若該縣市完全無測站資料，回傳 null
- *
- * @returns RainfallParseResult 包含雨量值與來源說明
- */
-function parseRainfallMmPerHr(
-  rainData: unknown,
-  county: string,
-  options: RainfallParseOptions = {}
-): RainfallParseResult {
-  const { nearbyCoords } = options;
-  const countyNorm = county.replace(/台/g, "臺");
-
-  const rec = (rainData as { records?: Record<string, unknown> })?.records;
-  const stations = (rec?.Station ?? rec?.station) as unknown[] | undefined;
-  const arr = Array.isArray(stations) ? stations : stations ? [stations] : [];
-
-  // 解析所有該縣市測站的雨量與座標
-  type StationData = { rain: number; lat?: number; lon?: number };
-  const countyStations: StationData[] = [];
-
-  for (const s of arr) {
-    const st = s as Record<string, unknown>;
-    const stationCounty = String(st?.CountyName ?? st?.countyName ?? "");
-    if (!stationCounty.includes(countyNorm) && !stationCounty.includes(county)) continue;
-
-    const rainVal =
-      st?.Rain ??
-      st?.rain ??
-      st?.Precipitation ??
-      st?.precipitation ??
-      (st?.WeatherElement as Array<{ ElementName?: string; ElementValue?: Array<{ value?: string }> }>)?.find?.((e) =>
-        /雨量|RAIN|Rain/i.test(e.ElementName ?? "")
-      )?.ElementValue?.[0]?.value;
-
-    const r = parseFloat(String(rainVal ?? "0").replace(/^-$|^T$|^X$/i, "0"));
-    if (Number.isNaN(r)) continue;
-
-    // 嘗試取得測站座標
-    const stLat = parseFloat(String(st?.StationLatitude ?? st?.stationLatitude ?? ""));
-    const stLon = parseFloat(String(st?.StationLongitude ?? st?.stationLongitude ?? ""));
-    // 部分資料結構可能用 GeoInfo
-    const geoInfo = st?.GeoInfo as Record<string, unknown> | undefined;
-    const coords = geoInfo?.Coordinates as Record<string, unknown> | undefined;
-    const coordSys = coords?.CoordinateSystem as Record<string, unknown> | undefined;
-    const geoLat = parseFloat(String(coordSys?.lat ?? geoInfo?.Lat ?? ""));
-    const geoLon = parseFloat(String(coordSys?.lon ?? geoInfo?.Lon ?? ""));
-
-    const lat = Number.isFinite(stLat) ? stLat : Number.isFinite(geoLat) ? geoLat : undefined;
-    const lon = Number.isFinite(stLon) ? stLon : Number.isFinite(geoLon) ? geoLon : undefined;
-
-    countyStations.push({ rain: r, lat, lon });
-  }
-
-  if (countyStations.length === 0) {
-    return { rainfall: null, source: "none", stationCount: 0 };
-  }
-
-  // 若提供座標，嘗試找附近測站
-  if (nearbyCoords && nearbyCoords.length > 0) {
-    const nearbyStations = countyStations.filter((st) => {
-      if (st.lat == null || st.lon == null) return false;
-      return nearbyCoords.some(
-        (coord) => haversineKmSimple(coord.lat, coord.lon, st.lat!, st.lon!) <= NEARBY_STATION_RADIUS_KM
-      );
-    });
-
-    if (nearbyStations.length > 0) {
-      const maxRain = Math.max(...nearbyStations.map((st) => st.rain));
-      return { rainfall: maxRain, source: "nearby", stationCount: nearbyStations.length };
-    }
-    // 無附近測站，退回縣市全域
-  }
-
-  // 縣市全域最大雨量
-  const maxRain = Math.max(...countyStations.map((st) => st.rain));
-  return { rainfall: maxRain, source: "countywide", stationCount: countyStations.length };
 }
 
 /** 降雨判斷：雨量 mm/hr → verdict，windMs 用於雨+風體感判斷 */
@@ -261,9 +151,14 @@ const todayInTaipei = () => new Date().toLocaleDateString("sv-SE", { timeZone: T
 
 /**
  * 取得鄉鎮天氣。county 為縣市（接受「台」「臺」與舊制名稱），district 為鄉鎮區。
+ * near 為使用者位置或路線取樣點：提供時即時雨量只採 3 km 內測站，附近沒有測站就不拿雨量判斷。
  * 失敗時丟出 CwbError（帶 HTTP 狀態）。
  */
-export async function getDistrictWeather(county: string, district?: string): Promise<CWBWeatherResponse> {
+export async function getDistrictWeather(
+  county: string,
+  district?: string,
+  { near = [] }: { near?: LatLon[] } = {}
+): Promise<CWBWeatherResponse> {
   const key = process.env.CWB_API_KEY;
   if (!key) throw new CwbError("CWB_API_KEY 未設定", 500);
 
@@ -305,17 +200,16 @@ export async function getDistrictWeather(county: string, district?: string): Pro
     const freshRes = await fetch(forecastUrl, { cache: "no-store" });
     if (freshRes.ok) forecastData = await freshRes.json();
   }
-  let rainfallMmPerHr: number | null = null;
+  let rainfall: RainfallSummary = { mmPerHr: null, scope: "none", stationCount: 0 };
   if (rainRes.ok) {
     try {
-      // 目前 getDistrictWeather 不傳入路線座標，使用縣市全域雨量；
-      // 未來可從呼叫端傳入 nearbyCoords 以優先使用附近測站
-      const rainfallResult = parseRainfallMmPerHr(await rainRes.json(), cwbCounty);
-      rainfallMmPerHr = rainfallResult.rainfall;
+      rainfall = summarizeRainfall(parseRainfallStations(await rainRes.json(), cwbCounty), near);
     } catch {
       // 雨量 API 失敗不影響主流程
     }
   }
+  // 有指定位置卻沒有附近測站時，縣市最大值不可當成在地雨量拿來判斷
+  const localRainMmPerHr = near.length > 0 && rainfall.scope !== "nearby" ? null : rainfall.mmPerHr;
   const sunsetData = await sunsetRes.json();
 
   const success = forecastData?.success === "true" || forecastData?.success === true;
@@ -388,7 +282,7 @@ export async function getDistrictWeather(county: string, district?: string): Pro
   const sunsetTime = sunsetLoc?.time?.find((t: { Date?: string }) => t.Date === today);
   const sunsetStr = sunsetTime?.SunSetTime ?? "17:45";
 
-  const { verdict, verdictType } = computeVerdict(temp, popFirst, uvIndex, windMs, rainfallMmPerHr);
+  const { verdict, verdictType } = computeVerdict(temp, popFirst, uvIndex, windMs, localRainMmPerHr);
 
   return {
     temperature: temp,
@@ -404,5 +298,7 @@ export async function getDistrictWeather(county: string, district?: string): Pro
     rainfall12h,
     verdict,
     verdictType,
+    rainfallMmPerHr: rainfall.mmPerHr,
+    rainfallScope: rainfall.scope,
   };
 }
