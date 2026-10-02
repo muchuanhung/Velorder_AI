@@ -18,7 +18,7 @@ apps/api/
 ├── alembic/versions/        # 0001：members + routes（MySQL 另建 POINT SRID 4326 generated column）
 ├── tests/                   # pytest，SQLite + 假 verifier + 本機/moto 儲存
 ├── Dockerfile               # entrypoint 先 alembic upgrade head 再起 uvicorn
-└── docker-compose.yml       # mysql 8.4 + minio（+ 建 bucket）+ api；redis 為選用 profile
+└── docker-compose.yml       # mysql 8.4 + minio（啟動時建 bucket）+ api；redis 為選用 profile
 ```
 
 依賴方向：`routers → services → models / integrations`。router 不碰 SQL，service 不碰 HTTP（丟 `AppError` 子類別，由 `main.py` 轉成狀態碼）。
@@ -36,6 +36,8 @@ docker compose --profile redis up    # 需要 Redis stub 時
 - 預設 `AUTH_PROVIDER=fake`，不需 Firebase 即可測：`Authorization: Bearer fake:<uid>[:<email>]`
 - 改用真的 Firebase：建立 `.env`（參考 `.env.example`），設 `AUTH_PROVIDER=firebase` 與 `FIREBASE_PROJECT_ID`（或 `FIREBASE_SERVICE_ACCOUNT_JSON`）
 - MinIO console：http://localhost:9001（帳密見 compose 預設值，只限本機）
+- MinIO 映像檔用 `bitnamilegacy/minio:2025.4.22`：Docker Hub 的 `minio/minio`、`minio/mc` 已不再公開提供，quay.io 也需要登入。此為封存版、不再更新，只供本機 mock
+- 若 API 容器連不到 `mysql`（`Can't connect ... (timed out)`），先確認主機防火牆沒有擋 Docker bridge 的 FORWARD 流量（例如 legacy iptables 的 `FORWARD` policy 為 `DROP`）
 - 容器啟動會自動 `alembic upgrade head`；`RUN_MIGRATIONS=false` 可關閉
 
 ### 不用 Docker
