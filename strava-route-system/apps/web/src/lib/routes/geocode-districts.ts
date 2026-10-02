@@ -12,95 +12,64 @@ interface Point {
   lon: number;
 }
 
-/** 每 ~0.5 km 取樣一次以達成真實路段涵蓋，可調整此常數 */
+type TownshipLookup = (lon: number, lat: number) => { county: string; town: string } | null;
+
+/** 沿軌跡取樣間距（km）；鄉鎮區最窄處約 1 km，0.5 km 才不會漏掉短暫穿越的行政區 */
 export const SEGMENT_SAMPLE_INTERVAL_KM = 0.5;
 
 /**
- * 依 GPX 軌跡約每 0.5 km 取樣，用本地 TopoJSON 找出涵蓋行政區
- * 連續相同行政區合併成一段，記錄 startKm/endKm（合併為 sampleKms 陣列的首尾）
+ * 沿軌跡每 SEGMENT_SAMPLE_INTERVAL_KM（含終點）內插取樣，反查行政區；
+ * 連續落在同一行政區的取樣合併為一段，sampleKms 依里程遞增，首尾即該段涵蓋範圍。
+ * 環狀路線回到同一區時會是另一段（同名，不同里程）。查不到行政區的取樣點（海上、邊界外）略過。
  */
-export function getSegmentsFromPoints(points: Point[]): RouteSegment[] {
+export function getSegmentsFromPoints(
+  points: Point[],
+  lookup: TownshipLookup = findTownshipDetailByLngLat
+): RouteSegment[] {
   if (points.length < 2) return [];
-
-  const n = points.length;
 
   // 累計里程，與 parseGpxToRoute 的 elevationProfile 同一算法
   const cumulKm: number[] = [0];
-  for (let i = 1; i < n; i++) {
+  for (let i = 1; i < points.length; i++) {
     const a = points[i - 1]!;
     const b = points[i]!;
     cumulKm.push(cumulKm[i - 1]! + haversineKm(a.lat, a.lon, b.lat, b.lon));
   }
+  const totalKm = cumulKm[cumulKm.length - 1]!;
 
-  const totalKm = cumulKm[n - 1] ?? 0;
+  const sampleCount = Math.floor(totalKm / SEGMENT_SAMPLE_INTERVAL_KM);
+  const sampleKms = Array.from({ length: sampleCount + 1 }, (_, i) => i * SEGMENT_SAMPLE_INTERVAL_KM);
+  if (totalKm - sampleKms[sampleKms.length - 1]! > 1e-9) sampleKms.push(totalKm);
 
-  // 計算取樣點：每 SEGMENT_SAMPLE_INTERVAL_KM 取樣一次，至少包含起點與終點
-  const sampleKms: number[] = [0];
-  let nextSampleKm = SEGMENT_SAMPLE_INTERVAL_KM;
-  while (nextSampleKm < totalKm) {
-    sampleKms.push(nextSampleKm);
-    nextSampleKm += SEGMENT_SAMPLE_INTERVAL_KM;
-  }
-  if (sampleKms[sampleKms.length - 1] !== totalKm) {
-    sampleKms.push(totalKm);
-  }
-
-  // 找出每個取樣里程對應的軌跡點索引
-  const sampleIndices = sampleKms.map((targetKm) => {
-    // 二分搜尋找最接近的累計里程
-    let lo = 0;
-    let hi = n - 1;
-    while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2);
-      if ((cumulKm[mid] ?? 0) < targetKm) lo = mid + 1;
-      else hi = mid;
-    }
-    // 找最接近的
-    if (lo > 0 && Math.abs((cumulKm[lo - 1] ?? 0) - targetKm) < Math.abs((cumulKm[lo] ?? 0) - targetKm)) {
-      return lo - 1;
-    }
-    return lo;
-  });
-
-  // 依序反查行政區，連續相同行政區合併
-  type SegmentItem = { county: string; town: string; startKm: number; endKm: number; sampleKms: number[] };
-  const items: SegmentItem[] = [];
-
-  for (let i = 0; i < sampleKms.length; i++) {
-    const idx = sampleIndices[i]!;
-    const pt = points[idx]!;
-    const km = sampleKms[i]!;
-    const detail = findTownshipDetailByLngLat(pt.lon, pt.lat);
-
+  const segments: RouteSegment[] = [];
+  let lastKey = "";
+  let j = 1;
+  for (const km of sampleKms) {
+    while (j < cumulKm.length - 1 && cumulKm[j]! < km) j++;
+    const a = points[j - 1]!;
+    const b = points[j]!;
+    const span = cumulKm[j]! - cumulKm[j - 1]!;
+    const t = span > 0 ? Math.min(1, Math.max(0, (km - cumulKm[j - 1]!) / span)) : 0;
+    const detail = lookup(a.lon + (b.lon - a.lon) * t, a.lat + (b.lat - a.lat) * t);
     if (!detail) continue;
 
-    const key = `${detail.county}-${detail.town}`;
-    const last = items[items.length - 1];
-
-    if (last && `${last.county}-${last.town}` === key) {
-      // 連續相同行政區，延長 endKm 並補記里程
-      last.endKm = km;
-      last.sampleKms.push(km);
-    } else {
-      // 新行政區
-      items.push({
-        county: detail.county,
-        town: detail.town,
-        startKm: km,
-        endKm: km,
-        sampleKms: [km],
-      });
+    const key = `${detail.county}|${detail.town}`;
+    const last = segments[segments.length - 1];
+    if (last && key === lastKey) {
+      last.sampleKms!.push(km);
+      continue;
     }
+    lastKey = key;
+    segments.push({
+      district: detail.town,
+      districtZh: detail.town,
+      county: detail.county,
+      rainProbability: 0,
+      windSpeed: 0,
+      temperature: 0,
+      condition: "clear",
+      sampleKms: [km],
+    });
   }
-
-  return items.map(({ county, town, sampleKms }) => ({
-    district: town,
-    districtZh: town,
-    county,
-    rainProbability: 0,
-    windSpeed: 0,
-    temperature: 0,
-    condition: "clear" as const,
-    sampleKms,
-  }));
+  return segments;
 }

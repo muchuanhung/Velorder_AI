@@ -14,6 +14,7 @@ import {
   deriveStages,
   nearestByKm,
   routeTotalKm,
+  stageAtKm,
   summarizeVerdict,
   type CctvMarker,
   type ChartDataPoint,
@@ -140,7 +141,7 @@ export function RouteSimClient() {
     const near = nearestByKm(markers, km);
     return near && Math.abs(near.km - km) <= COVER_KM ? near : null;
   }, [markers, km]);
-  const currentStage = useMemo(() => nearestByKm(stages, km), [stages, km]);
+  const currentStage = useMemo(() => stageAtKm(stages, km), [stages, km]);
   const currentElevation = useMemo(() => nearestByKm(chartData, km)?.elevation ?? 0, [chartData, km]);
   const peakElevation = useMemo(
     () => (chartData.length ? Math.max(...chartData.map((d) => d.elevation)) : 0),

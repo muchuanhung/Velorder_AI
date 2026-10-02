@@ -12,6 +12,7 @@ import {
   summarizeVerdict,
   nearestByKm,
   routeTotalKm,
+  stageAtKm,
   type ChartDataPoint,
 } from "@/lib/routes/recon-geo";
 import { eventHazards } from "@/lib/routes/road-events";
@@ -68,7 +69,11 @@ export function ReconView({
       ),
     [hazards, roadEvents?.events]
   );
-  const verdict = useMemo(() => summarizeVerdict(verdictHazards, stages), [verdictHazards, stages]);
+  const eventsFailed = roadEvents?.error ? null : roadEvents?.failedCounties;
+  const verdict = useMemo(
+    () => summarizeVerdict(verdictHazards, stages, { eventsFailed }),
+    [verdictHazards, stages, eventsFailed]
+  );
 
   const chartData = useMemo<ChartDataPoint[]>(
     () => (route.elevationProfile ?? []).map(([km, elevation]) => ({ km, elevation })),
@@ -81,7 +86,7 @@ export function ReconView({
 
   const { positionKm, moveTo, activeMarker } = useReconPosition(route.id, cctvMarkers, initialMarker);
 
-  const currentStage = useMemo(() => nearestByKm(stages, positionKm), [stages, positionKm]);
+  const currentStage = useMemo(() => stageAtKm(stages, positionKm), [stages, positionKm]);
   const currentElevation = useMemo(
     () => nearestByKm(chartData, positionKm)?.elevation ?? 0,
     [chartData, positionKm]
