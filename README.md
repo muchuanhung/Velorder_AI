@@ -1,80 +1,119 @@
-<img src="https://github.com/user-attachments/assets/71bff9ef-a15e-42be-8c98-64f7fc981cfe" alt="App-icon" width="100" />
+<img src="https://github.com/user-attachments/assets/71bff9ef-a15e-42be-8c98-64f7fc981cfe" alt="Routecast app icon" width="100" />
 
-## 專案名稱
-#  Velorder_AI(Strava + 推薦路線系統（AI 自動推薦跑步 / 騎行路線)
+# Routecast
 
-##  🚴‍♂️專案介紹
-> Strava Route AI 是一個結合 Strava 活動資料、即時氣象與路況安全示警系統。使用者可以根據危險天氣或路況變化時收到即時警示。
+[![CI](https://github.com/muchuanhung/Velorder_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/muchuanhung/Velorder_AI/actions/workflows/ci.yml)
 
-## 🗂️ 主要分類（模組化說明）
-### 認證與資料整合（Integration）
-> 功能：Strava OAuth、資料匯入（活動、路線、segments）、定期同步（webhook / cron）。
-> 技術範例：Strava API、OAuth2、Webhook、後端 jobs。
+> 出發前判讀台灣單車、跑步與越野路線的天氣與路況風險。
 
-### 資料庫與 Schema（Storage）
-> 功能：使用者 profile、歷史活動、儲存推薦路線（GPX / GeoJSON）、路線評分紀錄、偏好設定。
-> 技術範例：PostgreSQL + PostGIS（地理空間查詢）、Prisma schema。
+Routecast 沿 GPX 軌跡每 0.5 km 取樣反查行政區，依騎經各路段的預估時間（20 km/h）挑選 CWB 鄉鎮預報時段，再套上測站雨量與 TDX 路況事件，對每條路線給出「安全／注意／危險／未判定」的判讀；天氣缺漏或沿線縣市路況取不到時判為未判定，不宣稱安全。
 
-### 即時資料整合（Real-time Feeds）
-> 功能：氣象（CWB 或其他）、交通（TDX）、道路事件（事故/施工）、使用者即時位置上報。
-> 技術範例：第三方 API、Convex 或 WebSocket、Inngest for event triggers。
+（GitHub repo 沿用舊名 `Velorder_AI`，產品名稱為 Routecast。）
 
-### 前端展示與互動（Frontend）
-> 功能：地圖可視化（GPX/GeoJSON）、路線編輯、偏好設定、活動檢視、即時通知。
-> 技術範例：Next.js 16 + TypeScript + Tailwind、Mapbox/Leaflet、React Query。
+## 功能
 
-### 背景處理與運算（Background / Compute）
-> 功能：重運算（route generation、elevation processing）、影片/圖像渲染（如要產生路線快照）、批次同步。
-> 技術範例：Cloud Run / Cloud Functions、Inngest、容器化 workers。
+| 頁面 | 說明 |
+|------|------|
+| `/dashboard` 今日判讀 | 各路線的判定、示警路段與 ETA 降雨時段；天氣卡片優先採用定位 3 km 內的測站雨量 |
+| `/routes` 路線示警 | 路線列表與單一路線偵察：高度圖、依里程對應的行政區路段、沿線 CCTV |
+| `/maps` 降雨地圖 | 全台縣市降雨預報（`/api/weather/cwb/all-counties`） |
+| `/profile` | 個人資料與 Strava 連結（可用 `NEXT_PUBLIC_STRAVA_ENABLED=false` 關閉） |
+| `/routes/private` 私人路線 | 登入即可使用，不需付費；上傳私人 GPX 功能開發中 |
+| `/lab/route-sim` | 3D 路線沙盤（實驗；正式環境需 `NEXT_PUBLIC_LAB_ENABLED=true`） |
 
-### AI 與提示工程（AI / LLM）
-> 功能：自然語言偏好解析（user prompt → structured preferences）、生成路線描述、候選過濾邏輯、可選的 ML 模型做個人化推薦。
-> 技術範例：OpenAI / LLM、prompt templates、微調／上下文回饋 loop。
+## 技術架構
 
-### 安全與權限（Auth & Ops）
-> 功能：使用者驗證、Strava token 管理、API rate limit、日誌與監控。
-> 技術範例：Clerk（或 Auth0）、Redis（token cache）、Cloud Monitoring / Sentry。
+| 範疇 | 實際使用 |
+|------|----------|
+| 前端／API | Next.js 16（App Router、Route Handlers）、React 19、TypeScript、Tailwind CSS v4、Radix UI、three.js（`/lab`） |
+| 認證 | Firebase Authentication（client 登入，server 以 Firebase Admin 驗證 `firebase-id-token` cookie） |
+| 資料儲存 | Firestore（Strava token、活動、CCTV 清單）、Firebase Storage（`gpx/routes/*.gpx` 公開路線） |
+| 背景工作 | Inngest（Strava 同步、TDX CCTV 每日同步） |
+| 外部資料 | CWB 開放資料（`F-D0047-*` 鄉鎮預報、`O-A0002-002` 測站雨量）、TDX（路況事件、CCTV）、Strava API（OAuth 與活動） |
+| 行政區反查 | 內建台灣鄉鎮 TopoJSON + bbox 索引，本地 point-in-polygon，不需外部地理服務 |
+| 部署 | Vercel（見 `strava-route-system/vercel.json`） |
+| 測試／CI | Playwright（unit 與 E2E project）、GitHub Actions 跑型別檢查與 unit 測試 |
 
+## 專案結構
+
+```
+strava-route-system/          # pnpm + Turborepo monorepo
+├── apps/web/                 # Routecast 主程式（Next.js）
+│   ├── src/app/              # 頁面與 /api route handlers
+│   ├── src/lib/              # cwb、tdx、routes、firebase 等邏輯
+│   ├── src/inngest/          # Inngest functions
+│   ├── tests/{unit,e2e}/     # Playwright 測試
+│   └── docs/                 # TDX CCTV、Strava 品牌規範等設定文件
+├── apps/docs/                # create-next-app 範本，尚未使用
+└── packages/
+    ├── auth/                 # Strava OAuth token 交換與 refresh
+    ├── ui/                   # 共用元件
+    ├── eslint-config/
+    └── typescript-config/
+```
+
+## 背景工作（Inngest）
+
+| Function | 觸發 | 內容 |
+|----------|------|------|
+| `strava-sync-activities` | 事件 `strava/sync-activities`（完成 Strava OAuth 後送出） | 拉取該使用者最新活動並寫入 Firestore |
+| `strava-sync-all` | Cron `0 * * * *`（每小時） | 對所有有效 token 送出 `strava/sync-activities` |
+| `tdx-cctv-sync` | Cron `0 4 * * *`（台灣 12:00） | 同步 TDX CCTV 清單到 Firestore；開發時也可 `POST /api/cctv/sync` 手動觸發 |
+
+## 本機開發
+
+需求：Node 22（見 `strava-route-system/.nvmrc`）、pnpm 9。
+
+```bash
+cd strava-route-system
+pnpm install
+pnpm --filter web dev                       # http://localhost:3000
+npx inngest-cli@latest dev -u http://localhost:3000/api/inngest   # 另開終端，需要背景工作時
+```
+
+在 `strava-route-system/apps/web/.env.local` 設定環境變數（依需要的功能填寫）：
+
+```bash
+# Firebase（必填）
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+FIREBASE_SERVICE_ACCOUNT_JSON=              # service account JSON 字串
+
+# 天氣與路況（缺任一項時路線判讀為「未判定」；缺 TDX 時也沒有 CCTV）
+CWB_API_KEY=
+TDX_CLIENT_ID=
+TDX_CLIENT_SECRET=
+
+# Strava（選用）
+STRAVA_CLIENT_ID=
+STRAVA_CLIENT_SECRET=
+STRAVA_REDIRECT_URI=http://localhost:3000/api/strava
+NEXT_PUBLIC_STRAVA_ENABLED=true
+
+# 其他
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+CCTV_SYNC_SECRET=                           # production 手動觸發 /api/cctv/sync 用
+# 正式環境的 Inngest 另需 INNGEST_EVENT_KEY、INNGEST_SIGNING_KEY；本機 dev server 不需要
+```
+
+公開路線來自 Firebase Storage 的 `gpx/routes/*.gpx`，上傳後最多 10 分鐘生效（server 端快取）。
+
+## 測試
+
+```bash
+cd strava-route-system/apps/web
+pnpm test:unit    # 純函式，不需瀏覽器或 server，數秒內完成（CI 執行此項）
+pnpm test:e2e     # 會先 next build 再於 3100 port 啟動；需 npx playwright install
+```
+
+Dashboard E2E 需要在 `.env.local` 設定 `E2E_USER_EMAIL`／`E2E_USER_PASSWORD`，未設定時自動跳過。
 
 ## 專案團隊
-| 開發人員 | 負責開發範圍 |
-| -------- | -------------------------------------- |
-| Muchuanhung    | 全端開發 |
 
-## 專案使用技術
-| 技術 | 用途 |
-|------|------|
-| **Next.js 16 + TypeScript + Tailwind v4；Mapbox / react-leafle** | 前端 |
-| **tRPC（type-safe）或 Fastify/Nest（REST）** | API Layer |
-| **PostgreSQL + PostGIS，Prisma 作為 ORM** | 資料庫 |
-| **Convex（live queries）或 WebSocket；React Query 前端 cache** | 即時同步 |
-| **Inngest（event-driven）+ Cloud Run workers** | Background jobs |
-| **OSRM / GraphHopper 或自訂 A*/Dijkstra + OSM data** | Route Computation |
-| **OpenAI（prompt → structured preference）；選擇性使用 ML 模型做個性化** | AI |
-| **Clerk（或 Auth0） + Strava OAuth** | Auth |
-| **GCS / S3（GPX/快照等大型檔案）** | Storage |
-| **GitHub Actions + Turborepo Remote Cache（加速 build）** | CI / CD |
-
-## 📡 事件驅動背景流程（Inngest）
-
-| 事件 | 觸發點 | 處理內容 |
-|------|--------|----------|
-| `strava/sync-activities` | 使用者完成 `/api/strava` OAuth callback 後即時送出 | 由 `inngest/functions.ts` 呼叫 Strava API 拉取最新活動並暫存，確保授權完馬上開始同步 |
-| `strava/sync-all` | Inngest Cron `0 * * * *`（每小時） | 讀取目前有效的 Strava token，批次送出 `strava/sync-activities` 事件確保資料保持新鮮 |
-
-### 建置與執行
-
-1. 於 `strava-route-system/apps/web/.env.local` 設定必要環境變數：
-   ```
-   STRAVA_CLIENT_ID=xxx
-   STRAVA_CLIENT_SECRET=xxx
-   STRAVA_REDIRECT_URI=http://localhost:3000/api/strava
-   INNGEST_EVENT_KEY=dev-local
-   INNGEST_SIGNING_KEY=dev-signing-key
-   ```
-2. 安裝依賴並啟動 Next.js：`pnpm install && pnpm --filter web dev`
-3. 另開終端執行 Inngest Dev Server：`pnpm --filter web inngest:dev`
-4. 登入後點擊「連結 Strava」，授權完成會自動送出 `strava/sync-activities`
-5. Cron 任務 `strava/sync-all` 預設每小時觸發，可於 Inngest 儀表板手動觸發以驗證批次同步
-
-> 註：目前資料仍暫存於記憶體，實務上可替換為 Prisma/Postgres，以符合雲端部署需求。
+| 開發人員 | 負責範圍 |
+|----------|----------|
+| Muchuanhung | 全端開發 |

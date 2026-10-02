@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web-unit:
+    name: Web 型別檢查與單元測試
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: strava-route-system
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: strava-route-system/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: strava-route-system/.nvmrc
+          cache: pnpm
+          cache-dependency-path: strava-route-system/pnpm-lock.yaml
+
+      # 只裝 web 及其 workspace 依賴，略過 docs
+      - run: pnpm install --frozen-lockfile --filter web...
+
+      - name: 型別檢查
+        run: pnpm --filter web exec tsc --noEmit
+
+      # unit project 是純函式測試，不需要瀏覽器與 server
+      - name: 單元測試
+        run: pnpm --filter web test:unit

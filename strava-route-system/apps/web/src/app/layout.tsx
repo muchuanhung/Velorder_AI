@@ -27,7 +27,7 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://strava-sync-alpha.ve
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: "Routecast｜日光地形路線判讀",
-  description: "出發前判讀台灣單車、跑步與越野路線的天氣、坡度與路況風險。",
+  description: "出發前判讀台灣單車、跑步與越野路線的天氣與路況風險。",
   manifest: "/manifest.json",
   appleWebApp: {
     title: "Routecast",

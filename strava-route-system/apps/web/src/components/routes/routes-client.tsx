@@ -169,7 +169,6 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
           >
             <Lock className="size-3.5" aria-hidden />
             私人路線
-            <span className="rounded bg-accent px-1.5 text-xs font-bold">Pro</span>
           </Link>
           <Drawer open={mobileListOpen} onOpenChange={setMobileListOpen}>
             <DrawerTrigger asChild>
