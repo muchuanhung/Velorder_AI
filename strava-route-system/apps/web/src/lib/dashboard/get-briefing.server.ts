@@ -50,6 +50,7 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
         temperature: w.temperature,
         condition: mapCwbCondition(w.condition),
         periodLabel: first ? `${first.label}–${first.endLabel}` : null,
+        rainfallBuckets: w.rainfall12h,
       };
       return [key, weather] as const;
     })
@@ -63,7 +64,10 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
 
   const eventsResult = await eventsPromise;
   const now = new Date();
-  const briefings = routes.map((route) => briefRoute(route, lookup, eventsResult?.events ?? [], now));
+  const eventsFailed = eventsResult ? eventsResult.failed : null;
+  const briefings = routes.map((route) =>
+    briefRoute(route, lookup, { events: eventsResult?.events ?? [], now, eventsFailed })
+  );
   const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 
   return {
@@ -72,6 +76,6 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
     alternative: pickAlternative(featured, briefings),
     routes: briefings.map((b) => ({ id: b.id, name: b.name })),
     weatherCoverage: { ok: lookup.size, total: keys.length },
-    eventsFailed: eventsResult ? eventsResult.failed : null,
+    eventsFailed,
   };
 }

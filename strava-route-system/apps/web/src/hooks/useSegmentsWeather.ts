@@ -17,6 +17,9 @@ export interface RainfallPeriod {
   pop: number;
   label: string;
   endLabel?: string;
+  /** ISO 時間，供依 ETA 挑選時段 */
+  startTime: string;
+  endTime: string;
 }
 
 export interface SegmentWeather {
@@ -74,7 +77,7 @@ export function useSegmentsWeather(segments: RouteSegment[]): {
           temperature: number;
           windSpeedKmh: number;
           condition: CWBWeatherCondition;
-          rainfall12h?: Array<{ pop: number; label: string; endLabel?: string }>;
+          rainfall12h?: Array<{ pop: number; label: string; endLabel?: string; startTime?: string; endTime?: string }>;
         };
         if (!res.ok || data.error) throw new Error(data.error ?? `CWB ${res.status}`);
         const rainfall12h = data.rainfall12h ?? [];
@@ -86,7 +89,13 @@ export function useSegmentsWeather(segments: RouteSegment[]): {
             windSpeed: data.windSpeedKmh ?? 0,
             temperature: data.temperature ?? 0,
             condition: mapCondition(data.condition),
-            rainfall12h: rainfall12h.map((p) => ({ pop: p.pop, label: p.label, endLabel: p.endLabel })),
+            rainfall12h: rainfall12h.map((p) => ({
+              pop: p.pop,
+              label: p.label,
+              endLabel: p.endLabel,
+              startTime: p.startTime ?? "",
+              endTime: p.endTime ?? "",
+            })),
           },
         };
       });

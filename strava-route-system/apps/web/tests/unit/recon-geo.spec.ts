@@ -4,6 +4,7 @@ import {
   deriveStages,
   isWeatherHazard,
   mapLatLonToKm,
+  stageAtKm,
   summarizeVerdict,
 } from "@/lib/routes/recon-geo";
 import { makeRoute, segment, slopeProfile, withWeather } from "../fixtures/route";
@@ -54,22 +55,44 @@ function hazardsOf(route: ReturnType<typeof makeRoute>) {
 }
 
 test.describe("deriveStages", () => {
-  test("依 sampleKms 對應行政區（環狀路線回到起點）", () => {
+  test("依 sampleKms 排序切段，交界取兩側取樣的中點（相容舊快取的環狀路線資料）", () => {
     const route = makeRoute({
       segments: [segment("士林區", [0, 20]), segment("北投區", [10])],
     });
-    const at = (km: number) => deriveStages(route).find((s) => s.km === km)?.name;
-    expect(at(0)).toBe("士林區");
-    expect(at(10)).toBe("北投區");
-    expect(at(20)).toBe("士林區");
+    const stages = deriveStages(route);
+    expect(stages.map((s) => [s.name, s.startKm, s.endKm])).toEqual([
+      ["士林區", 0, 5],
+      ["北投區", 5, 15],
+      ["士林區", 15, 20],
+    ]);
+    expect(stageAtKm(stages, 0)?.name).toBe("士林區");
+    expect(stageAtKm(stages, 10)?.name).toBe("北投區");
+    expect(stageAtKm(stages, 20)?.name).toBe("士林區");
   });
 
-  test("舊資料沒有 sampleKms 時退回索引對應", () => {
+  test("密集取樣：連續同區合併成一個 stage，涵蓋區間連續無縫", () => {
+    const kms = (from: number, to: number) => Array.from({ length: (to - from) * 2 + 1 }, (_, i) => from + i / 2);
+    const route = makeRoute({
+      segments: [segment("士林區", kms(0, 6)), segment("北投區", kms(6.5, 14)), segment("內湖區", kms(14.5, 20))],
+    });
+    const stages = deriveStages(route);
+    expect(stages.map((s) => [s.name, s.startKm, s.endKm])).toEqual([
+      ["士林區", 0, 6.25],
+      ["北投區", 6.25, 14.25],
+      ["內湖區", 14.25, 20],
+    ]);
+    // 位置在北投區範圍內但離內湖區代表點較近時，仍應回傳北投區
+    expect(stageAtKm(stages, 14)?.name).toBe("北投區");
+  });
+
+  test("舊資料沒有 sampleKms 時退回 5 點依索引對應，連續同區合併", () => {
     const route = makeRoute({
       segments: [segment("大安區", []), segment("中山區", [])].map((s) => ({ ...s, sampleKms: undefined })),
     });
-    const names = deriveStages(route).map((s) => s.name);
-    expect(names).toEqual(["大安區", "中山區", "中山區", "中山區", "中山區"]);
+    expect(deriveStages(route).map((s) => [s.name, s.startKm, s.endKm])).toEqual([
+      ["大安區", 0, 2.5],
+      ["中山區", 2.5, 20],
+    ]);
   });
 });
 
@@ -122,12 +145,24 @@ test.describe("summarizeVerdict", () => {
     expect(summarizeVerdict(hazards, stages)).toEqual({ level: "clear", headline: "沿途無示警", note: "" });
   });
 
-  test("部分路段無天氣時加註", () => {
+  test("部分路段無天氣時不可宣稱安全，必須為未判定", () => {
     const route = makeRoute({
       segments: [segment("士林區", [0, 5], withWeather(10)), segment("北投區", [10, 15, 20])],
     });
     const { stages, hazards } = hazardsOf(route);
-    expect(summarizeVerdict(hazards, stages)).toMatchObject({ level: "clear", note: "部分路段無天氣資料" });
+    const verdict = summarizeVerdict(hazards, stages);
+    expect(verdict.level).toBe("unknown");
+    expect(verdict.note).toContain("部分路段無天氣資料");
+  });
+
+  test("部分路段無天氣但有示警時，示警等級優先", () => {
+    const route = makeRoute({
+      segments: [segment("士林區", [0, 5], withWeather(70)), segment("北投區", [10, 15, 20])],
+    });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages);
+    expect(verdict.level).toBe("risky");
+    expect(verdict.note).toContain("部分路段無天氣資料");
   });
 
   test("取最嚴重的示警作為判定，並列出其他示警數", () => {
@@ -148,5 +183,37 @@ test.describe("summarizeVerdict", () => {
     const verdict = summarizeVerdict([event], stages);
     expect(verdict.level).toBe("caution");
     expect(verdict.note).toContain("尚無天氣資料");
+  });
+
+  test("路況事件服務完全失敗（eventsFailed=null）時，不可宣稱安全", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(10))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages, { eventsFailed: null });
+    expect(verdict.level).toBe("unknown");
+    expect(verdict.note).toContain("路況事件暫時取不到");
+  });
+
+  test("路況事件部分縣市失敗時，不可宣稱安全", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(10))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages, { eventsFailed: ["新北市"] });
+    expect(verdict.level).toBe("unknown");
+    expect(verdict.note).toContain("新北市路況事件取不到");
+  });
+
+  test("路況事件失敗但有示警時，示警等級優先", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(70))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages, { eventsFailed: null });
+    expect(verdict.level).toBe("risky");
+    expect(verdict.note).toContain("路況事件暫時取不到");
+  });
+
+  test("eventsFailed 為空陣列時，可正常判定為安全", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(10))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages, { eventsFailed: [] });
+    expect(verdict.level).toBe("clear");
+    expect(verdict.headline).toBe("沿途無示警");
   });
 });

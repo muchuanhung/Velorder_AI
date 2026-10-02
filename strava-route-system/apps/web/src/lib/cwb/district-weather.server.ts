@@ -5,6 +5,7 @@
 
 import { getCWBdatasetId, normalizeCountyForCWB } from "@/lib/cwb/county-map";
 import { isForecastStale } from "@/lib/cwb/forecast-freshness";
+import { parseRainfallStations, summarizeRainfall, type LatLon, type RainfallSummary } from "@/lib/cwb/rainfall-stations";
 
 const CWB_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
 /** 伺服器在 Vercel 上是 UTC；時段標籤與「今天」一律以台灣時間計算 */
@@ -47,6 +48,9 @@ export type CWBWeatherResponse = {
   rainfall12h: Array<{ startTime: string; endTime: string; pop: number; label: string; endLabel: string }>;
   verdict: string;
   verdictType: "good" | "caution" | "bad";
+  /** 即時時雨量（mm/hr）；rainfallScope 為 county 時是整個縣市測站的最大值，不代表該地點 */
+  rainfallMmPerHr: number | null;
+  rainfallScope: RainfallSummary["scope"];
 };
 
 /** 對應 HTTP 狀態的錯誤，供 API route 轉成回應 */
@@ -87,33 +91,6 @@ function getElementValue(elements: WeatherElement[] | undefined, name: string): 
   const item = elements.find((e) => e.ElementName === name);
   const firstTime = item?.Time?.[0];
   return firstTime?.ElementValue?.[0];
-}
-
-/** 從 O-A0002-002 回傳中取得該縣市最大 1hr 雨量 (mm/hr)，若無資料回傳 null */
-function parseRainfallMmPerHr(rainData: unknown, county: string): number | null {
-  const countyNorm = county.replace(/台/g, "臺");
-  let maxRain = 0;
-  let found = false;
-  const rec = (rainData as { records?: Record<string, unknown> })?.records;
-  const stations = (rec?.Station ?? rec?.station) as unknown[] | undefined;
-  const arr = Array.isArray(stations) ? stations : stations ? [stations] : [];
-  for (const s of arr) {
-    const st = s as Record<string, unknown>;
-    const stationCounty = String(st?.CountyName ?? st?.countyName ?? "");
-    if (!stationCounty.includes(countyNorm) && !stationCounty.includes(county)) continue;
-    const rainVal =
-      st?.Rain ??
-      st?.rain ??
-      st?.Precipitation ??
-      st?.precipitation ??
-      (st?.WeatherElement as Array<{ ElementName?: string; ElementValue?: Array<{ value?: string }> }>)?.find?.((e) =>
-        /雨量|RAIN|Rain/i.test(e.ElementName ?? "")
-      )?.ElementValue?.[0]?.value;
-    const r = parseFloat(String(rainVal ?? "0").replace(/^-$|^T$|^X$/i, "0"));
-    if (!Number.isNaN(r) && r > maxRain) maxRain = r;
-    found = true;
-  }
-  return found ? maxRain : null;
 }
 
 /** 降雨判斷：雨量 mm/hr → verdict，windMs 用於雨+風體感判斷 */
@@ -174,9 +151,14 @@ const todayInTaipei = () => new Date().toLocaleDateString("sv-SE", { timeZone: T
 
 /**
  * 取得鄉鎮天氣。county 為縣市（接受「台」「臺」與舊制名稱），district 為鄉鎮區。
+ * near 為使用者位置或路線取樣點：提供時即時雨量只採 3 km 內測站，附近沒有測站就不拿雨量判斷。
  * 失敗時丟出 CwbError（帶 HTTP 狀態）。
  */
-export async function getDistrictWeather(county: string, district?: string): Promise<CWBWeatherResponse> {
+export async function getDistrictWeather(
+  county: string,
+  district?: string,
+  { near = [] }: { near?: LatLon[] } = {}
+): Promise<CWBWeatherResponse> {
   const key = process.env.CWB_API_KEY;
   if (!key) throw new CwbError("CWB_API_KEY 未設定", 500);
 
@@ -218,14 +200,16 @@ export async function getDistrictWeather(county: string, district?: string): Pro
     const freshRes = await fetch(forecastUrl, { cache: "no-store" });
     if (freshRes.ok) forecastData = await freshRes.json();
   }
-  let rainfallMmPerHr: number | null = null;
+  let rainfall: RainfallSummary = { mmPerHr: null, scope: "none", stationCount: 0 };
   if (rainRes.ok) {
     try {
-      rainfallMmPerHr = parseRainfallMmPerHr(await rainRes.json(), cwbCounty);
+      rainfall = summarizeRainfall(parseRainfallStations(await rainRes.json(), cwbCounty), near);
     } catch {
       // 雨量 API 失敗不影響主流程
     }
   }
+  // 有指定位置卻沒有附近測站時，縣市最大值不可當成在地雨量拿來判斷
+  const localRainMmPerHr = near.length > 0 && rainfall.scope !== "nearby" ? null : rainfall.mmPerHr;
   const sunsetData = await sunsetRes.json();
 
   const success = forecastData?.success === "true" || forecastData?.success === true;
@@ -298,7 +282,7 @@ export async function getDistrictWeather(county: string, district?: string): Pro
   const sunsetTime = sunsetLoc?.time?.find((t: { Date?: string }) => t.Date === today);
   const sunsetStr = sunsetTime?.SunSetTime ?? "17:45";
 
-  const { verdict, verdictType } = computeVerdict(temp, popFirst, uvIndex, windMs, rainfallMmPerHr);
+  const { verdict, verdictType } = computeVerdict(temp, popFirst, uvIndex, windMs, localRainMmPerHr);
 
   return {
     temperature: temp,
@@ -314,5 +298,7 @@ export async function getDistrictWeather(county: string, district?: string): Pro
     rainfall12h,
     verdict,
     verdictType,
+    rainfallMmPerHr: rainfall.mmPerHr,
+    rainfallScope: rainfall.scope,
   };
 }

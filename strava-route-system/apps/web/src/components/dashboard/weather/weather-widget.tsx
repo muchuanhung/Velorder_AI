@@ -316,7 +316,11 @@ export function WeatherWidget({ navigateTo }: WeatherWidgetProps) {
   return (
     <>
       <LocationAutoRequest />
-      <WeatherProvider county={county} district={district}>
+      <WeatherProvider
+        county={county}
+        district={district}
+        coords={location ? { lat: location.latitude, lon: location.longitude } : null}
+      >
         {mounted ? (
           <>
             <DesktopCard navigateTo={navigateTo} />

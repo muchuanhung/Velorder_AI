@@ -37,7 +37,7 @@ const LEVEL: Record<
   },
   unknown: {
     word: "未判定",
-    advice: "目前拿不到這條路線的天氣資料，無法判斷風險。",
+    advice: "資料不足，暫時無法判斷這條路線的風險。",
     icon: HelpCircle,
     sign: "bg-muted text-foreground",
     muted: "text-muted-foreground",
@@ -81,6 +81,14 @@ export function BriefingCard({ featured, alternative }: { featured: RouteBriefin
             {s.word}
           </h2>
           {hasHazard ? (
+            <>
+              <p className="text-lg font-bold">{verdict.headline}</p>
+              <p className={cn("text-sm", s.muted)}>
+                {s.advice}
+                {verdict.note && `・${verdict.note}`}
+              </p>
+            </>
+          ) : verdict.level === "unknown" ? (
             <>
               <p className="text-lg font-bold">{verdict.headline}</p>
               <p className={cn("text-sm", s.muted)}>

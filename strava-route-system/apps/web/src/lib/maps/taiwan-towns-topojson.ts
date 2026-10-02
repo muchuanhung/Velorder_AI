@@ -3,7 +3,7 @@
  * 支援「縣市+鄉鎮區」例如 台北市大安區
  */
 
-import townTopology from "./twTown1982.topo.json";
+import townTopology from "./twTown1982.topo.json" with { type: "json" };
 import { normalizeCountyForCWB, normalizeLocationCounty } from "@/lib/cwb/county-map";
 
 type TopoGeometry = {
@@ -180,32 +180,57 @@ export function findTownshipByLngLat(
   return null;
 }
 
+type IndexedPolygon = {
+  county: string;
+  town: string;
+  /** [minLng, minLat, maxLng, maxLat] */
+  bbox: [number, number, number, number];
+  rings: [number, number][][];
+};
+
+let polygonIndex: IndexedPolygon[] | null = null;
+
+/** 解碼後的多邊形與 bbox 只建一次；路線每 0.5 km 反查一次，逐次解碼 arcs 會太慢 */
+function getPolygonIndex(): IndexedPolygon[] {
+  if (polygonIndex) return polygonIndex;
+  const topo = townTopology as unknown as Topology;
+  const out: IndexedPolygon[] = [];
+  for (const geom of topo.objects?.layer1?.geometries ?? []) {
+    if ((geom.type !== "Polygon" && geom.type !== "MultiPolygon") || !geom.arcs) continue;
+    const county = geom.properties?.COUNTYNAME ?? "";
+    const town = geom.properties?.TOWNNAME ?? "";
+    if (!county || !town) continue;
+    const polygons =
+      geom.type === "Polygon"
+        ? [resolvePolygonRings(topo, geom.arcs as number[][])]
+        : (geom.arcs as number[][][]).map((p) => resolvePolygonRings(topo, p));
+    for (const rings of polygons) {
+      const outer = rings[0];
+      if (!outer?.length) continue;
+      let [minLng, minLat, maxLng, maxLat] = [Infinity, Infinity, -Infinity, -Infinity];
+      for (const [x = 0, y = 0] of outer) {
+        if (x < minLng) minLng = x;
+        if (x > maxLng) maxLng = x;
+        if (y < minLat) minLat = y;
+        if (y > maxLat) maxLat = y;
+      }
+      out.push({ county, town, bbox: [minLng, minLat, maxLng, maxLat], rings: rings as [number, number][][] });
+    }
+  }
+  polygonIndex = out;
+  return out;
+}
+
 /** 從經緯度找出鄉鎮區，回傳 {county, town}（town 如 士林區） */
 export function findTownshipDetailByLngLat(
   lng: number,
   lat: number
 ): { county: string; town: string } | null {
-  const topo = townTopology as unknown as Topology;
-  const layer = topo.objects?.layer1;
-  if (!layer?.geometries) return null;
-  for (const geom of layer.geometries) {
-    if (geom.type !== "Polygon" && geom.type !== "MultiPolygon" || !geom.arcs) continue;
-    const county = (geom.properties?.COUNTYNAME ?? "") as string;
-    const town = (geom.properties?.TOWNNAME ?? "") as string;
-    if (!county || !town) continue;
-    const polygons: number[][][][] =
-      geom.type === "Polygon"
-        ? [resolvePolygonRings(topo, geom.arcs as number[][])]
-        : (geom.arcs as number[][][]).map((p) => resolvePolygonRings(topo, p));
-    for (const polyRings of polygons) {
-      const outer = polyRings[0];
-      if (!outer || !pointInRing(lng, lat, outer as [number, number][])) continue;
-      let inHole = false;
-      for (let i = 1; i < polyRings.length; i++) {
-        if (pointInRing(lng, lat, polyRings[i] as [number, number][])) { inHole = true; break; }
-      }
-      if (!inHole) return { county, town };
-    }
+  for (const { county, town, bbox, rings } of getPolygonIndex()) {
+    if (lng < bbox[0] || lng > bbox[2] || lat < bbox[1] || lat > bbox[3]) continue;
+    if (!pointInRing(lng, lat, rings[0]!)) continue;
+    if (rings.slice(1).some((hole) => pointInRing(lng, lat, hole))) continue;
+    return { county, town };
   }
   return null;
 }
