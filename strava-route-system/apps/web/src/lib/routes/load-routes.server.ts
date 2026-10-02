@@ -37,7 +37,8 @@ async function fetchRoutesFromStorage(): Promise<Route[]> {
 }
 
 /** 全部路線（依名稱排序），快取 10 分鐘 */
-export const loadRoutes = unstable_cache(fetchRoutesFromStorage, ["gpx-routes"], {
+/** 快取鍵帶版本：路段取樣方式改變時遞增，避免沿用舊格式的快取 */
+export const loadRoutes = unstable_cache(fetchRoutesFromStorage, ["gpx-routes", "segments-v2"], {
   revalidate: ROUTES_REVALIDATE_SECONDS,
   tags: ["gpx-routes"],
 });

@@ -7,6 +7,7 @@ import {
   pickAlternative,
   type DistrictWeather,
 } from "@/lib/dashboard/briefing";
+import type { RainfallBucket } from "@/lib/cwb/forecast-eta";
 import { makeRoute, segment, slopeProfile } from "../fixtures/route";
 
 function weather(rain: number, extra: Partial<DistrictWeather> = {}): DistrictWeather {
@@ -20,8 +21,20 @@ function weather(rain: number, extra: Partial<DistrictWeather> = {}): DistrictWe
   };
 }
 
-const lookupOf = (entries: Record<string, DistrictWeather>) =>
-  new Map(Object.entries(entries).map(([district, w]) => [districtKey("台北市", district), w]));
+const lookupOf = (entries: Record<string, DistrictWeather>, county = "台北市") =>
+  new Map(Object.entries(entries).map(([district, w]) => [districtKey(county, district), w]));
+
+const bucket = (start: string, end: string, pop: number): RainfallBucket => ({
+  startTime: `2026-10-01T${start}:00+08:00`,
+  endTime: `2026-10-01T${end}:00+08:00`,
+  pop,
+  label: start,
+  endLabel: end,
+});
+
+/** 08:00–10:00 降雨 10%、10:00–12:00 降雨 70% */
+const MORNING_THEN_RAIN = [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 70)];
+const AT_8AM = new Date("2026-10-01T08:00:00+08:00");
 
 test.describe("applyWeather", () => {
   test("查得到的行政區帶入天氣並標 hasWeather，查不到的標 false", () => {
@@ -30,6 +43,23 @@ test.describe("applyWeather", () => {
     const [shilin, beitou] = out.segments;
     expect(shilin).toMatchObject({ rainProbability: 70, windSpeed: 12, hasWeather: true });
     expect(beitou!.hasWeather).toBe(false);
+  });
+
+  test("有出發時間時，各路段取起點 ETA 所在的時段（20 km/h）", () => {
+    // 士林區 0 km → 08:00；北投區 40 km → 10:00，進入第二個時段
+    const route = makeRoute({ distance: 50, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 50])] });
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+      北投區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+    });
+    const out = applyWeather(route, lookup, { departureTime: AT_8AM });
+    expect(out.segments.map((s) => s.rainProbability)).toEqual([10, 70]);
+  });
+
+  test("沒有出發時間時維持第一個時段", () => {
+    const route = makeRoute({ segments: [segment("北投區", [40])] });
+    const out = applyWeather(route, lookupOf({ 北投區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }));
+    expect(out.segments[0]!.rainProbability).toBe(10);
   });
 });
 
@@ -66,11 +96,11 @@ test.describe("briefRoute", () => {
     const work = { ...base, id: "work", type: 2, subType: 205, title: "道路施工", lat: 25.05 + 8 / 111 };
     const accident = { ...base, id: "acc", type: 1, subType: 101, title: "交通事故", lat: 25.05 + 5 / 111 };
 
-    const onlyWork = briefRoute(route, lookupOf({ 士林區: weather(10) }), [work], now);
+    const onlyWork = briefRoute(route, lookupOf({ 士林區: weather(10) }), { events: [work], now });
     expect(onlyWork.verdict.level).toBe("clear");
     expect(onlyWork.roadEvents.map((e) => e.id)).toEqual(["work"]);
 
-    const withAccident = briefRoute(route, lookupOf({ 士林區: weather(10) }), [work, accident], now);
+    const withAccident = briefRoute(route, lookupOf({ 士林區: weather(10) }), { events: [work, accident], now });
     expect(withAccident.verdict.level).toBe("caution");
     expect(withAccident.verdict.headline).toContain("事故：交通事故");
   });
@@ -83,12 +113,50 @@ test.describe("briefRoute", () => {
     expect(b.periodLabel).toBe("今天 12:00–18:00");
   });
 
+  test("遠端路段 ETA 落在下雨時段：判為危險，預報時段標示涵蓋實際用到的時段", () => {
+    const route = makeRoute({ distance: 50, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 50])] });
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+      北投區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+    });
+    const b = briefRoute(route, lookup, { now: AT_8AM });
+    expect(b.verdict.level).toBe("risky");
+    expect(b.maxRain).toBe(70);
+    expect(b.periodLabel).toBe("08:00–12:00");
+  });
+
   test("完全沒有天氣資料時為未判定，數值為 null", () => {
     const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
     const b = briefRoute(route, new Map());
     expect(b.verdict.level).toBe("unknown");
     expect(b.maxRain).toBeNull();
     expect(b.temperature).toBeNull();
+  });
+
+  test("路況事件服務整個失敗時，天氣良好也判為未判定", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10) }), { eventsFailed: null });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.verdict.note).toContain("路況事件暫時取不到");
+  });
+
+  test("路況事件失敗的縣市在路線上（新舊縣名、台臺皆可對上）時判為未判定", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10) }), { eventsFailed: ["臺北市"] });
+    expect(b.verdict.level).toBe("unknown");
+  });
+
+  test("路況事件失敗的縣市不在這條路線上時，不影響判定", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10) }), { eventsFailed: ["宜蘭縣"] });
+    expect(b.verdict.level).toBe("clear");
+  });
+
+  test("路況事件失敗但天氣已達危險時，仍判為危險", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(70) }), { eventsFailed: null });
+    expect(b.verdict.level).toBe("risky");
+    expect(b.verdict.note).toContain("路況事件暫時取不到");
   });
 });
 

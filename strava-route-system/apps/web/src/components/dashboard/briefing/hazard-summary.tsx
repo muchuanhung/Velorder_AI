@@ -63,7 +63,9 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
         <HazardList hazards={hazards} />
       ) : (
         <p className="text-sm text-muted-foreground">
-          {briefing.verdict.level === "unknown" ? "沒有天氣資料，無法判讀。" : "沿途沒有示警。"}
+          {briefing.verdict.level === "unknown"
+            ? [briefing.verdict.headline, briefing.verdict.note].filter(Boolean).join("・") + "。"
+            : "沿途沒有示警。"}
         </p>
       )}
 

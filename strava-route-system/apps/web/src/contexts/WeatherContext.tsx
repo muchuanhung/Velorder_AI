@@ -23,9 +23,13 @@ type WeatherProviderProps = {
   children: React.ReactNode;
   county: string | null;
   district?: string | null;
+  /** 使用者位置；提供時即時雨量只採附近測站 */
+  coords?: { lat: number; lon: number } | null;
 };
 
-export function WeatherProvider({ children, county, district }: WeatherProviderProps) {
+export function WeatherProvider({ children, county, district, coords }: WeatherProviderProps) {
+  const lat = coords?.lat;
+  const lon = coords?.lon;
   const [data, setData] = useState<CWBWeatherResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +44,11 @@ export function WeatherProvider({ children, county, district }: WeatherProviderP
     setError(null);
     const params = new URLSearchParams({ county });
     if (district) params.set("district", district);
+    if (lat != null && lon != null) {
+      // 小數 2 位（約 1 km）已足以挑選 3 km 內的測站，不必送出精確位置
+      params.set("lat", lat.toFixed(2));
+      params.set("lon", lon.toFixed(2));
+    }
     fetch(`/api/weather/cwb?${params}`)
       .then(async (res) => {
         const json = await res.json();
@@ -51,7 +60,7 @@ export function WeatherProvider({ children, county, district }: WeatherProviderP
         setData(null);
       })
       .finally(() => setLoading(false));
-  }, [county, district]);
+  }, [county, district, lat, lon]);
 
   useEffect(() => {
     fetchWeather();
