@@ -44,6 +44,7 @@ strava-route-system/          # pnpm + Turborepo monorepo
 │   ├── src/inngest/          # Inngest functions
 │   ├── tests/{unit,e2e}/     # Playwright 測試
 │   └── docs/                 # TDX CCTV、Strava 品牌規範等設定文件
+├── apps/api/                 # 自有後端（FastAPI + MySQL + S3 相容儲存），見 apps/api/README.md
 ├── apps/docs/                # create-next-app 範本，尚未使用
 └── packages/
     ├── auth/                 # Strava OAuth token 交換與 refresh
@@ -101,6 +102,8 @@ CCTV_SYNC_SECRET=                           # production 手動觸發 /api/cctv/
 ```
 
 公開路線來自 Firebase Storage 的 `gpx/routes/*.gpx`，上傳後最多 10 分鐘生效（server 端快取）。
+
+自有後端 API（會員、私人 GPX）：`cd strava-route-system/apps/api && docker compose up --build`，細節見 [`apps/api/README.md`](strava-route-system/apps/api/README.md)。
 
 ## 測試
 
