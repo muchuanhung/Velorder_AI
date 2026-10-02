@@ -24,7 +24,7 @@ const sections = [
   { id: "data-storage", label: "資料儲存與安全", icon: Shield },
   { id: "cookies", label: "Cookie 與追蹤", icon: Cookie },
   { id: "user-rights", label: "您的權利", icon: UserCheck },
-  { id: "monetization", label: "營利說明", icon: CreditCard },
+  { id: "fees-and-data", label: "費用與資料使用", icon: CreditCard },
   { id: "third-parties", label: "第三方服務", icon: Scale },
   { id: "contact", label: "聯絡我們", icon: Mail },
 ];

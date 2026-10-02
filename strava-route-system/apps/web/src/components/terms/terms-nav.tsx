@@ -22,7 +22,7 @@ const sections = [
   { id: "tos-acceptance", label: "接受服務條款", icon: FileCheck },
   { id: "tos-account", label: "帳號與存取", icon: ShieldCheck },
   { id: "tos-strava-api", label: "Strava API 使用", icon: Link2 },
-  { id: "tos-subscriptions", label: "訂閱", icon: CreditCard },
+  { id: "tos-fees", label: "服務費用", icon: CreditCard },
   { id: "tos-prohibited", label: "禁止行為", icon: Ban },
   { id: "tos-health", label: "健康聲明", icon: HeartPulse },
   { id: "tos-ip", label: "智慧財產權", icon: Scale },
