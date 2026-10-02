@@ -19,28 +19,23 @@ import {
   type Hazard,
   type ReconVerdict,
   type VerdictLevel,
-  type VerdictOptions,
 } from "@/lib/routes/recon-geo";
-
-/** 預設平均騎乘速度（km/h），用於估算抵達各路段的時間。可依使用者設定覆寫。 */
-export const DEFAULT_CYCLING_SPEED_KMH = 20;
-
-export interface RainfallBucket {
-  startTime: string;
-  endTime: string;
-  pop: number;
-  label: string;
-  endLabel: string;
-}
+import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
+import {
+  DEFAULT_CYCLING_SPEED_KMH,
+  pickRainfallBucketForSegment,
+  type RainfallBucket,
+} from "@/lib/cwb/forecast-eta";
 
 export interface DistrictWeather {
+  /** 第一個預報時段的降雨機率；沒有 rainfallBuckets 或未指定出發時間時使用 */
   rainProbability: number;
   windSpeedKmh: number;
   temperature: number;
   condition: RouteSegment["condition"];
-  /** 判讀所依據的預報時段（台灣時間標籤） */
+  /** 第一個預報時段（台灣時間標籤） */
   periodLabel: string | null;
-  /** 完整降雨預報時段，供依 ETA 選擇適當時段 */
+  /** 完整降雨機率時段，依各路段 ETA 挑選 */
   rainfallBuckets?: RainfallBucket[];
 }
 
@@ -48,58 +43,17 @@ export type WeatherLookup = ReadonlyMap<string, DistrictWeather>;
 
 export const districtKey = (county: string, district: string) => `${county}|${district}`;
 
-/**
- * 計算路段的預估抵達時間（ETA），基於起點里程與平均速度。
- * @param segmentStartKm 路段起點里程
- * @param departureTime 出發時間
- * @param avgSpeedKmh 平均速度（預設 DEFAULT_CYCLING_SPEED_KMH）
- * @returns 預估抵達時間
- */
-export function estimateArrivalTime(
-  segmentStartKm: number,
-  departureTime: Date,
-  avgSpeedKmh: number = DEFAULT_CYCLING_SPEED_KMH
-): Date {
-  const hoursToSegment = segmentStartKm / avgSpeedKmh;
-  const msToSegment = hoursToSegment * 60 * 60 * 1000;
-  return new Date(departureTime.getTime() + msToSegment);
-}
+const weatherOf = (seg: RouteSegment, lookup: WeatherLookup) =>
+  seg.county && seg.districtZh ? lookup.get(districtKey(seg.county, seg.districtZh)) : undefined;
 
-/**
- * 依 ETA 選擇適當的降雨預報時段。
- * 若 ETA 落在某時段的 startTime ~ endTime 內，選該時段；
- * 否則選最接近的未來時段，或最後一個時段（若 ETA 已超過所有時段）。
- * @param eta 預估抵達時間
- * @param buckets 降雨預報時段陣列
- * @returns 選中的時段，或 null（若無時段資料）
- */
-export function pickRainfallBucketByEta(
-  eta: Date,
-  buckets: RainfallBucket[]
+/** 路段騎經時間所落在的降雨時段；沒有出發時間或時段資料時回傳 null */
+function bucketForSegment(
+  seg: RouteSegment,
+  w: DistrictWeather,
+  { departureTime, speedKmh = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
 ): RainfallBucket | null {
-  if (!buckets || buckets.length === 0) return null;
-
-  const etaMs = eta.getTime();
-
-  // 先找涵蓋 ETA 的時段
-  for (const bucket of buckets) {
-    const startMs = Date.parse(bucket.startTime);
-    const endMs = Date.parse(bucket.endTime);
-    if (!Number.isNaN(startMs) && !Number.isNaN(endMs) && etaMs >= startMs && etaMs < endMs) {
-      return bucket;
-    }
-  }
-
-  // 找最接近的未來時段
-  for (const bucket of buckets) {
-    const startMs = Date.parse(bucket.startTime);
-    if (!Number.isNaN(startMs) && startMs > etaMs) {
-      return bucket;
-    }
-  }
-
-  // 若 ETA 已超過所有時段，回傳最後一個
-  return buckets[buckets.length - 1] ?? null;
+  if (!departureTime || !w.rainfallBuckets?.length) return null;
+  return pickRainfallBucketForSegment(seg.sampleKms, departureTime, w.rainfallBuckets, speedKmh);
 }
 
 /** CWB condition → 路段 condition */
@@ -119,45 +73,24 @@ export function routeDistrictKeys(routes: Route[]): string[] {
 }
 
 export interface ApplyWeatherOptions {
-  /** 出發時間，用於計算各路段的 ETA 並選擇對應的降雨時段 */
+  /** 出發時間；提供時各路段的降雨機率改用其 ETA 所在的時段 */
   departureTime?: Date;
-  /** 平均速度（km/h），預設 DEFAULT_CYCLING_SPEED_KMH */
-  avgSpeedKmh?: number;
+  speedKmh?: number;
 }
 
 /**
- * 把天氣合併進路段；查不到的路段標 hasWeather=false（數值不可當真）
- * 若提供 departureTime，會依各路段的 ETA 選擇對應的降雨預報時段；
- * 否則使用第一個時段（舊行為）。
+ * 把天氣合併進路段；查不到的路段標 hasWeather=false（數值不可當真）。
+ * 風速、氣溫、天氣現象仍是第一個預報時段（CWB 這些欄位目前只取第一筆）。
  */
-export function applyWeather(
-  route: Route,
-  lookup: WeatherLookup,
-  options: ApplyWeatherOptions = {}
-): Route {
-  const { departureTime, avgSpeedKmh = DEFAULT_CYCLING_SPEED_KMH } = options;
-
+export function applyWeather(route: Route, lookup: WeatherLookup, options: ApplyWeatherOptions = {}): Route {
   return {
     ...route,
     segments: route.segments.map((seg) => {
-      const w = seg.county && seg.districtZh ? lookup.get(districtKey(seg.county, seg.districtZh)) : undefined;
+      const w = weatherOf(seg, lookup);
       if (!w) return { ...seg, hasWeather: false };
-
-      // 依 ETA 選擇降雨時段
-      let rainProbability = w.rainProbability;
-      if (departureTime && w.rainfallBuckets && w.rainfallBuckets.length > 0) {
-        // 使用路段的第一個取樣里程作為起點里程
-        const segmentStartKm = seg.sampleKms?.[0] ?? 0;
-        const eta = estimateArrivalTime(segmentStartKm, departureTime, avgSpeedKmh);
-        const bucket = pickRainfallBucketByEta(eta, w.rainfallBuckets);
-        if (bucket) {
-          rainProbability = bucket.pop;
-        }
-      }
-
       return {
         ...seg,
-        rainProbability,
+        rainProbability: bucketForSegment(seg, w, options)?.pop ?? w.rainProbability,
         windSpeed: w.windSpeedKmh,
         temperature: w.temperature,
         condition: w.condition,
@@ -165,6 +98,30 @@ export function applyWeather(
       };
     }),
   };
+}
+
+/** 判讀實際用到的預報時段：各路段 ETA 時段的最早開始到最晚結束；沒有時段資料時退回第一個路段的時段 */
+function usedPeriodLabel(route: Route, lookup: WeatherLookup, options: ApplyWeatherOptions): string | null {
+  const used: RainfallBucket[] = [];
+  let fallback: string | null = null;
+  for (const seg of route.segments) {
+    const w = weatherOf(seg, lookup);
+    if (!w) continue;
+    fallback ??= w.periodLabel;
+    const bucket = bucketForSegment(seg, w, options);
+    if (bucket) used.push(bucket);
+  }
+  if (used.length === 0) return fallback;
+  const first = used.reduce((a, b) => (Date.parse(b.startTime) < Date.parse(a.startTime) ? b : a));
+  const last = used.reduce((a, b) => (Date.parse(b.endTime) > Date.parse(a.endTime) ? b : a));
+  return `${first.label}–${last.endLabel}`;
+}
+
+/** 只保留此路線經過的縣市（事件失敗清單是所有路線共用的） */
+function failedOnRoute(route: Route, eventsFailed: string[] | null | undefined): string[] | null | undefined {
+  if (!eventsFailed) return eventsFailed;
+  const onRoute = new Set(route.segments.map((s) => (s.county ? normalizeCountyForCWB(s.county) : "")));
+  return eventsFailed.filter((c) => onRoute.has(normalizeCountyForCWB(c)));
 }
 
 export interface RouteBriefing {
@@ -187,51 +144,40 @@ export interface RouteBriefing {
 
 export interface BriefRouteOptions {
   events?: RoadEvent[];
+  /** 判讀時間，也是估算 ETA 的出發時間 */
   now?: Date;
-  /** 路況事件取不到的縣市清單；null = 整個服務失敗 */
+  /** 路況事件取不到的縣市；null 代表整個事件服務失敗 */
   eventsFailed?: string[] | null;
 }
 
 export function briefRoute(
   route: Route,
   lookup: WeatherLookup,
-  eventsOrOptions: RoadEvent[] | BriefRouteOptions = [],
-  nowParam?: Date
+  { events = [], now = new Date(), eventsFailed }: BriefRouteOptions = {}
 ): RouteBriefing {
-  // 兼容舊簽名：briefRoute(route, lookup, events[], now?)
-  const isLegacyCall = Array.isArray(eventsOrOptions);
-  const events = isLegacyCall ? eventsOrOptions : (eventsOrOptions.events ?? []);
-  const now = isLegacyCall ? (nowParam ?? new Date()) : (eventsOrOptions.now ?? new Date());
-  const eventsFailed = isLegacyCall ? undefined : eventsOrOptions.eventsFailed;
-
-  // 使用 now 作為出發時間，依各路段的 ETA 選擇對應的降雨預報時段
-  const enriched = applyWeather(route, lookup, { departureTime: now });
+  const weatherOptions: ApplyWeatherOptions = { departureTime: now };
+  const enriched = applyWeather(route, lookup, weatherOptions);
   const stages = deriveStages(enriched);
   const roadEvents = matchEventsToRoute(events, buildRoutePolylineKm(route), { now });
   const hazards = [...computeHazards(enriched, stages).filter(isWeatherHazard), ...eventHazards(roadEvents)].sort(
     (a, b) => a.startKm - b.startKm
   );
 
-  const verdictOptions: VerdictOptions = { eventsFailed };
-
   const withWeather = enriched.segments.filter((s) => s.hasWeather);
   const temps = withWeather.map((s) => s.temperature);
-  const firstKey = withWeather[0]?.county && withWeather[0]?.districtZh
-    ? districtKey(withWeather[0].county, withWeather[0].districtZh)
-    : null;
 
   return {
     id: route.id,
     name: route.nameZh || route.name,
     distanceKm: routeTotalKm(route),
     elevationGainM: route.elevationGain,
-    verdict: summarizeVerdict(hazards, stages, verdictOptions),
+    verdict: summarizeVerdict(hazards, stages, { eventsFailed: failedOnRoute(route, eventsFailed) }),
     hazards,
     roadEvents,
     maxRain: withWeather.length ? Math.max(...withWeather.map((s) => s.rainProbability)) : null,
     maxWindKmh: withWeather.length ? Math.max(...withWeather.map((s) => s.windSpeed)) : null,
     temperature: temps.length ? { min: Math.min(...temps), max: Math.max(...temps) } : null,
-    periodLabel: firstKey ? (lookup.get(firstKey)?.periodLabel ?? null) : null,
+    periodLabel: usedPeriodLabel(route, lookup, weatherOptions),
     elevationProfile: route.elevationProfile,
   };
 }

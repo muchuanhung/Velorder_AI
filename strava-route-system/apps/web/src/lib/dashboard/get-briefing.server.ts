@@ -8,14 +8,10 @@ import { getDistrictWeather } from "@/lib/cwb/district-weather.server";
 import { getRoadEvents } from "@/lib/tdx/road-events.server";
 import {
   briefRoute,
-  DEFAULT_CYCLING_SPEED_KMH,
-  estimateArrivalTime,
   mapCwbCondition,
   pickAlternative,
-  pickRainfallBucketByEta,
   routeDistrictKeys,
   type DistrictWeather,
-  type RainfallBucket,
   type RouteBriefing,
 } from "@/lib/dashboard/briefing";
 
@@ -48,21 +44,13 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
       const [county, district] = key.split("|") as [string, string];
       const w = await getDistrictWeather(county, district);
       const first = w.rainfall12h[0];
-      // 保留完整降雨時段，供依 ETA 選擇適當時段
-      const rainfallBuckets: RainfallBucket[] = w.rainfall12h.map((r) => ({
-        startTime: r.startTime,
-        endTime: r.endTime,
-        pop: r.pop,
-        label: r.label,
-        endLabel: r.endLabel,
-      }));
       const weather: DistrictWeather = {
         rainProbability: first?.pop ?? 0,
         windSpeedKmh: w.windSpeedKmh,
         temperature: w.temperature,
         condition: mapCwbCondition(w.condition),
         periodLabel: first ? `${first.label}–${first.endLabel}` : null,
-        rainfallBuckets,
+        rainfallBuckets: w.rainfall12h,
       };
       return [key, weather] as const;
     })
@@ -76,7 +64,6 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
 
   const eventsResult = await eventsPromise;
   const now = new Date();
-  // 傳遞 eventsFailed 給 briefRoute，以便 summarizeVerdict 判斷涵蓋完整性
   const eventsFailed = eventsResult ? eventsResult.failed : null;
   const briefings = routes.map((route) =>
     briefRoute(route, lookup, { events: eventsResult?.events ?? [], now, eventsFailed })

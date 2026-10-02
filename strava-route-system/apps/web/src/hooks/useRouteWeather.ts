@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Route, RouteSegment, RainfallPeriod } from "@/lib/routes/route-data";
 import { computeRouteStatus, computeBestTimeToRide } from "@/lib/routes/route-data";
 import { useSegmentsWeather } from "@/hooks/useSegmentsWeather";
+import { pickRainfallBucketForSegment } from "@/lib/cwb/forecast-eta";
 
 const EMPTY_SEGMENTS: RouteSegment[] = [];
 
@@ -27,15 +28,17 @@ export function useRouteWeather(route: Route | null): RouteWeather {
   const segments = route?.segments ?? EMPTY_SEGMENTS;
   const { weatherMap, loading, error } = useSegmentsWeather(segments);
 
-  const enrichedSegments = useMemo<WeatheredSegment[]>(
-    () =>
-      segments.map((seg) => {
-        const key = seg.county && seg.districtZh ? `${seg.county}|${seg.districtZh}` : null;
-        const w = key ? weatherMap.get(key) : undefined;
-        return w ? { ...seg, ...w, hasWeather: true } : { ...seg, hasWeather: false };
-      }),
-    [segments, weatherMap]
-  );
+  const enrichedSegments = useMemo<WeatheredSegment[]>(() => {
+    // 與 Dashboard 判讀一致：現在出發，各路段降雨機率取其騎經時間所在的預報時段
+    const departure = new Date();
+    return segments.map((seg) => {
+      const key = seg.county && seg.districtZh ? `${seg.county}|${seg.districtZh}` : null;
+      const w = key ? weatherMap.get(key) : undefined;
+      if (!w) return { ...seg, hasWeather: false };
+      const bucket = pickRainfallBucketForSegment(seg.sampleKms, departure, w.rainfall12h ?? []);
+      return { ...seg, ...w, rainProbability: bucket?.pop ?? w.rainProbability, hasWeather: true };
+    });
+  }, [segments, weatherMap]);
 
   return useMemo(() => {
     const withWeather = enrichedSegments.filter((s) => s.hasWeather);
