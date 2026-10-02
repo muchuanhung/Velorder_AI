@@ -598,11 +598,11 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Routecast 目前以免費服務形式提供。我們承諾透明說明如何規劃維持與發展平台。
+            Routecast 以免費服務形式提供，我們承諾透明說明平台如何運作。
           </p>
 
-          <HighlightBox variant="warning">
-            <strong>未來進階功能：</strong>我們可能推出付費訂閱方案，提供進階分析、更深入訓練洞察、延伸歷史分析與 AI 教練建議。免費方案使用者仍可使用核心功能，包含活動同步、基本分析與地圖視覺化。任何價格變更將至少提前 30 天通知所有使用者。
+          <HighlightBox variant="info">
+            <strong>免費使用：</strong>Routecast 不收取使用費用，也不會要求、收集或儲存信用卡或其他付款資訊。
           </HighlightBox>
 
           <div className="space-y-3">
@@ -613,7 +613,7 @@ export function PolicyContent() {
                   不將資料變現
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  我們不會也永不出售個別使用者資料、健康指標或活動紀錄給廣告主、資料仲介或任何第三方。營收僅來自進階功能訂閱。
+                  我們不會也永不出售個別使用者資料、健康指標或活動紀錄給廣告主、資料仲介或任何第三方。
                 </p>
               </div>
             </div>

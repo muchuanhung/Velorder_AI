@@ -296,19 +296,19 @@ export function TermsContent() {
       <Separator />
 
       {/* ------------------------------------------------------------ */}
-      {/* 4. Subscription & Payments                                   */}
+      {/* 4. Fees                                                      */}
       {/* ------------------------------------------------------------ */}
       <section>
         <SectionHeading
-          id="tos-subscriptions"
+          id="tos-fees"
           number={4}
           icon={CreditCard}
-          title="訂閱與付款"
-          subtitle="目前免費方案與規劃中的進階功能"
+          title="服務費用"
+          subtitle="Routecast 免費提供"
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Routecast 目前提供免費方案，包含活動同步、基本分析與地圖視覺化等核心功能。我們正朝可持續營運模式發展，未來可能納入付費功能。
+            Routecast 免費提供，包含活動同步、路線分析、天氣與雨量判讀及地圖視覺化等功能。
           </p>
 
           <div className="rounded-lg border border-border overflow-hidden">
@@ -326,51 +326,31 @@ export function TermsContent() {
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    免費方案
+                    使用費用
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    含活動同步、基本訓練分析、GPS 地圖視覺化及 Inngest 背景處理。
+                    使用 Routecast 不需支付任何費用。
                   </td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    進階功能
+                    付款資訊
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    進階分析、AI 教練洞察、延伸歷史分析與自訂訓練計畫，未來可能需付費訂閱。
+                    我們不會要求、收集或儲存信用卡或其他付款資訊。
                   </td>
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    功能變更
+                    服務變更
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    目前免費之功能可能改為付費方案。任何此類變更將至少提前 30 日通知。
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    帳單
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    進階功能上線後，訂閱將以月繳或年繳方式計費。您可於下一計費週期前隨時取消。
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    退款
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    退款申請將個案審核。年訂於期中取消者，可能提供按比例退款。
+                    功能可能隨時調整或下架；重大變更將依本條款「修改」一節通知。
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-          <HighlightBox variant="info">
-            <strong>價格透明：</strong>我們將在要求付款前清楚說明價格。未經您於安全付款流程中明確同意與確認，不會產生任何扣款。
-          </HighlightBox>
         </div>
       </section>
 

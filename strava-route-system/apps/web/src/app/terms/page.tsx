@@ -6,7 +6,7 @@ import { TermsHeader } from "@/components/terms/terms-header";
 export const metadata: Metadata = {
   title: "Terms of Service - Routecast",
   description:
-    "Read the Routecast Terms of Service covering account usage, Strava API policies, subscriptions, and user responsibilities.",
+    "Read the Routecast Terms of Service covering account usage, Strava API policies, and user responsibilities.",
 };
 
 export default function TermsPage() {
