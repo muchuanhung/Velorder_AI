@@ -1,0 +1,88 @@
+# 本機開發用：MySQL + MinIO（S3 mock）+ API；Redis 為選用 profile
+#   docker compose up --build
+#   docker compose --profile redis up --build
+# 這裡的帳密只供本機容器使用，不是正式環境的密鑰。
+name: routecast-api
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: routecast
+      MYSQL_USER: routecast
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-routecast}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-routecast-root}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroutecast", "-p${MYSQL_PASSWORD:-routecast}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-routecast}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-routecast-minio}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/$${S3_BUCKET}
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-routecast}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-routecast-minio}
+      S3_BUCKET: ${S3_BUCKET:-routecast-gpx}
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["redis"]
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ENVIRONMENT: local
+      DATABASE_URL: mysql+pymysql://routecast:${MYSQL_PASSWORD:-routecast}@mysql:3306/routecast?charset=utf8mb4
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-fake}
+      STORAGE_BACKEND: s3
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET: ${S3_BUCKET:-routecast-gpx}
+      S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-routecast}
+      S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-routecast-minio}
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+volumes:
+  mysql-data:
+  minio-data:
