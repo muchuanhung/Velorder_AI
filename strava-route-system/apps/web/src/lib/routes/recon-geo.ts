@@ -152,36 +152,47 @@ export function routeTotalKm(route: Route): number {
   return route.distance ?? (ep[ep.length - 1]?.[0] ?? 0);
 }
 
-/** 依 0、1/4、1/2、3/4、終點取樣，對應行政區天氣 */
+/**
+ * 從路線 segments 產生 RouteStage 陣列，反映真實行政區涵蓋。
+ * 當 segments 有 sampleKms 時，以每個 segment 的 sampleKms 中位數作為代表里程；
+ * 舊資料（無 sampleKms）退回 0/25%/50%/75%/100% 五點取樣。
+ */
 export function deriveStages(route: Route): RouteStage[] {
   const ep = route.elevationProfile ?? [];
   const segs = route.segments ?? [];
   if (ep.length === 0) return [];
   const totalKm = routeTotalKm(route);
+
+  const hasSampleKms = segs.some((s) => s.sampleKms && s.sampleKms.length > 0);
+
+  if (hasSampleKms) {
+    // 新資料：依 segments 順序，每個 segment 產生一個 stage
+    return segs.map((seg, i) => {
+      const kms = seg.sampleKms ?? [];
+      // 取中位數里程作為此 stage 代表位置
+      const km = kms.length > 0 ? kms[Math.floor(kms.length / 2)]! : (totalKm * i) / Math.max(segs.length - 1, 1);
+      return {
+        id: `stage-${i}`,
+        km,
+        name: seg.districtZh ?? `路段 ${i + 1}`,
+        rainProbability: seg.rainProbability ?? 0,
+        temperature: seg.temperature ?? 0,
+        windSpeed: seg.windSpeed ?? 0,
+        condition: seg.condition,
+        hasWeather: seg.hasWeather ?? false,
+      };
+    });
+  }
+
+  // 舊資料：退回 5 點取樣
   const sampleKm = [0, totalKm * 0.25, totalKm * 0.5, totalKm * 0.75, totalKm].filter(
     (k, i, arr) => arr.indexOf(k) === i
   );
 
-  // 有 sampleKms 時依里程找最近的行政區；舊資料（無 sampleKms）退回索引對應
-  const hasSampleKms = segs.some((s) => s.sampleKms && s.sampleKms.length > 0);
-  const segAtKm = (km: number, fallbackIdx: number) => {
-    if (!hasSampleKms) return segs[Math.min(fallbackIdx, segs.length - 1)] ?? segs[0];
-    let best = segs[0];
-    let bestDist = Infinity;
-    for (const seg of segs) {
-      for (const sk of seg.sampleKms ?? []) {
-        const d = Math.abs(sk - km);
-        if (d < bestDist) {
-          bestDist = d;
-          best = seg;
-        }
-      }
-    }
-    return best;
-  };
+  const segAtKm = (fallbackIdx: number) => segs[Math.min(fallbackIdx, segs.length - 1)] ?? segs[0];
 
   return sampleKm.map((km, i) => {
-    const seg = segAtKm(km, i);
+    const seg = segAtKm(i);
     return {
       id: `stage-${i}`,
       km,
@@ -392,10 +403,35 @@ export interface ReconVerdict {
   note: string;
 }
 
-/** 全線判定：取最嚴重的示警；沒有任何天氣資料時為 unknown */
-export function summarizeVerdict(hazards: Hazard[], stages: RouteStage[]): ReconVerdict {
+export interface VerdictOptions {
+  /**
+   * 路況事件取不到的縣市清單；null 表示整個事件服務失敗；
+   * 空陣列或 undefined 表示完全成功。
+   */
+  eventsFailed?: string[] | null;
+}
+
+/**
+ * 全線判定：取最嚴重的示警；沒有任何天氣資料時為 unknown。
+ *
+ * 重要：當涵蓋不完整（部分路段缺天氣或路況事件服務失敗）且無更嚴重示警時，
+ * 不可宣稱 clear，必須回傳 unknown（未判定）。
+ *
+ * - 若有 risky/caution 示警，仍優先回傳該等級（已知風險 > 未知）
+ * - 若無示警但涵蓋不完整（partial weather 或 eventsFailed），回傳 unknown
+ */
+export function summarizeVerdict(
+  hazards: Hazard[],
+  stages: RouteStage[],
+  options: VerdictOptions = {}
+): ReconVerdict {
+  const { eventsFailed } = options;
   const withWeather = stages.filter((s) => s.hasWeather).length;
+  const noWeather = withWeather === 0;
   const partial = withWeather > 0 && withWeather < stages.length;
+
+  // TDX 路況事件服務是否有問題（null = 整個服務失敗，非空陣列 = 部分縣市失敗）
+  const eventsHadIssue = eventsFailed === null || (eventsFailed && eventsFailed.length > 0);
 
   const worst = hazards.reduce<Hazard | null>(
     (best, h) => (!best || LEVEL_RANK[h.level] > LEVEL_RANK[best.level] ? h : best),
@@ -405,16 +441,32 @@ export function summarizeVerdict(hazards: Hazard[], stages: RouteStage[]): Recon
   const notes: string[] = [];
   if (worst && hazards.length > 1) notes.push(`另有 ${hazards.length - 1} 項示警`);
   if (partial) notes.push("部分路段無天氣資料");
+  if (eventsFailed === null) notes.push("路況事件服務暫時無法取得");
+  else if (eventsFailed && eventsFailed.length > 0) notes.push(`部分路況事件取不到：${eventsFailed.join("、")}`);
 
+  // 若有示警（risky/caution），回傳最嚴重的示警等級
   if (worst) {
     return {
       level: worst.level,
       headline: `${worst.startKm.toFixed(1)} km 起${worst.label}`,
-      note: [withWeather === 0 ? "尚無天氣資料" : "", ...notes].filter(Boolean).join("・"),
+      note: [noWeather ? "尚無天氣資料" : "", ...notes].filter(Boolean).join("・"),
     };
   }
-  if (withWeather === 0) {
+
+  // 沒有示警：檢查涵蓋是否完整
+  if (noWeather) {
     return { level: "unknown", headline: "尚無天氣資料", note: "無法判定天氣風險" };
   }
-  return { level: "clear", headline: "沿途無示警", note: notes.join("・") };
+
+  // 涵蓋不完整（部分天氣缺失或路況事件失敗）：不宣稱 clear
+  if (partial || eventsHadIssue) {
+    return {
+      level: "unknown",
+      headline: "資料涵蓋不完整，無法確認安全",
+      note: notes.join("・"),
+    };
+  }
+
+  // 涵蓋完整且無示警：可宣稱 clear
+  return { level: "clear", headline: "沿途無示警", note: "" };
 }
