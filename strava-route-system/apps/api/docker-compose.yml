@@ -23,37 +23,24 @@ services:
       timeout: 3s
       retries: 30
 
+  # Docker Hub 的 minio/minio、minio/mc 已不再公開提供，改用 Bitnami 封存版（固定版本，不會再更新）。
+  # MINIO_DEFAULT_BUCKETS 會在啟動時建立 bucket，不需另外的 mc init 容器。
   minio:
-    image: minio/minio:latest
-    command: ["server", "/data", "--console-address", ":9001"]
+    image: bitnamilegacy/minio:2025.4.22
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-routecast}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-routecast-minio}
+      MINIO_DEFAULT_BUCKETS: ${S3_BUCKET:-routecast-gpx}
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio-data:/data
+      - minio-data:/bitnami/minio/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
       interval: 5s
       timeout: 3s
       retries: 30
-
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
-      mc mb --ignore-existing local/$${S3_BUCKET}
-      "
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-routecast}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-routecast-minio}
-      S3_BUCKET: ${S3_BUCKET:-routecast-gpx}
 
   redis:
     image: redis:7-alpine
@@ -66,8 +53,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
     env_file:
       - path: .env
         required: false
