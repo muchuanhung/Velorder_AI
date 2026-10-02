@@ -588,13 +588,13 @@ export function PolicyContent() {
 
       <Separator />
 
-      {/* Monetization */}
+      {/* Fees & Data */}
       <section>
         <SectionHeading
-          id="monetization"
+          id="fees-and-data"
           icon={CreditCard}
-          title="營利說明"
-          subtitle="Routecast 如何維持服務"
+          title="費用與資料使用"
+          subtitle="免費服務，不將資料變現"
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
