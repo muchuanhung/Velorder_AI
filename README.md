@@ -6,7 +6,7 @@
 
 > 出發前判讀台灣單車、跑步與越野路線的天氣與路況風險。
 
-Routecast 依 GPX 軌跡反查沿線行政區，套上中央氣象署（CWB）鄉鎮預報、測站雨量與 TDX 路況事件，對每條路線給出「安全／注意／危險／未判定」的判讀；沒有天氣資料時標為未判定。
+Routecast 沿 GPX 軌跡每 0.5 km 取樣反查行政區，依騎經各路段的預估時間（20 km/h）挑選 CWB 鄉鎮預報時段，再套上測站雨量與 TDX 路況事件，對每條路線給出「安全／注意／危險／未判定」的判讀；天氣缺漏或沿線縣市路況取不到時判為未判定，不宣稱安全。
 
 （GitHub repo 沿用舊名 `Velorder_AI`，產品名稱為 Routecast。）
 
@@ -14,7 +14,7 @@ Routecast 依 GPX 軌跡反查沿線行政區，套上中央氣象署（CWB）�
 
 | 頁面 | 說明 |
 |------|------|
-| `/dashboard` 今日判讀 | 各路線的判定、示警路段與降雨機率，以及目前位置的天氣卡片 |
+| `/dashboard` 今日判讀 | 各路線的判定、示警路段與 ETA 降雨時段；天氣卡片優先採用定位 3 km 內的測站雨量 |
 | `/routes` 路線示警 | 路線列表與單一路線偵察：高度圖、依里程對應的行政區路段、沿線 CCTV |
 | `/maps` 降雨地圖 | 全台縣市降雨預報（`/api/weather/cwb/all-counties`） |
 | `/profile` | 個人資料與 Strava 連結（可用 `NEXT_PUBLIC_STRAVA_ENABLED=false` 關閉） |
@@ -30,7 +30,7 @@ Routecast 依 GPX 軌跡反查沿線行政區，套上中央氣象署（CWB）�
 | 資料儲存 | Firestore（Strava token、活動、CCTV 清單）、Firebase Storage（`gpx/routes/*.gpx` 公開路線） |
 | 背景工作 | Inngest（Strava 同步、TDX CCTV 每日同步） |
 | 外部資料 | CWB 開放資料（`F-D0047-*` 鄉鎮預報、`O-A0002-002` 測站雨量）、TDX（路況事件、CCTV）、Strava API（OAuth 與活動） |
-| 行政區反查 | 內建台灣鄉鎮 TopoJSON，本地 point-in-polygon，不需外部地理服務 |
+| 行政區反查 | 內建台灣鄉鎮 TopoJSON + bbox 索引，本地 point-in-polygon，不需外部地理服務 |
 | 部署 | Vercel（見 `strava-route-system/vercel.json`） |
 | 測試／CI | Playwright（unit 與 E2E project）、GitHub Actions 跑型別檢查與 unit 測試 |
 
@@ -83,7 +83,7 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
 NEXT_PUBLIC_FIREBASE_APP_ID=
 FIREBASE_SERVICE_ACCOUNT_JSON=              # service account JSON 字串
 
-# 天氣與路況（缺 CWB 時路線判讀為「未判定」；缺 TDX 時沒有路況事件與 CCTV）
+# 天氣與路況（缺任一項時路線判讀為「未判定」；缺 TDX 時也沒有 CCTV）
 CWB_API_KEY=
 TDX_CLIENT_ID=
 TDX_CLIENT_SECRET=
