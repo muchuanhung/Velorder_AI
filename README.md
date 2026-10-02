@@ -18,7 +18,7 @@ Routecast 依 GPX 軌跡反查沿線行政區，套上中央氣象署（CWB）�
 | `/routes` 路線示警 | 路線列表與單一路線偵察：高度圖、依里程對應的行政區路段、沿線 CCTV |
 | `/maps` 降雨地圖 | 全台縣市降雨預報（`/api/weather/cwb/all-counties`） |
 | `/profile` | 個人資料與 Strava 連結（可用 `NEXT_PUBLIC_STRAVA_ENABLED=false` 關閉） |
-| `/billing` | Stripe 訂閱結帳結果頁 |
+| `/routes/private` 私人路線 | 登入即可使用，不需付費；上傳私人 GPX 功能開發中 |
 | `/lab/route-sim` | 3D 路線沙盤（實驗；正式環境需 `NEXT_PUBLIC_LAB_ENABLED=true`） |
 
 ## 技術架構
@@ -27,9 +27,8 @@ Routecast 依 GPX 軌跡反查沿線行政區，套上中央氣象署（CWB）�
 |------|----------|
 | 前端／API | Next.js 16（App Router、Route Handlers）、React 19、TypeScript、Tailwind CSS v4、Radix UI、three.js（`/lab`） |
 | 認證 | Firebase Authentication（client 登入，server 以 Firebase Admin 驗證 `firebase-id-token` cookie） |
-| 資料儲存 | Firestore（Strava token、活動、訂閱、CCTV 清單）、Firebase Storage（`gpx/routes/*.gpx` 公開路線） |
+| 資料儲存 | Firestore（Strava token、活動、CCTV 清單）、Firebase Storage（`gpx/routes/*.gpx` 公開路線） |
 | 背景工作 | Inngest（Strava 同步、TDX CCTV 每日同步） |
-| 金流 | Stripe Checkout + Webhook |
 | 外部資料 | CWB 開放資料（`F-D0047-*` 鄉鎮預報、`O-A0002-002` 測站雨量）、TDX（路況事件、CCTV）、Strava API（OAuth 與活動） |
 | 行政區反查 | 內建台灣鄉鎮 TopoJSON，本地 point-in-polygon，不需外部地理服務 |
 | 部署 | Vercel（見 `strava-route-system/vercel.json`） |
@@ -41,10 +40,10 @@ Routecast 依 GPX 軌跡反查沿線行政區，套上中央氣象署（CWB）�
 strava-route-system/          # pnpm + Turborepo monorepo
 ├── apps/web/                 # Routecast 主程式（Next.js）
 │   ├── src/app/              # 頁面與 /api route handlers
-│   ├── src/lib/              # cwb、tdx、routes、firebase、stripe 等邏輯
+│   ├── src/lib/              # cwb、tdx、routes、firebase 等邏輯
 │   ├── src/inngest/          # Inngest functions
 │   ├── tests/{unit,e2e}/     # Playwright 測試
-│   └── docs/                 # Stripe、TDX CCTV、Strava 品牌規範等設定文件
+│   └── docs/                 # TDX CCTV、Strava 品牌規範等設定文件
 ├── apps/docs/                # create-next-app 範本，尚未使用
 └── packages/
     ├── auth/                 # Strava OAuth token 交換與 refresh
@@ -94,13 +93,6 @@ STRAVA_CLIENT_ID=
 STRAVA_CLIENT_SECRET=
 STRAVA_REDIRECT_URI=http://localhost:3000/api/strava
 NEXT_PUBLIC_STRAVA_ENABLED=true
-
-# Stripe（選用，詳見 apps/web/docs/STRIPE_SETUP.md）
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PRICE_DAY=
-STRIPE_PRICE_MONTHLY=
-STRIPE_PRICE_YEARLY=
 
 # 其他
 NEXT_PUBLIC_APP_URL=http://localhost:3000
