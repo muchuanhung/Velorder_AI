@@ -89,18 +89,67 @@ function getElementValue(elements: WeatherElement[] | undefined, name: string): 
   return firstTime?.ElementValue?.[0];
 }
 
-/** 從 O-A0002-002 回傳中取得該縣市最大 1hr 雨量 (mm/hr)，若無資料回傳 null */
-function parseRainfallMmPerHr(rainData: unknown, county: string): number | null {
+/** 優先使用路線附近測站的搜尋半徑（km） */
+const NEARBY_STATION_RADIUS_KM = 3.0;
+
+interface RainfallParseOptions {
+  /** 路線/路段附近的座標點，用於篩選附近測站 */
+  nearbyCoords?: Array<{ lat: number; lon: number }>;
+}
+
+interface RainfallParseResult {
+  /** 雨量值 (mm/hr)，null 表示無資料 */
+  rainfall: number | null;
+  /** 'nearby' = 使用路線附近測站; 'countywide' = 退回縣市全域; 'none' = 無資料 */
+  source: "nearby" | "countywide" | "none";
+  /** 使用的測站數量 */
+  stationCount: number;
+}
+
+/**
+ * 簡易 haversine 距離計算（km）
+ */
+function haversineKmSimple(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * 從 O-A0002-002 回傳中取得雨量 (mm/hr)
+ *
+ * 行為說明：
+ * 1. 若提供 nearbyCoords，優先取距離這些座標點 ≤3 km 內的測站，取其中最大雨量
+ * 2. 若無附近測站（或未提供座標），退回該縣市全域的最大雨量
+ * 3. 若該縣市完全無測站資料，回傳 null
+ *
+ * @returns RainfallParseResult 包含雨量值與來源說明
+ */
+function parseRainfallMmPerHr(
+  rainData: unknown,
+  county: string,
+  options: RainfallParseOptions = {}
+): RainfallParseResult {
+  const { nearbyCoords } = options;
   const countyNorm = county.replace(/台/g, "臺");
-  let maxRain = 0;
-  let found = false;
+
   const rec = (rainData as { records?: Record<string, unknown> })?.records;
   const stations = (rec?.Station ?? rec?.station) as unknown[] | undefined;
   const arr = Array.isArray(stations) ? stations : stations ? [stations] : [];
+
+  // 解析所有該縣市測站的雨量與座標
+  type StationData = { rain: number; lat?: number; lon?: number };
+  const countyStations: StationData[] = [];
+
   for (const s of arr) {
     const st = s as Record<string, unknown>;
     const stationCounty = String(st?.CountyName ?? st?.countyName ?? "");
     if (!stationCounty.includes(countyNorm) && !stationCounty.includes(county)) continue;
+
     const rainVal =
       st?.Rain ??
       st?.rain ??
@@ -109,11 +158,49 @@ function parseRainfallMmPerHr(rainData: unknown, county: string): number | null 
       (st?.WeatherElement as Array<{ ElementName?: string; ElementValue?: Array<{ value?: string }> }>)?.find?.((e) =>
         /雨量|RAIN|Rain/i.test(e.ElementName ?? "")
       )?.ElementValue?.[0]?.value;
+
     const r = parseFloat(String(rainVal ?? "0").replace(/^-$|^T$|^X$/i, "0"));
-    if (!Number.isNaN(r) && r > maxRain) maxRain = r;
-    found = true;
+    if (Number.isNaN(r)) continue;
+
+    // 嘗試取得測站座標
+    const stLat = parseFloat(String(st?.StationLatitude ?? st?.stationLatitude ?? ""));
+    const stLon = parseFloat(String(st?.StationLongitude ?? st?.stationLongitude ?? ""));
+    // 部分資料結構可能用 GeoInfo
+    const geoInfo = st?.GeoInfo as Record<string, unknown> | undefined;
+    const coords = geoInfo?.Coordinates as Record<string, unknown> | undefined;
+    const coordSys = coords?.CoordinateSystem as Record<string, unknown> | undefined;
+    const geoLat = parseFloat(String(coordSys?.lat ?? geoInfo?.Lat ?? ""));
+    const geoLon = parseFloat(String(coordSys?.lon ?? geoInfo?.Lon ?? ""));
+
+    const lat = Number.isFinite(stLat) ? stLat : Number.isFinite(geoLat) ? geoLat : undefined;
+    const lon = Number.isFinite(stLon) ? stLon : Number.isFinite(geoLon) ? geoLon : undefined;
+
+    countyStations.push({ rain: r, lat, lon });
   }
-  return found ? maxRain : null;
+
+  if (countyStations.length === 0) {
+    return { rainfall: null, source: "none", stationCount: 0 };
+  }
+
+  // 若提供座標，嘗試找附近測站
+  if (nearbyCoords && nearbyCoords.length > 0) {
+    const nearbyStations = countyStations.filter((st) => {
+      if (st.lat == null || st.lon == null) return false;
+      return nearbyCoords.some(
+        (coord) => haversineKmSimple(coord.lat, coord.lon, st.lat!, st.lon!) <= NEARBY_STATION_RADIUS_KM
+      );
+    });
+
+    if (nearbyStations.length > 0) {
+      const maxRain = Math.max(...nearbyStations.map((st) => st.rain));
+      return { rainfall: maxRain, source: "nearby", stationCount: nearbyStations.length };
+    }
+    // 無附近測站，退回縣市全域
+  }
+
+  // 縣市全域最大雨量
+  const maxRain = Math.max(...countyStations.map((st) => st.rain));
+  return { rainfall: maxRain, source: "countywide", stationCount: countyStations.length };
 }
 
 /** 降雨判斷：雨量 mm/hr → verdict，windMs 用於雨+風體感判斷 */
@@ -221,7 +308,10 @@ export async function getDistrictWeather(county: string, district?: string): Pro
   let rainfallMmPerHr: number | null = null;
   if (rainRes.ok) {
     try {
-      rainfallMmPerHr = parseRainfallMmPerHr(await rainRes.json(), cwbCounty);
+      // 目前 getDistrictWeather 不傳入路線座標，使用縣市全域雨量；
+      // 未來可從呼叫端傳入 nearbyCoords 以優先使用附近測站
+      const rainfallResult = parseRainfallMmPerHr(await rainRes.json(), cwbCounty);
+      rainfallMmPerHr = rainfallResult.rainfall;
     } catch {
       // 雨量 API 失敗不影響主流程
     }
