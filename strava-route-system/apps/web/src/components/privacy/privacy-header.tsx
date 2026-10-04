@@ -16,7 +16,6 @@ import { ScrollArea } from "../../components/ui/scroll-area";
 import {
   Database,
   Target,
-  Link2,
   Cookie,
   Shield,
   Scale,
@@ -30,7 +29,6 @@ const mobileSections = [
   { id: "introduction", label: "導覽", icon: FileText },
   { id: "data-collection", label: "我們蒐集的資料", icon: Database },
   { id: "purpose-of-use", label: "使用目的", icon: Target },
-  { id: "strava-api", label: "Strava API 合規", icon: Link2 },
   { id: "data-storage", label: "資料儲存與安全", icon: Shield },
   { id: "cookies", label: "Cookie 與追蹤", icon: Cookie },
   { id: "user-rights", label: "您的權利", icon: UserCheck },
@@ -57,7 +55,7 @@ export function PrivacyHeader() {
           <Link href="/login" className="flex items-center gap-2.5 group">
             <ProductLogo size={32} />
             <span className="hidden sm:block font-semibold text-foreground text-sm">
-              Dawnline
+              曉行 Dawnline
             </span>
           </Link>
         </div>

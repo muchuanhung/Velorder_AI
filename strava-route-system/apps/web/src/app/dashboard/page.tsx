@@ -6,7 +6,7 @@ import { AppShell } from "@/components/app-shell/app-shell";
 import { Briefing } from "@/components/dashboard/briefing/briefing";
 import { BriefingSkeleton } from "@/components/dashboard/briefing/briefing-skeleton";
 
-export const metadata: Metadata = { title: "今日判讀｜Dawnline" };
+export const metadata: Metadata = { title: "今日判讀" };
 
 /** 依台灣時間問候（伺服器在 UTC 也正確） */
 function greeting(now = new Date()): string {

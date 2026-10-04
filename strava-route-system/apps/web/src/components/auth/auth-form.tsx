@@ -21,8 +21,8 @@ type AuthMode = "login" | "signup" | "forgot";
 
 const authFormConfig = {
   header: {
-    login: { title: "歡迎回來", subtitle: "登入以存取您的Strava活動數據" },
-    signup: { title: "歡迎加入", subtitle: "開始追蹤您的Strava活動旅程" },
+    login: { title: "歡迎回來", subtitle: "登入後查看你的路線與逐段判定" },
+    signup: { title: "歡迎加入", subtitle: "註冊後上傳 GPX，查看逐段判定" },
     forgot: { title: "重置密碼", subtitle: "輸入您的電子郵件以接收重置連結" },
   },
   googleButton: "使用 Google 登入",

@@ -4,9 +4,9 @@ import { TermsContent } from "@/components/terms/terms-content";
 import { TermsHeader } from "@/components/terms/terms-header";
 
 export const metadata: Metadata = {
-  title: "Terms of Service - Dawnline",
+  title: "服務條款",
   description:
-    "Read the Dawnline Terms of Service covering account usage, Strava API policies, and user responsibilities.",
+    "曉行 Dawnline 服務條款：帳號使用、服務費用與使用者責任。",
 };
 
 export default function TermsPage() {

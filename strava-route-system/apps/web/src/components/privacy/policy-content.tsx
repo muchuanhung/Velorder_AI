@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Database,
   Target,
-  Link2,
   Cookie,
   Shield,
   Scale,
@@ -16,8 +15,6 @@ import {
   FileText,
   AlertTriangle,
   CheckCircle2,
-  Activity,
-  Heart,
   MapPin,
   Cpu,
 } from "lucide-react";
@@ -117,11 +114,11 @@ export function PolicyContent() {
           id="introduction"
           icon={FileText}
           title="隱私政策"
-          subtitle="最後更新：2026 年 2 月 10 日"
+          subtitle="最後更新：2026 年 10 月 4 日"
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            歡迎使用曉行 Dawnline。我們非常重視您的隱私，尤其是運動與健康相關資料。本隱私政策說明當您使用本服務時，我們如何蒐集、使用、揭露與保護您的資訊。
+            歡迎使用曉行 Dawnline。我們非常重視您的隱私，尤其是您的路線與位置資料。本隱私政策說明當您使用本服務時，我們如何蒐集、使用、揭露與保護您的資訊。
           </p>
           <p className="text-muted-foreground leading-relaxed">
             使用 Dawnline 即表示您同意依本政策蒐集與使用資訊。若不同意本政策條款，請勿使用本服務。
@@ -130,10 +127,6 @@ export function PolicyContent() {
             <Badge variant="secondary" className="gap-1.5 text-foreground">
               <Shield className="h-3 w-3" />
               符合 GDPR
-            </Badge>
-            <Badge variant="secondary" className="gap-1.5 text-foreground">
-              <Link2 className="h-3 w-3" />
-              符合 Strava API 規範
             </Badge>
             <Badge variant="secondary" className="gap-1.5 text-foreground">
               <UserCheck className="h-3 w-3" />
@@ -151,51 +144,25 @@ export function PolicyContent() {
           id="data-collection"
           icon={Database}
           title="我們蒐集的資料"
-          subtitle="透過 Strava OAuth 整合取得的資訊"
+          subtitle="您提供與自動蒐集的資訊"
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            當您透過 OAuth 2.0 將 Strava 帳號連結至 Dawnline 時，我們會請求以下類別的資料存取權。在 Strava 連結流程中，系統會提示您授權各項權限範圍。
+            當您註冊或使用 Dawnline 時，我們會蒐集以下類別的資料。
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <InfoCard
               icon={UserCheck}
-              title="Strava 個人資料"
-              description="您的公開個人資料，包含顯示名稱、大頭照、城市、州/省、國家及運動員統計。"
+              title="帳號資料"
+              description="透過 Google 或電子郵件註冊時提供的顯示名稱、電子郵件與大頭照。"
             />
             <InfoCard
               icon={MapPin}
-              title="活動 GPS 紀錄"
-              description="您紀錄的活動（跑步、騎車、游泳等）之詳細 GPS 座標與路線資料。"
-            />
-            <InfoCard
-              icon={Heart}
-              title="心率資料"
-              description="透過 Garmin、Wahoo、Apple Watch 等穿戴裝置在活動中紀錄的心率串流。"
-            />
-            <InfoCard
-              icon={Activity}
-              title="表現數據"
-              description="配速、速度、功率、步頻、海拔及其他與活動相關的感測器數據。"
+              title="路線資料"
+              description="您在私人路線中建立或上傳的 GPX 軌跡與路線名稱。"
             />
           </div>
-
-          <HighlightBox variant="info">
-            <strong>OAuth 權限範圍：</strong>我們僅請求{" "}
-            <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-xs text-strava">
-              read
-            </code>
-            、{" "}
-            <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-xs text-strava">
-              activity:read
-            </code>
-            、{" "}
-            <code className="rounded bg-secondary px-1.5 py-0.5 font-mono text-xs text-strava">
-              activity:read_all
-            </code>
-            。我們絕不請求對您 Strava 帳號的寫入權限。
-          </HighlightBox>
 
           <h3 className="text-base font-medium text-foreground mt-6">
             自動蒐集的資訊
@@ -234,7 +201,7 @@ export function PolicyContent() {
           id="purpose-of-use"
           icon={Target}
           title="使用目的"
-          subtitle="我們如何運用您的資料以提升訓練體驗"
+          subtitle="我們如何運用您的資料"
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
@@ -259,21 +226,10 @@ export function PolicyContent() {
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    個人化分析
+                    路線判讀
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    根據您的活動紀錄產生訓練洞察、體能趨勢與表現儀表板。
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                    <Badge variant="outline" className="text-foreground">同意</Badge>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    背景處理
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    透過 Inngest 背景任務同步 Strava 歷史資料、計算彙總統計並非同步更新訓練指標。
+                    依路線沿途位置查詢天氣與路況，產生逐段判定。
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                     <Badge variant="outline" className="text-foreground">同意</Badge>
@@ -284,7 +240,7 @@ export function PolicyContent() {
                     地圖視覺化
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    在互動地圖上顯示您的 GPS 軌跡，協助檢視路線、探索熱力圖與發現新區域。
+                    在互動地圖上顯示路線軌跡與沿途天氣、路況。
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                     <Badge variant="outline" className="text-foreground">同意</Badge>
@@ -303,71 +259,6 @@ export function PolicyContent() {
                 </tr>
               </tbody>
             </table>
-          </div>
-
-          <HighlightBox variant="success">
-            <strong>Inngest 處理：</strong>背景同步任務透過 Inngest 排程執行，於獨立的無伺服器函式中處理活動資料。每項任務具等冪性，重複執行不會產生重複資料。
-          </HighlightBox>
-        </div>
-      </section>
-
-      <Separator />
-
-      {/* Strava API Compliance */}
-      <section>
-        <SectionHeading
-          id="strava-api"
-          icon={Link2}
-          title="Strava API 合規"
-          subtitle="我們對 Strava 開發者協議的承諾"
-        />
-        <div className="mt-4 space-y-4">
-          <p className="text-muted-foreground leading-relaxed">
-            Dawnline 完全符合{" "}
-            <span className="text-strava font-medium">
-              Strava API 協議
-            </span>
-            ，並遵循所有要求的資料處理實務。我們遵守以下原則：
-          </p>
-
-          <div className="space-y-3">
-            {[
-              {
-                title: "不超必要保留資料",
-                description:
-                  "我們不會將 Strava 資料保留超過提供服務所需時間。當您解除 Strava 連結或刪除 Dawnline 帳號後，所有相關 Strava 資料將於 30 天內永久刪除。",
-              },
-              {
-                title: "隨時可撤銷存取權",
-                description:
-                  "您可隨時透過個人設定或 Strava「我的應用程式」頁面解除 Strava 與 Dawnline 的連結。解除後，我們會立即停止所有資料同步並開始刪除程序。",
-              },
-              {
-                title: "不出售健康資料",
-                description:
-                  "我們不會向任何第三方出售、出租或交換個人健康或體能資料。您的活動 GPS、心率與表現數據絕不透過資料仲介或廣告網路變現。",
-              },
-              {
-                title: "正確 Strava 標示",
-                description:
-                  "所有來自 Strava 的資料皆依 Strava 品牌指南標示「Powered by Strava」。",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="flex gap-3 rounded-lg border border-border bg-card p-4"
-              >
-                <CheckCircle2 className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {item.title}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -418,10 +309,10 @@ export function PolicyContent() {
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="px-4 py-3 text-foreground">
-                    Strava 活動資料
+                    路線資料
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    至帳號刪除或解除 Strava 連結後 30 天
+                    至帳號刪除後 30 天
                   </td>
                 </tr>
                 <tr>
@@ -567,7 +458,7 @@ export function PolicyContent() {
               {
                 title: "撤回同意權",
                 description:
-                  "隨時透過解除 Strava 連結或刪除 Dawnline 帳號撤回同意。",
+                  "隨時透過刪除 Dawnline 帳號撤回同意。",
               },
             ].map((right) => (
               <div
@@ -613,7 +504,7 @@ export function PolicyContent() {
                   不將資料變現
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  我們不會也永不出售個別使用者資料、健康指標或活動紀錄給廣告主、資料仲介或任何第三方。
+                  我們不會也永不出售個別使用者資料、位置或路線紀錄給廣告主、資料仲介或任何第三方。
                 </p>
               </div>
             </div>
@@ -665,17 +556,6 @@ export function PolicyContent() {
               <tbody className="divide-y divide-border">
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    Strava API
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    活動資料來源
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                    OAuth 權杖
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 font-medium text-foreground">
                     Firebase (Google)
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
@@ -683,17 +563,6 @@ export function PolicyContent() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                     電子郵件、驗證憑證
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    Inngest
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    背景任務編排
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                    僅任務中繼資料
                   </td>
                 </tr>
                 <tr>

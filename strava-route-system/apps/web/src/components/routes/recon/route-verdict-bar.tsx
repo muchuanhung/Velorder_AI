@@ -52,7 +52,12 @@ export function RouteVerdictBar({ verdict }: { verdict: ReconVerdict }) {
       <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", style.iconClass)} aria-hidden />
       <div className="min-w-0">
         <p className="text-base font-semibold leading-snug text-foreground">
-          <span className={cn("mr-2 font-bold", style.wordClass)}>{style.word}</span>
+          <span
+            className={cn("mr-2 font-bold", style.wordClass)}
+            title={verdict.level === "unknown" ? "資料不足，無法判定，不代表安全。" : undefined}
+          >
+            {style.word}
+          </span>
           {verdict.headline}
         </p>
         {verdict.note && <p className="mt-0.5 text-sm text-muted-foreground">{verdict.note}</p>}

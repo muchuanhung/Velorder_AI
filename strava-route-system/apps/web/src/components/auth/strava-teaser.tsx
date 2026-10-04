@@ -1,49 +1,33 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Activity, MapPin, CloudSun } from "lucide-react";
+import { Route, CloudSun, HelpCircle } from "lucide-react";
 import { DecorativeMapBackground } from "@/components/ui/decorative-map-background";
-import { StravaLogoIcon } from "@/components/ui/strava-logo-icon";
 import { ProductLogo } from "@/components/ui/product-logo";
 
-const teaserConfig = {
-  hero: {
-    title: "Dawnline",
-    subtitle: "您的Strava數據，精彩呈現在您的眼前",
-  },
-  connectCard: {
-    title: "Connect with Strava",
-    description: "自動同步您的活動數據",
-    badgeText: "透過 Inngest 背景同步處理",
-  },
-  features: [
-    {
-      icon: Activity,
-      title: "Auto-sync Activities",
-      description: "您的跑步、騎行和游泳活動自動同步",
-    },
-    {
-      icon: MapPin,
-      title: "GPS Track Visualization",
-      description: "GPS軌跡視覺化",
-    },
-    {
-      icon: CloudSun,
-      title: "Live Weather",
-      description: "即時天氣資訊，中央氣象署數據",
-    },
-    {
-      icon: Zap,
-      title: "Powered by Inngest",
-      description: "可靠的背景同步處理",
-    },
-  ],
-  stats: [
-    { value: "2,847", label: "km tracked" },
-    { value: "48.2k", label: "elevation (m)" },
-    { value: "312", label: "activities" },
-  ],
+export const loginHero = {
+  brand: "曉行 Dawnline",
+  title: "出發前，整條路線一次判定。",
+  subtitle: "上傳 GPX，逐公里標出走、慢、停與未判定。缺資料，不說安全。",
 };
+
+const features = [
+  {
+    icon: Route,
+    title: "逐公里判定",
+    description: "沿 GPX 軌跡逐段標出走、慢、停，一眼看出哪一段要注意。",
+  },
+  {
+    icon: CloudSun,
+    title: "天氣與路況一起看",
+    description: "交通部中央氣象署鄉鎮預報與雨量，加上 TDX 路況事件。",
+  },
+  {
+    icon: HelpCircle,
+    title: "缺資料標未判定",
+    description: "資料不足，無法判定，不代表安全。",
+  },
+];
 
 export function StravaTeaser() {
   return (
@@ -56,81 +40,39 @@ export function StravaTeaser() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8"
+          className="mb-10"
         >
-          <div className="mb-2 flex items-center gap-3">
+          <div className="mb-6 flex items-center gap-3">
             <ProductLogo size={48} />
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {teaserConfig.hero.title}
-            </span>
+            <span className="text-2xl font-bold tracking-tight text-foreground">{loginHero.brand}</span>
           </div>
-          <p className="text-muted-foreground">{teaserConfig.hero.subtitle}</p>
-        </motion.div>
-
-        {/* Connect Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-8 rounded-2xl border border-border bg-card/50 p-6 backdrop-blur-sm"
-        >
-          <div className="mb-4 flex items-center gap-3">
-            <StravaLogoIcon size={32} />
-            <div>
-              <h3 className="font-semibold text-foreground">
-                {teaserConfig.connectCard.title}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {teaserConfig.connectCard.description}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
-            <Zap className="h-4 w-4" />
-            <span>{teaserConfig.connectCard.badgeText}</span>
-          </div>
+          <h1 className="text-3xl font-black leading-tight text-foreground">{loginHero.title}</h1>
+          <p className="mt-3 text-muted-foreground">{loginHero.subtitle}</p>
         </motion.div>
 
         {/* Features */}
         <div className="space-y-4">
-          {teaserConfig.features.map((feature, index) => {
+          {features.map((feature, index) => {
             const FeatureIcon = feature.icon;
             return (
               <motion.div
                 key={feature.title}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 + index * 0.1 }}
+                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
                 className="flex items-start gap-3"
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                   <FeatureIcon className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-foreground">{feature.title}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {feature.description}
-                  </p>
+                  <h2 className="font-medium text-foreground">{feature.title}</h2>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </div>
               </motion.div>
             );
           })}
         </div>
-
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          className="mt-8 grid grid-cols-3 gap-4"
-        >
-          {teaserConfig.stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-2xl font-bold text-primary">{stat.value}</div>
-              <div className="text-xs text-muted-foreground">{stat.label}</div>
-            </div>
-          ))}
-        </motion.div>
       </div>
     </div>
   );

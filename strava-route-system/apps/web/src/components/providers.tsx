@@ -8,7 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 /**
  * 全站 Provider
- * - 主題：淺色「日光地形」為主，深色跟隨系統設定
+ * - 主題：淺色為主，深色跟隨系統設定
  * - ThemeProvider 必須一直在樹上：若 mount 前後切換有無 ThemeProvider，
  *   React 會把整個 app 卸載重掛，所有 effect 與請求都跑兩次。
  *   hydration 差異由 <html suppressHydrationWarning> 處理。
