@@ -69,7 +69,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-border bg-card p-4 shadow-lg [body:has([data-bottom-nav])_&]:bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] md:[body:has([data-bottom-nav])_&]:bottom-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-medium text-foreground">將 Routecast 加入主畫面</p>
+            <p className="font-medium text-foreground">將 Dawnline 加入主畫面</p>
             {isIOS ? (
               <p className="mt-1 text-sm text-muted-foreground">
                 點選分享按鈕 <Share className="inline size-4 align-text-bottom" aria-label="分享" />，然後選擇「加入主畫面」

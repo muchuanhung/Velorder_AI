@@ -1,14 +1,14 @@
-<img src="https://github.com/user-attachments/assets/71bff9ef-a15e-42be-8c98-64f7fc981cfe" alt="Routecast app icon" width="100" />
+<img src="strava-route-system/apps/web/public/icon.svg" alt="曉行 Dawnline app icon" width="100" />
 
-# Routecast
+# 曉行 Dawnline
 
 [![CI](https://github.com/muchuanhung/Velorder_AI/actions/workflows/ci.yml/badge.svg)](https://github.com/muchuanhung/Velorder_AI/actions/workflows/ci.yml)
 
 > 出發前判讀台灣單車、跑步與越野路線的天氣與路況風險。
 
-Routecast 沿 GPX 軌跡每 0.5 km 取樣反查行政區，依騎經各路段的預估時間（20 km/h）挑選 CWB 鄉鎮預報時段，再套上測站雨量與 TDX 路況事件，對每條路線給出「安全／注意／危險／未判定」的判讀；天氣缺漏或沿線縣市路況取不到時判為未判定，不宣稱安全。
+曉行 Dawnline 沿 GPX 軌跡每 0.5 km 取樣反查行政區，依騎經各路段的預估時間（20 km/h）挑選 CWB 鄉鎮預報時段，再套上測站雨量與 TDX 路況事件，對每條路線給出「安全／注意／危險／未判定」的判讀；天氣缺漏或沿線縣市路況取不到時判為未判定，不宣稱安全。
 
-（GitHub repo 沿用舊名 `Velorder_AI`，產品名稱為 Routecast。）
+（GitHub repo 沿用舊名 `Velorder_AI`，產品名稱為曉行 Dawnline。）
 
 ## 功能
 
@@ -38,7 +38,7 @@ Routecast 沿 GPX 軌跡每 0.5 km 取樣反查行政區，依騎經各路段的
 
 ```
 strava-route-system/          # pnpm + Turborepo monorepo
-├── apps/web/                 # Routecast 主程式（Next.js）
+├── apps/web/                 # 曉行 Dawnline 主程式（Next.js）
 │   ├── src/app/              # 頁面與 /api route handlers
 │   ├── src/lib/              # cwb、tdx、routes、firebase 等邏輯
 │   ├── src/inngest/          # Inngest functions

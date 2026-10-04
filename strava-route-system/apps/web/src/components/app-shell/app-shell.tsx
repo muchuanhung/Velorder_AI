@@ -38,8 +38,8 @@ export function AppShell({
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur-sm pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-black tracking-wide text-primary">
-            <Image src="/routecast.svg" alt="" width={32} height={32} className="size-8" priority />
-            Routecast
+            <Image src="/dawnline.svg" alt="" width={32} height={32} className="size-8" priority />
+            Dawnline
           </Link>
           <nav aria-label="主要導覽" className="hidden h-full items-stretch gap-6 md:flex">
             {NAV.map((item) => (

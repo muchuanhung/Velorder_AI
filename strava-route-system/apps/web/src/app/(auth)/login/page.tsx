@@ -88,7 +88,7 @@ export default function LoginPage() {
           className="relative z-10 mb-8 flex items-center gap-2 lg:hidden"
         >
           <ProductLogo size={40} />
-          <span className="text-xl font-bold text-foreground">Routecast</span>
+          <span className="text-xl font-bold text-foreground">Dawnline</span>
         </motion.div>
 
         {/* Auth Card */}

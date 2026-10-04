@@ -121,10 +121,10 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            歡迎使用 Routecast。我們非常重視您的隱私，尤其是運動與健康相關資料。本隱私政策說明當您使用本服務時，我們如何蒐集、使用、揭露與保護您的資訊。
+            歡迎使用曉行 Dawnline。我們非常重視您的隱私，尤其是運動與健康相關資料。本隱私政策說明當您使用本服務時，我們如何蒐集、使用、揭露與保護您的資訊。
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            使用 Routecast 即表示您同意依本政策蒐集與使用資訊。若不同意本政策條款，請勿使用本服務。
+            使用 Dawnline 即表示您同意依本政策蒐集與使用資訊。若不同意本政策條款，請勿使用本服務。
           </p>
           <div className="flex flex-wrap gap-2 mt-4">
             <Badge variant="secondary" className="gap-1.5 text-foreground">
@@ -155,7 +155,7 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            當您透過 OAuth 2.0 將 Strava 帳號連結至 Routecast 時，我們會請求以下類別的資料存取權。在 Strava 連結流程中，系統會提示您授權各項權限範圍。
+            當您透過 OAuth 2.0 將 Strava 帳號連結至 Dawnline 時，我們會請求以下類別的資料存取權。在 Strava 連結流程中，系統會提示您授權各項權限範圍。
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -323,7 +323,7 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Routecast 完全符合{" "}
+            Dawnline 完全符合{" "}
             <span className="text-strava font-medium">
               Strava API 協議
             </span>
@@ -335,12 +335,12 @@ export function PolicyContent() {
               {
                 title: "不超必要保留資料",
                 description:
-                  "我們不會將 Strava 資料保留超過提供服務所需時間。當您解除 Strava 連結或刪除 Routecast 帳號後，所有相關 Strava 資料將於 30 天內永久刪除。",
+                  "我們不會將 Strava 資料保留超過提供服務所需時間。當您解除 Strava 連結或刪除 Dawnline 帳號後，所有相關 Strava 資料將於 30 天內永久刪除。",
               },
               {
                 title: "隨時可撤銷存取權",
                 description:
-                  "您可隨時透過個人設定或 Strava「我的應用程式」頁面解除 Strava 與 Routecast 的連結。解除後，我們會立即停止所有資料同步並開始刪除程序。",
+                  "您可隨時透過個人設定或 Strava「我的應用程式」頁面解除 Strava 與 Dawnline 的連結。解除後，我們會立即停止所有資料同步並開始刪除程序。",
               },
               {
                 title: "不出售健康資料",
@@ -567,7 +567,7 @@ export function PolicyContent() {
               {
                 title: "撤回同意權",
                 description:
-                  "隨時透過解除 Strava 連結或刪除 Routecast 帳號撤回同意。",
+                  "隨時透過解除 Strava 連結或刪除 Dawnline 帳號撤回同意。",
               },
             ].map((right) => (
               <div
@@ -598,11 +598,11 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Routecast 以免費服務形式提供，我們承諾透明說明平台如何運作。
+            Dawnline 以免費服務形式提供，我們承諾透明說明平台如何運作。
           </p>
 
           <HighlightBox variant="info">
-            <strong>免費使用：</strong>Routecast 不收取使用費用，也不會要求、收集或儲存信用卡或其他付款資訊。
+            <strong>免費使用：</strong>Dawnline 不收取使用費用，也不會要求、收集或儲存信用卡或其他付款資訊。
           </HighlightBox>
 
           <div className="space-y-3">
@@ -624,7 +624,7 @@ export function PolicyContent() {
                   無廣告
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Routecast 不顯示第三方廣告，亦不使用您的資料在本平台或任何外部服務投放定向廣告。
+                  Dawnline 不顯示第三方廣告，亦不使用您的資料在本平台或任何外部服務投放定向廣告。
                 </p>
               </div>
             </div>
@@ -644,7 +644,7 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            我們使用少量第三方服務以營運 Routecast。各服務受其自身隱私政策及我們的資料處理協議約束。
+            我們使用少量第三方服務以營運 Dawnline。各服務受其自身隱私政策及我們的資料處理協議約束。
           </p>
 
           <div className="rounded-lg border border-border overflow-hidden">

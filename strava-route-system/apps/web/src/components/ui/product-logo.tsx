@@ -13,8 +13,8 @@ export function ProductLogo({ className, size = 40 }: ProductLogoProps) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/routecast.svg"
-        alt="Routecast"
+        src="/dawnline.svg"
+        alt="Dawnline"
         width={size}
         height={size}
         className="object-contain"

@@ -1,6 +1,6 @@
 {
-  "name": "Routecast - Route Weather & Traffic",
-  "short_name": "Routecast",
+  "name": "曉行 Dawnline",
+  "short_name": "Dawnline",
   "description": "出發前判讀台灣單車、跑步與越野路線的天氣與路況風險。",
   "start_url": "/login",
   "scope": "/",

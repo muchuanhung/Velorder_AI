@@ -34,8 +34,8 @@ const MARGIN = 0.12; // bbox 外擴比例，讓路線不貼邊
 const MAX_W = 200; // 網格上限，控制檔案大小
 const MAX_H = 320;
 const TARGET_CELL_M = 48; // 目標網格間距
-const TILE_CACHE = join(tmpdir(), "routecast-terrain-tiles");
-const OUT_DIR = join(tmpdir(), "routecast-terrain-out");
+const TILE_CACHE = join(tmpdir(), "dawnline-terrain-tiles");
+const OUT_DIR = join(tmpdir(), "dawnline-terrain-out");
 const STORAGE_PREFIX = "terrain/routes";
 
 try {
