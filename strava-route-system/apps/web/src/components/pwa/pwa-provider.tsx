@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Share } from "lucide-react";
+import { ProductLogo } from "@/components/ui/product-logo";
 
 /** 註冊 Service Worker */
 function useServiceWorker() {
@@ -68,7 +69,8 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       {/* 頁面有底部分頁列（手機）時，停在分頁列上方，避免蓋住導覽 */}
       <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-border bg-card p-4 shadow-lg [body:has([data-bottom-nav])_&]:bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] md:[body:has([data-bottom-nav])_&]:bottom-4">
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <ProductLogo size={40} />
+          <div className="min-w-0 flex-1">
             <p className="font-medium text-foreground">將 Dawnline 加入主畫面</p>
             {isIOS ? (
               <p className="mt-1 text-sm text-muted-foreground">
