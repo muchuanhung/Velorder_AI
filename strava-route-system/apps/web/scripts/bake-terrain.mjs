@@ -27,7 +27,7 @@ const APP_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes("--dry-run");
 const ONLY = args.find((a) => a.startsWith("--only="))?.slice("--only=".length);
-const BASE_URL = process.env.BASE_URL ?? "https://strava-sync-alpha.vercel.app";
+const BASE_URL = process.env.BASE_URL ?? "https://dawnline-tw.vercel.app";
 
 const ZOOM = 13;
 const MARGIN = 0.12; // bbox 外擴比例，讓路線不貼邊
