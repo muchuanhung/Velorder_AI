@@ -33,8 +33,7 @@ export const metadata: Metadata = {
     title: "Routecast",
     capable: true,
     statusBarStyle: "default",
-  },
-  // icons 由 src/app 的 favicon.ico、icon.svg、apple-icon.png 檔案慣例自動輸出
+  }
 };
 
 export default function RootLayout({
