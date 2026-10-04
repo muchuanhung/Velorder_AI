@@ -3,6 +3,7 @@
  * 從 public/icon.svg 產生 PWA 所需的 PNG 圖示與 favicon
  * 執行: pnpm run generate-pwa-icons
  */
+import { Buffer } from "node:buffer";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -45,8 +46,9 @@ async function main() {
   console.log("已產生 icon-maskable-512.png");
 
   // apple-icon.png (180x180)
-  // iOS 會自行裁圓角並把透明處填黑，因此先用品牌綠填滿透明圓角
-  const appleBuf = await sharp(svg).resize(180, 180).flatten({ background: "#2f5d3e" }).png().toBuffer();
+  // iOS 會自行裁圓角並把透明處填黑，因此拿掉 icon.svg 的圓角裁切，輸出滿版圖
+  const fullBleedSvg = Buffer.from(svg.toString().replace(' clip-path="url(#r)"', ""));
+  const appleBuf = await sharp(fullBleedSvg).resize(180, 180).flatten({ background: "#2a8752" }).png().toBuffer();
   writeFileSync(join(publicDir, "apple-icon.png"), appleBuf);
   console.log("已產生 apple-icon.png");
 
