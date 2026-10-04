@@ -34,14 +34,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
   },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "32x32" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
-    apple: "/apple-icon.png",
-  },
+  // icons 由 src/app 的 favicon.ico、icon.svg、apple-icon.png 檔案慣例自動輸出
 };
 
 export default function RootLayout({

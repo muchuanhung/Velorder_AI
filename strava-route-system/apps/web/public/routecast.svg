@@ -1,6 +1,1 @@
-<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="7" fill="#2f5d3e"/>
-  <circle cx="22.5" cy="9.5" r="3" fill="#e8a93d"/>
-  <path d="M4.5 25 12.5 11.5l4.5 6.5 3-4 7.5 11z" fill="#f2f3ec"/>
-  <path d="M8.2 19.8h8.9M10.9 15.2h3.4" stroke="#2f5d3e" stroke-width="1.5" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#2F5D3E"/><circle cx="290" cy="206" r="66" fill="#E8A93D"/><polygon points="0,600 0,356 92,356 150,332 194,300 236,320 290,224 338,286 374,268 420,334 512,334 512,600" fill="#2F5D3E"/><path d="M60 404 C150 380 230 412 300 396 S420 372 452 388" fill="none" stroke="#43795A" stroke-width="12" stroke-linecap="round"/><path d="M92 440 C170 424 250 448 320 436 S410 420 420 426" fill="none" stroke="#43795A" stroke-width="12" stroke-linecap="round"/><polyline points="92,356 150,332 194,300 236,320 290,224 338,286 374,268 420,334" fill="none" stroke="#F2F3EC" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/><circle cx="92" cy="356" r="22" fill="#F2F3EC"/><circle cx="420" cy="334" r="20" fill="#2F5D3E" stroke="#F2F3EC" stroke-width="12"/></svg>
