@@ -2,12 +2,12 @@
  * 最小化 Service Worker - 支援 PWA 安裝
  * 預快取關鍵資源以改善首次載入
  */
-const CACHE_NAME = "dawnline-v1";
+const CACHE_NAME = "dawnline-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(["/", "/login", "/manifest.json", "/icon.svg", "/icon-192.png", "/icon-512.png"]).catch(() => {}))
+      .then((cache) => cache.addAll(["/", "/login", "/manifest.json", "/icon.svg", "/icons/icon-192.png", "/icons/icon-512.png"]).catch(() => {}))
       .then(() => self.skipWaiting())
   );
 });

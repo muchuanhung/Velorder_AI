@@ -27,7 +27,7 @@ function isUnitOnly(argv: string[]): boolean {
 
 // E2E 測 production build：dev server 同時服務多個瀏覽器時送 JS 太慢且會中途重新編譯，
 // 平行測試會超時。用 3100 port，不影響開著的 pnpm dev（3000）。
-// 直接呼叫 next build，不走 pnpm build，避免 generate-pwa-icons 覆寫 public/ 的 icon。
+// 直接呼叫 next build。
 const PORT = 3100;
 
 export default defineConfig({
