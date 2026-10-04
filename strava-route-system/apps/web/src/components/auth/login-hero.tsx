@@ -5,7 +5,7 @@ import { Route, CloudSun, HelpCircle } from "lucide-react";
 import { DecorativeMapBackground } from "@/components/ui/decorative-map-background";
 import { ProductLogo } from "@/components/ui/product-logo";
 
-export const loginHero = {
+export const loginCopy = {
   brand: "曉行 Dawnline",
   title: "出發前，整條路線一次判定。",
   subtitle: "上傳 GPX，逐公里標出走、慢、停與未判定。缺資料，不說安全。",
@@ -29,7 +29,7 @@ const features = [
   },
 ];
 
-export function StravaTeaser() {
+export function LoginHero() {
   return (
     <div className="relative flex h-full flex-col justify-center p-12">
       <DecorativeMapBackground />
@@ -44,10 +44,10 @@ export function StravaTeaser() {
         >
           <div className="mb-6 flex items-center gap-3">
             <ProductLogo size={48} />
-            <span className="text-2xl font-bold tracking-tight text-foreground">{loginHero.brand}</span>
+            <span className="text-2xl font-bold tracking-tight text-foreground">{loginCopy.brand}</span>
           </div>
-          <h1 className="text-3xl font-black leading-tight text-foreground">{loginHero.title}</h1>
-          <p className="mt-3 text-muted-foreground">{loginHero.subtitle}</p>
+          <h1 className="text-3xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
+          <p className="mt-3 text-muted-foreground">{loginCopy.subtitle}</p>
         </motion.div>
 
         {/* Features */}

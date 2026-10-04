@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
-import { StravaTeaser, loginHero } from "@/components/auth/strava-teaser";
+import { LoginHero, loginCopy } from "@/components/auth/login-hero";
 import { SiteFooter } from "@/components/app-shell/site-footer";
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,7 +73,7 @@ export default function LoginPage() {
         transition={{ duration: 0.8 }}
         className="hidden lg:block lg:w-1/2 xl:w-3/5"
       >
-        <StravaTeaser />
+        <LoginHero />
       </motion.div>
 
       {/* Right Side - 登入表單 */}
@@ -90,10 +90,10 @@ export default function LoginPage() {
         >
           <div className="flex items-center gap-2">
             <ProductLogo size={40} />
-            <span className="text-xl font-bold text-foreground">{loginHero.brand}</span>
+            <span className="text-xl font-bold text-foreground">{loginCopy.brand}</span>
           </div>
-          <h1 className="mt-4 text-2xl font-black leading-tight text-foreground">{loginHero.title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{loginHero.subtitle}</p>
+          <h1 className="mt-4 text-2xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{loginCopy.subtitle}</p>
         </motion.div>
 
         {/* Auth Card */}
