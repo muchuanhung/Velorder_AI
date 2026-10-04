@@ -121,7 +121,7 @@ export function PolicyContent() {
             歡迎使用曉行 Dawnline。我們非常重視您的隱私，尤其是您的路線與位置資料。本隱私政策說明當您使用本服務時，我們如何蒐集、使用、揭露與保護您的資訊。
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            使用 Dawnline 即表示您同意依本政策蒐集與使用資訊。若不同意本政策條款，請勿使用本服務。
+            使用曉行 Dawnline 即表示您同意依本政策蒐集與使用資訊。若不同意本政策條款，請勿使用本服務。
           </p>
           <div className="flex flex-wrap gap-2 mt-4">
             <Badge variant="secondary" className="gap-1.5 text-foreground">
@@ -148,7 +148,7 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            當您註冊或使用 Dawnline 時，我們會蒐集以下類別的資料。
+            當您註冊或使用曉行 Dawnline 時，我們會蒐集以下類別的資料。
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -458,7 +458,7 @@ export function PolicyContent() {
               {
                 title: "撤回同意權",
                 description:
-                  "隨時透過刪除 Dawnline 帳號撤回同意。",
+                  "隨時透過刪除曉行 Dawnline 帳號撤回同意。",
               },
             ].map((right) => (
               <div
@@ -489,11 +489,11 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Dawnline 以免費服務形式提供，我們承諾透明說明平台如何運作。
+            曉行 Dawnline 以免費服務形式提供，我們承諾透明說明平台如何運作。
           </p>
 
           <HighlightBox variant="info">
-            <strong>免費使用：</strong>Dawnline 不收取使用費用，也不會要求、收集或儲存信用卡或其他付款資訊。
+            <strong>免費使用：</strong>曉行 Dawnline 不收取使用費用，也不會要求、收集或儲存信用卡或其他付款資訊。
           </HighlightBox>
 
           <div className="space-y-3">
@@ -515,7 +515,7 @@ export function PolicyContent() {
                   無廣告
                 </p>
                 <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  Dawnline 不顯示第三方廣告，亦不使用您的資料在本平台或任何外部服務投放定向廣告。
+                  曉行 Dawnline 不顯示第三方廣告，亦不使用您的資料在本平台或任何外部服務投放定向廣告。
                 </p>
               </div>
             </div>
@@ -535,7 +535,7 @@ export function PolicyContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            我們使用少量第三方服務以營運 Dawnline。各服務受其自身隱私政策及我們的資料處理協議約束。
+            我們使用少量第三方服務以營運曉行 Dawnline。各服務受其自身隱私政策及我們的資料處理協議約束。
           </p>
 
           <div className="rounded-lg border border-border overflow-hidden">
