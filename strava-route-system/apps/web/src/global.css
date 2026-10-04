@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Routecast「日光地形」設計 token
+ * Dawnline「日光地形」設計 token
  * - 沿用 shadcn 變數名，全站元件直接套用
  * - 高飽和色只給警示：destructive（危險）、warning（注意）
  * - 已驗證 WCAG 對比：一般文字 ≥ 4.5:1；琥珀當文字請用 warning-strong（warning 為填色）

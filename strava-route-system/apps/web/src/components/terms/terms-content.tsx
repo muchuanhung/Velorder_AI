@@ -161,11 +161,11 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            本服務條款（「條款」）規範您對 Routecast 應用程式（「服務」）之存取與使用。服務由 Routecast（「我們」）營運。當您建立帳號、透過 OAuth 連結 Strava 帳號或以其他方式使用服務時，即表示您同意受本條款全部內容之約束。
+            本服務條款（「條款」）規範您對曉行 Dawnline 應用程式（「服務」）之存取與使用。服務由 Dawnline（「我們」）營運。當您建立帳號、透過 OAuth 連結 Strava 帳號或以其他方式使用服務時，即表示您同意受本條款全部內容之約束。
           </p>
 
           <HighlightBox variant="info">
-            <strong>連結 Strava 即視為同意：</strong>當您透過 OAuth 授權流程授權 Routecast 存取您的 Strava 帳號資料時，即明確表示您已閱讀、理解並同意本服務條款以及我們的{" "}
+            <strong>連結 Strava 即視為同意：</strong>當您透過 OAuth 授權流程授權 Dawnline 存取您的 Strava 帳號資料時，即明確表示您已閱讀、理解並同意本服務條款以及我們的{" "}
             <a href="/privacy" className="text-strava underline underline-offset-2 font-medium">
               隱私政策
             </a>
@@ -204,7 +204,7 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            使用 Routecast 須透過 Google 驗證（Firebase）或電子郵件／密碼註冊建立帳號。您須對帳號憑證之保密及帳號下之一切活動負責。
+            使用 Dawnline 須透過 Google 驗證（Firebase）或電子郵件／密碼註冊建立帳號。您須對帳號憑證之保密及帳號下之一切活動負責。
           </p>
 
           <NumberedList
@@ -234,7 +234,7 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Routecast 依賴{" "}
+            Dawnline 依賴{" "}
             <span className="text-strava font-medium">Strava V3 API</span>{" "}
             取得您的活動資料。使用本服務即表示您知悉並同意以下事項：
           </p>
@@ -244,7 +244,7 @@ export function TermsContent() {
               {
                 title: "第三方依賴",
                 description:
-                  "本服務依賴 Strava API 之持續可用與正常運作。我們不對 Strava API 之停機、中斷、速率限制或任何可能影響您使用 Routecast 之狀況負責。",
+                  "本服務依賴 Strava API 之持續可用與正常運作。我們不對 Strava API 之停機、中斷、速率限制或任何可能影響您使用 Dawnline 之狀況負責。",
               },
               {
                 title: "資料正確性",
@@ -254,7 +254,7 @@ export function TermsContent() {
               {
                 title: "API 變更",
                 description:
-                  "Strava 可能隨時修改、廢止或停止 API 端點。此類變更可能影響部分 Routecast 功能之可用性。我們將合理努力因應 API 變更，但無法保證功能不中斷。",
+                  "Strava 可能隨時修改、廢止或停止 API 端點。此類變更可能影響部分 Dawnline 功能之可用性。我們將合理努力因應 API 變更，但無法保證功能不中斷。",
               },
               {
                 title: "速率限制",
@@ -304,11 +304,11 @@ export function TermsContent() {
           number={4}
           icon={CreditCard}
           title="服務費用"
-          subtitle="Routecast 免費提供"
+          subtitle="Dawnline 免費提供"
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            Routecast 免費提供，包含活動同步、路線分析、天氣與雨量判讀及地圖視覺化等功能。
+            Dawnline 免費提供，包含活動同步、路線分析、天氣與雨量判讀及地圖視覺化等功能。
           </p>
 
           <div className="rounded-lg border border-border overflow-hidden">
@@ -329,7 +329,7 @@ export function TermsContent() {
                     使用費用
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
-                    使用 Routecast 不需支付任何費用。
+                    使用 Dawnline 不需支付任何費用。
                   </td>
                 </tr>
                 <tr>
@@ -375,7 +375,7 @@ export function TermsContent() {
           <div className="space-y-3">
             <ProhibitedItem
               title="資料爬取與自動蒐集"
-              description="使用機器人、爬蟲或任何自動化方式存取、蒐集或擷取 Routecast 之資料，包括但不限於使用者檔案、活動資料、分析結果或任何彙整資料集。"
+              description="使用機器人、爬蟲或任何自動化方式存取、蒐集或擷取 Dawnline 之資料，包括但不限於使用者檔案、活動資料、分析結果或任何彙整資料集。"
             />
             <ProhibitedItem
               title="逆向工程"
@@ -383,7 +383,7 @@ export function TermsContent() {
             />
             <ProhibitedItem
               title="未經授權之 API 存取"
-              description="在未取得明確書面授權下存取或嘗試存取任何 Routecast API 端點、內部服務或後端基礎設施，包括攔截、竄改或重送 API 請求。"
+              description="在未取得明確書面授權下存取或嘗試存取任何 Dawnline API 端點、內部服務或後端基礎設施，包括攔截、竄改或重送 API 請求。"
             />
             <ProhibitedItem
               title="帳號濫用"
@@ -391,11 +391,11 @@ export function TermsContent() {
             />
             <ProhibitedItem
               title="資料再散布"
-              description="再散布、轉售、再授權或公開分享透過 Routecast 取得之任何資料，包括分析結果、GPS 軌跡或由本服務衍生之訓練洞察。"
+              description="再散布、轉售、再授權或公開分享透過 Dawnline 取得之任何資料，包括分析結果、GPS 軌跡或由本服務衍生之訓練洞察。"
             />
             <ProhibitedItem
               title="干擾服務"
-              description="引入惡意軟體、病毒或任何有害程式；以過量請求（DDoS）癱瘓服務；或以其他方式企圖破壞或降低 Routecast 之可用性或效能。"
+              description="引入惡意軟體、病毒或任何有害程式；以過量請求（DDoS）癱瘓服務；或以其他方式企圖破壞或降低 Dawnline 之可用性或效能。"
             />
           </div>
         </div>
@@ -416,12 +416,12 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <HighlightBox variant="warning">
-            <strong>非醫療建議：</strong>Routecast 提供之健身分析與訓練洞察僅供{" "}
+            <strong>非醫療建議：</strong>Dawnline 提供之健身分析與訓練洞察僅供{" "}
             <strong>資訊與教育用途</strong>。本服務所呈現之資料、圖表、指標、建議與洞察不構成醫療建議、診斷或治療。
           </HighlightBox>
 
           <p className="text-muted-foreground leading-relaxed">
-            在根據透過 Routecast 取得之資訊做出健康、健身或訓練計畫相關決定前，您應先諮詢合格醫療人員。尤其：
+            在根據透過 Dawnline 取得之資訊做出健康、健身或訓練計畫相關決定前，您應先諮詢合格醫療人員。尤其：
           </p>
 
           <BulletList
@@ -430,7 +430,7 @@ export function TermsContent() {
               "GPS 衍生指標（距離、配速、海拔）為近似值，不應作為遠地導航等安全關鍵決策之依據。",
               "AI 教練功能（若提供）由機器學習模型產生，未經認證教練、訓練師或醫療專業人員審核。",
               "若運動時出現胸痛、頭暈、呼吸急促或其他不適症狀，請立即停止並就醫，勿以應用程式顯示為準。",
-              "Routecast 對因依循本服務所呈現之分析、建議或訓練計畫而產生之任何傷害、疾病或健康併發症不負責任。",
+              "Dawnline 對因依循本服務所呈現之分析、建議或訓練計畫而產生之任何傷害、疾病或健康併發症不負責任。",
             ]}
           />
         </div>
@@ -451,7 +451,7 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            本服務（含其原創內容、功能、使用者介面、分析演算法與運作方式）為 Routecast 及其授權人專屬財產，且將持續如此。
+            本服務（含其原創內容、功能、使用者介面、分析演算法與運作方式）為 Dawnline 及其授權人專屬財產，且將持續如此。
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -539,7 +539,7 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            在法律允許之最大範圍內，ROUTECAST 及其負責人、董事、員工或代理人概不對任何間接、附帶、特別、衍生或懲罰性損害負責，包括但不限於：
+            在法律允許之最大範圍內，DAWNLINE 及其負責人、董事、員工或代理人概不對任何間接、附帶、特別、衍生或懲罰性損害負責，包括但不限於：
           </p>
 
           <BulletList
@@ -580,7 +580,7 @@ export function TermsContent() {
 
           <NumberedList
             items={[
-              "於 Routecast 儀表板內以顯著方式公告至少 14 日。",
+              "於 Dawnline 儀表板內以顯著方式公告至少 14 日。",
               "寄送電子郵件至您帳號所綁定之信箱。",
               "於本條款頂端更新「最後更新」日期。",
             ]}
@@ -607,7 +607,7 @@ export function TermsContent() {
         />
         <div className="mt-4 space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            您或 Routecast 皆可隨時以任何理由終止本協議。
+            您或 Dawnline 皆可隨時以任何理由終止本協議。
           </p>
 
           <div className="rounded-lg border border-border overflow-hidden">
@@ -639,7 +639,7 @@ export function TermsContent() {
                 </tr>
                 <tr>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    Routecast
+                    Dawnline
                   </td>
                   <td className="px-4 py-3 text-muted-foreground leading-relaxed">
                     我們得因違反條款而暫停或終止您之存取，並在可行時事先通知。
@@ -716,7 +716,7 @@ export function TermsContent() {
               {" "}一併閱讀。
             </p>
             <p className="text-xs text-muted-foreground">
-              © 2026 Routecast. 保留所有權利。
+              © 2026 曉行 Dawnline. 保留所有權利。
             </p>
           </div>
         </div>
