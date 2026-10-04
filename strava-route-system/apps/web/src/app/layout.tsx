@@ -22,7 +22,7 @@ const chivoMono = Chivo_Mono({
   display: "swap",
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://strava-sync-alpha.vercel.app";
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://dawnline-tw.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
