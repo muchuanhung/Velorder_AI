@@ -1,6 +1,7 @@
 /.claude/*
 !/.claude/commands/
 *.md
+!CLAUDE.md
 !AGENTS.md
 !/.claude/commands/*.md
 
