@@ -53,6 +53,13 @@ export async function getPublicBriefings(limit = 3): Promise<RouteBriefing[]> {
   return (await briefRoutes(routes)).briefings;
 }
 
+/** 單一路線判讀（/routes 與 lab 頁用）；與 Dashboard 同一條流程，前端不再自行判定 */
+export async function getRouteBriefing(routeId: string): Promise<RouteBriefing | null> {
+  const route = (await loadRoutes()).find((r) => r.id === routeId);
+  if (!route) return null;
+  return (await briefRoutes([route])).briefings[0] ?? null;
+}
+
 async function briefRoutes(routes: Route[]) {
   const keys = routeDistrictKeys(routes);
   const counties = [...new Set(routes.flatMap((r) => r.segments.map((s) => s.county).filter((c): c is string => !!c)))];

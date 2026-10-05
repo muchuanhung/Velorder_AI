@@ -6,16 +6,14 @@ import { Box, Pause, Play, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRoutesFromStorage } from "@/hooks/useRoutesFromStorage";
 import { useRouteCCTV } from "@/hooks/useRouteCCTV";
-import { useRouteWeather } from "@/hooks/useRouteWeather";
+import { useRouteBriefing, verdictOf } from "@/hooks/useRouteBriefing";
 import {
   buildCctvMarkers,
   buildRoutePolylineKm,
-  computeHazards,
   deriveStages,
   nearestByKm,
   routeTotalKm,
   stageAtKm,
-  summarizeVerdict,
   type CctvMarker,
   type ChartDataPoint,
 } from "@/lib/routes/recon-geo";
@@ -84,10 +82,12 @@ export function RouteSimClient() {
   const [routeId, setRouteId] = useState("");
   const route = routes.find((r) => r.id === routeId) ?? routes[0] ?? null;
 
-  const weather = useRouteWeather(route);
+  // 判定與合併天氣的路段由伺服器提供（與 Dashboard、/routes 同一流程）
+  const briefing = useRouteBriefing(route?.id);
+  const briefedSegments = briefing.briefing?.segments;
   const enriched = useMemo(
-    () => (route ? { ...route, segments: weather.segments } : null),
-    [route, weather.segments]
+    () => (route ? { ...route, segments: briefedSegments ?? route.segments } : null),
+    [route, briefedSegments]
   );
   const { feeds, loading: cctvLoading, error: cctvError } = useRouteCCTV(route);
   const terrain = useTerrain(route?.id);
@@ -103,8 +103,8 @@ export function RouteSimClient() {
     [enriched, feeds, polyline]
   );
   const stages = useMemo(() => (enriched ? deriveStages(enriched) : []), [enriched]);
-  const hazards = useMemo(() => (enriched ? computeHazards(enriched, stages) : []), [enriched, stages]);
-  const verdict = useMemo(() => summarizeVerdict(hazards, stages), [hazards, stages]);
+  const hazards = useMemo(() => briefing.briefing?.hazards ?? [], [briefing.briefing]);
+  const verdict = verdictOf(briefing);
   const chartData = useMemo<ChartDataPoint[]>(
     () => (route?.elevationProfile ?? []).map(([km, elevation]) => ({ km, elevation })),
     [route]

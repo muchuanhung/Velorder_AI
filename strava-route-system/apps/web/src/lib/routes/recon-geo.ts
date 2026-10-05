@@ -362,11 +362,15 @@ function weatherHazards(stages: RouteStage[]): RawHazard[] {
   stages.forEach((s) => {
     if (!s.hasWeather) return;
     const { startKm, endKm } = s;
-    const rain = rainLevel(s.rainProbability);
+    // 超出預報時段：沒有對應時段的預報，不拿其他時段的數值產生示警（判定由 summarizeVerdict 改 unknown）
+    const forecastUsable = !s.outOfCoverage;
+    const rain = forecastUsable ? rainLevel(s.rainProbability) : null;
     if (rain) byKind.rain.push({ kind: "rain", level: rain, startKm, endKm, value: s.rainProbability });
-    const wind = windLevel(s.windSpeed);
+    const wind = forecastUsable ? windLevel(s.windSpeed) : null;
     if (wind) byKind.wind.push({ kind: "wind", level: wind, startKm, endKm, value: s.windSpeed });
-    if (s.condition === "stormy") {
+    if (!forecastUsable) {
+      // 不產生預報類示警
+    } else if (s.condition === "stormy") {
       byKind.storm.push({ kind: "storm", level: "risky", startKm, endKm, value: 0 });
     } else if (s.condition === "rainy" && !rain) {
       // 預報有雨但降雨機率未達門檻，與 computeRouteStatus 一致列為注意

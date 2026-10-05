@@ -7,17 +7,13 @@ import {
   buildCctvMarkers,
   pickInitialMarker,
   deriveStages,
-  computeHazards,
-  isWeatherHazard,
-  summarizeVerdict,
   nearestByKm,
   routeTotalKm,
   stageAtKm,
   type ChartDataPoint,
 } from "@/lib/routes/recon-geo";
-import { eventHazards } from "@/lib/routes/road-events";
 import { useReconPosition } from "@/hooks/useReconPosition";
-import type { RouteEventsState } from "@/hooks/useRouteEvents";
+import { roadEventsOf, verdictOf, type RouteBriefingState } from "@/hooks/useRouteBriefing";
 import { RouteVerdictBar } from "./recon/route-verdict-bar";
 import { HazardList } from "./recon/hazard-list";
 import { ElevationScrubber } from "./recon/elevation-scrubber";
@@ -33,8 +29,8 @@ interface ReconViewProps {
   cctvLoading?: boolean;
   /** CCTV 抓取失敗，用來區分「載入失敗」與「沿途無監視器」 */
   cctvError?: boolean;
-  /** 來自 useRouteEvents 的沿途路況事件 */
-  roadEvents?: RouteEventsState;
+  /** 伺服器端判讀（判定、示警、合併天氣的路段）；前端不自行判定 */
+  briefing: RouteBriefingState;
 }
 
 /**
@@ -46,7 +42,7 @@ export function ReconView({
   cctvFeeds: cctvFeedsProp,
   cctvLoading = false,
   cctvError = false,
-  roadEvents,
+  briefing,
 }: ReconViewProps) {
   const routePolyline = useMemo(() => buildRoutePolylineKm(route), [route]);
 
@@ -59,21 +55,12 @@ export function ReconView({
     [cctvMarkers, routePolyline]
   );
 
-  const stages = useMemo(() => deriveStages(route), [route]);
-  const hazards = useMemo(() => computeHazards(route, stages), [route, stages]);
-  // 判定看今天會變動的條件：天氣＋路況事件（災害、事故、管制、異常告警），與 Dashboard 一致；陡坡不列入
-  const verdictHazards = useMemo(
-    () =>
-      [...hazards.filter(isWeatherHazard), ...eventHazards(roadEvents?.events ?? [])].sort(
-        (a, b) => a.startKm - b.startKm
-      ),
-    [hazards, roadEvents?.events]
-  );
-  const eventsFailed = roadEvents?.error ? null : roadEvents?.failedCounties;
-  const verdict = useMemo(
-    () => summarizeVerdict(verdictHazards, stages, { eventsFailed }),
-    [verdictHazards, stages, eventsFailed]
-  );
+  // 高程圖游標處天氣用伺服器合併後的路段；判讀未回來前沿用原路段（hasWeather 皆為 false）
+  const segments = briefing.briefing?.segments;
+  const stages = useMemo(() => deriveStages(segments ? { ...route, segments } : route), [route, segments]);
+  const verdictHazards = useMemo(() => briefing.briefing?.hazards ?? [], [briefing.briefing]);
+  const verdict = verdictOf(briefing);
+  const roadEvents = roadEventsOf(briefing);
 
   const chartData = useMemo<ChartDataPoint[]>(
     () => (route.elevationProfile ?? []).map(([km, elevation]) => ({ km, elevation })),

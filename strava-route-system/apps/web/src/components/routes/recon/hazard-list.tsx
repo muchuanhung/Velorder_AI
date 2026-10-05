@@ -4,7 +4,7 @@ import { CloudRain, Wind, CloudLightning, TriangleAlert, Construction } from "lu
 import { cn } from "@/lib/utils";
 import type { Hazard, HazardKind } from "@/lib/routes/recon-geo";
 import { CATEGORY_LABEL, groupRouteEvents, type RouteEvent } from "@/lib/routes/road-events";
-import type { RouteEventsState } from "@/hooks/useRouteEvents";
+import type { RouteEventsState } from "@/hooks/useRouteBriefing";
 
 const KIND_ICON: Record<HazardKind, React.ComponentType<{ className?: string }>> = {
   rain: CloudRain,

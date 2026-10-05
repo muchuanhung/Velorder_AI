@@ -4,6 +4,7 @@ import {
   estimateArrivalTime,
   pickRainfallBucketByEta,
   pickRainfallBucketForSegment,
+  isBeyondForecast,
   type RainfallBucket,
 } from "@/lib/cwb/forecast-eta";
 
@@ -35,9 +36,9 @@ test.describe("pickRainfallBucketByEta", () => {
     expect(pickRainfallBucketByEta(at("12:00"), buckets)?.pop).toBe(50);
   });
 
-  test("ETA 早於所有時段取第一個未來時段；晚於所有時段取最後一個", () => {
+  test("ETA 早於所有時段取第一個未來時段；晚於所有時段回傳 null（不拿最後一段頂替）", () => {
     expect(pickRainfallBucketByEta(at("05:00"), buckets)?.pop).toBe(10);
-    expect(pickRainfallBucketByEta(at("05:00", "02"), buckets)?.pop).toBe(70);
+    expect(pickRainfallBucketByEta(at("05:00", "02"), buckets)).toBeNull();
   });
 
   test("時間無法解析的時段略過；沒有可用時段回傳 null", () => {
@@ -64,5 +65,24 @@ test.describe("pickRainfallBucketForSegment", () => {
     expect(pickRainfallBucketForSegment(undefined, at("14:00"), buckets)?.pop).toBe(50);
     expect(pickRainfallBucketForSegment([0], at("04:00"), buckets)?.pop).toBe(10);
     expect(pickRainfallBucketForSegment([0], at("08:00"), [])).toBeNull();
+  });
+});
+
+test.describe("超出預報時段", () => {
+  const buckets = [bucket("06:00", "12:00", 10), bucket("12:00", "18:00", 50)];
+
+  test("路段離開 ETA 超過最後一個時段：isBeyondForecast 為 true，pickRainfallBucketForSegment 回 null", () => {
+    // 16:00 出發，進入 0 km、離開 60 km → 19:00，超過 18:00
+    expect(isBeyondForecast([0, 60], at("16:00"), buckets)).toBe(true);
+    expect(pickRainfallBucketForSegment([0, 60], at("16:00"), buckets)).toBeNull();
+  });
+
+  test("路段完全在時段內：不算超出", () => {
+    expect(isBeyondForecast([0, 20], at("16:00"), buckets)).toBe(false);
+    expect(pickRainfallBucketForSegment([0, 20], at("16:00"), buckets)?.pop).toBe(50);
+  });
+
+  test("沒有可用時段時不算超出（交給無資料處理）", () => {
+    expect(isBeyondForecast([0, 60], at("16:00"), [])).toBe(false);
   });
 });
