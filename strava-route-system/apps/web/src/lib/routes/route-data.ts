@@ -21,6 +21,10 @@ export interface RouteSegment {
    * undefined 代表沒有查詢即時雨量（不列入判定也不加註）
    */
   observedRainMmPerHr?: number | null;
+  /** 此路段用的是過期預報（重抓後仍過期） */
+  weatherStale?: boolean;
+  /** 此路段預估抵達時間超出預報涵蓋時段 */
+  outOfCoverage?: boolean;
 }
 
 export interface CCTVFeed {

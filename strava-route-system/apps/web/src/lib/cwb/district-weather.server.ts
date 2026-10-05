@@ -51,6 +51,8 @@ export type CWBWeatherResponse = {
   uvLevel: string;
   sunset: string;
   rainfall12h: Array<{ startTime: string; endTime: string; pop: number; label: string; endLabel: string }>;
+  /** 重抓後仍是過期預報；判讀端須改判 unknown（stale） */
+  stale: boolean;
   verdict: string;
   verdictType: "good" | "caution" | "bad";
   /** 即時時雨量（mm/hr）；rainfallScope 為 county 時是整個縣市測站的最大值，不代表該地點 */
@@ -225,6 +227,7 @@ export async function getDistrictWeather(
     const freshRes = await fetch(forecastUrl, { cache: "no-store" });
     if (freshRes.ok) forecastData = await freshRes.json();
   }
+  const stale = isForecastStale(forecastData);
   let rainfall: RainfallSummary = { mmPerHr: null, scope: "none", stationCount: 0 };
   if (rainRes.ok) {
     try {
@@ -321,6 +324,7 @@ export async function getDistrictWeather(
     uvLevel,
     sunset: sunsetStr,
     rainfall12h,
+    stale,
     verdict,
     verdictType,
     rainfallMmPerHr: rainfall.mmPerHr,

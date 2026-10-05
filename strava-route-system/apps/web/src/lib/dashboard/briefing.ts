@@ -24,6 +24,7 @@ import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
 import { summarizeRainfall, type LatLon, type StationRain } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
+  estimateArrivalTime,
   pickRainfallBucketForSegment,
   type RainfallBucket,
 } from "@/lib/cwb/forecast-eta";
@@ -40,6 +41,8 @@ export interface DistrictWeather {
   rainfallBuckets?: RainfallBucket[];
   /** 路線 3 km 內雨量站的即時時雨量（mm/hr）；null 為附近沒有測站，未提供時不列入判定 */
   observedRainMmPerHr?: number | null;
+  /** 重抓後仍是過期預報 */
+  stale?: boolean;
 }
 
 export type WeatherLookup = ReadonlyMap<string, DistrictWeather>;
@@ -50,6 +53,18 @@ const weatherOf = (seg: RouteSegment, lookup: WeatherLookup) =>
   seg.county && seg.districtZh ? lookup.get(districtKey(seg.county, seg.districtZh)) : undefined;
 
 /** 路段騎經時間所落在的降雨時段；沒有出發時間或時段資料時回傳 null */
+/** 路段離開時的 ETA 超出最後一個預報時段 → 預報不涵蓋，不可拿其他時段頂替 */
+function isOutOfCoverage(
+  seg: RouteSegment,
+  w: DistrictWeather,
+  { departureTime, speedKmh = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
+): boolean {
+  if (!departureTime || !w.rainfallBuckets?.length) return false;
+  const lastEnd = Math.max(...w.rainfallBuckets.map((b) => Date.parse(b.endTime)));
+  const exitKm = seg.sampleKms?.[seg.sampleKms.length - 1] ?? 0;
+  return estimateArrivalTime(exitKm, departureTime, speedKmh).getTime() >= lastEnd;
+}
+
 function bucketForSegment(
   seg: RouteSegment,
   w: DistrictWeather,
@@ -156,6 +171,8 @@ export function applyWeather(route: Route, lookup: WeatherLookup, options: Apply
         condition: w.condition,
         hasWeather: true,
         observedRainMmPerHr: w.observedRainMmPerHr,
+        weatherStale: w.stale ?? false,
+        outOfCoverage: isOutOfCoverage(seg, w, options),
       };
     }),
   };

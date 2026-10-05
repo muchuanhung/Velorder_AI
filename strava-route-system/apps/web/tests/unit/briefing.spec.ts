@@ -125,6 +125,32 @@ test.describe("briefRoute", () => {
     expect(b.periodLabel).toBe("08:00–12:00");
   });
 
+  test("預報過期時為未判定，原因 stale", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { stale: true }) }), { now: AT_8AM });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.verdict.reasons).toEqual(["stale"]);
+  });
+
+  test("路段 ETA 超出最後一個預報時段時為未判定，原因 out_of_coverage", () => {
+    // 北投區出口 100 km → 13:00，超出 12:00 結束的預報
+    const route = makeRoute({ distance: 100, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 100])] });
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 10)] }),
+      北投區: weather(10, { rainfallBuckets: [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 10)] }),
+    });
+    const b = briefRoute(route, lookup, { now: AT_8AM });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.verdict.reasons).toEqual(["out_of_coverage"]);
+  });
+
+  test("ETA 都在預報時段內且資料新，可判安全", () => {
+    const route = makeRoute({ distance: 50, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 50])] });
+    const buckets = [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 10)];
+    const lookup = lookupOf({ 士林區: weather(10, { rainfallBuckets: buckets }), 北投區: weather(10, { rainfallBuckets: buckets }) });
+    expect(briefRoute(route, lookup, { now: AT_8AM }).verdict.level).toBe("clear");
+  });
+
   test("完全沒有天氣資料時為未判定，數值為 null", () => {
     const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
     const b = briefRoute(route, new Map());

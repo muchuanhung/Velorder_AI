@@ -3,6 +3,7 @@ import { AlertTriangle, ArrowRight, HelpCircle, ShieldAlert, ShieldCheck, type L
 import { cn } from "@/lib/utils";
 import type { VerdictLevel } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
+import { UnknownReasons } from "@/components/verdict/unknown-reasons";
 
 /** 判定牌的顏色跟著狀態走：危險紅、注意琥珀；安全與未判定用中性底，絕不用品牌綠表示危險 */
 const LEVEL: Record<
@@ -78,7 +79,7 @@ export function BriefingCard({ featured, alternative }: { featured: RouteBriefin
         <Icon className="mt-1 size-8 shrink-0" aria-hidden />
         <div className="min-w-0 space-y-2">
           <h2 id="verdict-title" className="text-5xl font-black leading-none tracking-tight">
-            {s.word}
+            {verdict.level === "unknown" ? <UnknownReasons reasons={verdict.reasons}>{s.word}</UnknownReasons> : s.word}
           </h2>
           {hasHazard ? (
             <>

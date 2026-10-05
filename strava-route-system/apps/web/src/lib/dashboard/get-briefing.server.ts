@@ -4,6 +4,7 @@
  */
 
 import { loadRoutes } from "@/lib/routes/load-routes.server";
+import type { Route } from "@/lib/routes/route-data";
 import { getCountyRainfallStations, getDistrictWeather } from "@/lib/cwb/district-weather.server";
 import { getRoadEvents } from "@/lib/tdx/road-events.server";
 import {
@@ -32,7 +33,27 @@ export type DashboardBriefing =
 export async function getDashboardBriefing(routeId?: string): Promise<DashboardBriefing> {
   const routes = await loadRoutes();
   if (routes.length === 0) return { status: "no-routes" };
+  const { briefings, weatherCoverage, eventsFailed } = await briefRoutes(routes);
+  const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 
+  return {
+    status: "ok",
+    featured,
+    alternative: pickAlternative(featured, briefings),
+    routes: briefings.map((b) => ({ id: b.id, name: b.name })),
+    weatherCoverage,
+    eventsFailed,
+  };
+}
+
+/** 首頁未登入用：前 N 條路線（loadRoutes 排序）的即時判讀 */
+export async function getPublicBriefings(limit = 3): Promise<RouteBriefing[]> {
+  const routes = (await loadRoutes()).slice(0, limit);
+  if (routes.length === 0) return [];
+  return (await briefRoutes(routes)).briefings;
+}
+
+async function briefRoutes(routes: Route[]) {
   const keys = routeDistrictKeys(routes);
   const counties = [...new Set(routes.flatMap((r) => r.segments.map((s) => s.county).filter((c): c is string => !!c)))];
   // 天氣與路況事件平行取得；事件失敗不影響天氣判讀
@@ -56,6 +77,7 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
         condition: mapCwbCondition(w.condition),
         periodLabel: first ? `${first.label}–${first.endLabel}` : null,
         rainfallBuckets: w.rainfall12h,
+        stale: w.stale,
       };
       return [key, weather] as const;
     })
@@ -77,14 +99,5 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
       eventsFailed,
     })
   );
-  const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
-
-  return {
-    status: "ok",
-    featured,
-    alternative: pickAlternative(featured, briefings),
-    routes: briefings.map((b) => ({ id: b.id, name: b.name })),
-    weatherCoverage: { ok: lookup.size, total: keys.length },
-    eventsFailed,
-  };
+  return { briefings, weatherCoverage: { ok: lookup.size, total: keys.length }, eventsFailed };
 }
