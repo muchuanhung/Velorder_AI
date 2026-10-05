@@ -11,6 +11,12 @@
 - 不重開命名討論（長期品牌曉行，這學期投影片與 demo 用同一個名字）。
 - 不做：導航、團騎位置分享、第二個 component library、Auth 重寫。
 
+## PR 規範
+- commit 的 author 與 committer 一律用 MuChuan Hung <mu.chuan.hung@gmail.com>，不准以 Claude 身分 commit；PR 的 contributor 不能出現 Claude。
+- commit 訊息、PR 標題與內文都不加 AI 署名：不寫 Co-Authored-By: Claude、Claude-Session、「Generated with Claude Code」或 session 連結。
+- PR 一律開 draft，內文依序寫：摘要、動了哪些檔案、驗證指令與結果、已知未處理事項。
+- 同一個任務的後續修正推到同一個 branch／PR，不另開 PR。
+
 ## 產品鐵律
 - 未判定 ≠ 安全。任何資料缺失、過期、超出預報時段，一律回 unknown，不准判成安全。
 - 判定只用規則式邏輯，LLM 不參與判定，只負責把既有判定翻成一句話。
