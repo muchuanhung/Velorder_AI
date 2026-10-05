@@ -11,6 +11,7 @@ import {
   mapCwbCondition,
   pickAlternative,
   routeDistrictKeys,
+  routeDistrictPoints,
   type DistrictWeather,
   type RouteBriefing,
 } from "@/lib/dashboard/briefing";
@@ -33,6 +34,7 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
   if (routes.length === 0) return { status: "no-routes" };
 
   const keys = routeDistrictKeys(routes);
+  const nearByKey = routeDistrictPoints(routes);
   const counties = [...new Set(routes.flatMap((r) => r.segments.map((s) => s.county).filter((c): c is string => !!c)))];
   // 天氣與路況事件平行取得；事件失敗不影響天氣判讀
   const eventsPromise = getRoadEvents(counties).catch((e) => {
@@ -42,7 +44,7 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
   const results = await Promise.allSettled(
     keys.map(async (key) => {
       const [county, district] = key.split("|") as [string, string];
-      const w = await getDistrictWeather(county, district);
+      const w = await getDistrictWeather(county, district, { near: nearByKey.get(key) ?? [] });
       const first = w.rainfall12h[0];
       const weather: DistrictWeather = {
         rainProbability: first?.pop ?? 0,
@@ -51,6 +53,8 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
         condition: mapCwbCondition(w.condition),
         periodLabel: first ? `${first.label}–${first.endLabel}` : null,
         rainfallBuckets: w.rainfall12h,
+        // 只採路線 3 km 內測站；附近沒有測站時為 null，不拿縣市最大值判斷
+        observedRainMmPerHr: w.rainfallScope === "nearby" ? w.rainfallMmPerHr : null,
       };
       return [key, weather] as const;
     })

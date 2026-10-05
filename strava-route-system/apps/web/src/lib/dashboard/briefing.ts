@@ -21,6 +21,7 @@ import {
   type VerdictLevel,
 } from "@/lib/routes/recon-geo";
 import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
+import type { LatLon } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
   pickRainfallBucketForSegment,
@@ -37,6 +38,8 @@ export interface DistrictWeather {
   periodLabel: string | null;
   /** 完整降雨機率時段，依各路段 ETA 挑選 */
   rainfallBuckets?: RainfallBucket[];
+  /** 路線 3 km 內雨量站的即時時雨量（mm/hr）；null 為附近沒有測站，未提供時不列入判定 */
+  observedRainMmPerHr?: number | null;
 }
 
 export type WeatherLookup = ReadonlyMap<string, DistrictWeather>;
@@ -72,6 +75,42 @@ export function routeDistrictKeys(routes: Route[]): string[] {
   return [...keys];
 }
 
+/**
+ * 各行政區在路線上的取樣座標（依 sampleKms 對到 polyline 上最近里程的點），
+ * 供即時雨量只採路線 3 km 內測站。多條路線經過同一區時合併。
+ */
+export function routeDistrictPoints(routes: Route[]): Map<string, LatLon[]> {
+  const out = new Map<string, LatLon[]>();
+  for (const route of routes) {
+    const poly = buildRoutePolylineKm(route);
+    if (!poly) continue;
+    for (const seg of route.segments) {
+      if (!seg.county || !seg.districtZh || !seg.sampleKms?.length) continue;
+      const key = districtKey(seg.county, seg.districtZh);
+      const points = out.get(key) ?? [];
+      for (const km of seg.sampleKms) {
+        const i = nearestIndex(poly.cumulativeKm, km);
+        const [lat, lon] = poly.points[i]!;
+        points.push({ lat, lon });
+      }
+      out.set(key, points);
+    }
+  }
+  return out;
+}
+
+/** 遞增陣列中最接近 target 的索引 */
+function nearestIndex(sorted: number[], target: number): number {
+  let lo = 0;
+  let hi = sorted.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid]! < target) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo > 0 && Math.abs(sorted[lo - 1]! - target) <= Math.abs(sorted[lo]! - target) ? lo - 1 : lo;
+}
+
 export interface ApplyWeatherOptions {
   /** 出發時間；提供時各路段的降雨機率改用其 ETA 所在的時段 */
   departureTime?: Date;
@@ -95,6 +134,7 @@ export function applyWeather(route: Route, lookup: WeatherLookup, options: Apply
         temperature: w.temperature,
         condition: w.condition,
         hasWeather: true,
+        observedRainMmPerHr: w.observedRainMmPerHr,
       };
     }),
   };

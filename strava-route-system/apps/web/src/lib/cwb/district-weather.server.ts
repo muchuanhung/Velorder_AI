@@ -144,7 +144,7 @@ function computeVerdict(
 }
 
 const timeLabel = (iso: string) =>
-  iso ? new Date(iso).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", timeZone: TIME_ZONE }) : "—";
+  iso ? new Date(iso).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TIME_ZONE }) : "—";
 
 /** 台灣時間的今天（YYYY-MM-DD） */
 const todayInTaipei = () => new Date().toLocaleDateString("sv-SE", { timeZone: TIME_ZONE });

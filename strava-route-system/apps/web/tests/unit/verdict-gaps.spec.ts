@@ -8,7 +8,14 @@
 
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
-import { applyWeather, briefRoute, districtKey, mapCwbCondition, type DistrictWeather } from "@/lib/dashboard/briefing";
+import {
+  applyWeather,
+  briefRoute,
+  districtKey,
+  mapCwbCondition,
+  routeDistrictPoints,
+  type DistrictWeather,
+} from "@/lib/dashboard/briefing";
 import { getDistrictWeather, type CWBWeatherResponse } from "@/lib/cwb/district-weather.server";
 import { flatProfile, makeRoute, segment } from "../fixtures/route";
 
@@ -18,8 +25,15 @@ const loadFixture = (name: string): unknown =>
 const F_D0047 = loadFixture("cwb-f-d0047.json");
 const O_A0002 = loadFixture("cwb-o-a0002.json");
 
-function weather(rain: number): DistrictWeather {
-  return { rainProbability: rain, windSpeedKmh: 5, temperature: 25, condition: "cloudy", periodLabel: "今天 12:00–18:00" };
+function weather(rain: number, extra: Partial<DistrictWeather> = {}): DistrictWeather {
+  return {
+    rainProbability: rain,
+    windSpeedKmh: 5,
+    temperature: 25,
+    condition: "cloudy",
+    periodLabel: "今天 12:00–18:00",
+    ...extra,
+  };
 }
 
 /** 以 URL 分派 CWB 各資料集的回應；不發真正的網路請求 */
@@ -49,6 +63,7 @@ function toDistrictWeather(w: CWBWeatherResponse): DistrictWeather {
     condition: mapCwbCondition(w.condition),
     periodLabel: first ? `${first.label}–${first.endLabel}` : null,
     rainfallBuckets: w.rainfall12h,
+    observedRainMmPerHr: w.rainfallScope === "nearby" ? w.rainfallMmPerHr : null,
   };
 }
 
@@ -114,8 +129,8 @@ test.describe("缺口 3：ETA 對到正確的 F-D0047 時段", () => {
     const b = briefRoute(route, lookup, { now });
     expect(b.verdict.level).toBe("risky");
     expect(b.maxRain).toBe(80);
-    const [, mid, late] = shilin.rainfall12h;
-    expect(b.periodLabel).toBe(`${mid!.label}–${late!.endLabel}`);
+    // 時段標籤為 24 小時制
+    expect(b.periodLabel).toBe("09:00–15:00");
   });
 });
 
@@ -141,5 +156,61 @@ test.describe("缺口 4：雨量只取路線 3 km 內測站", () => {
     expect(w.rainfallScope).toBe("county");
     expect(w.verdict).not.toContain("大雨");
     expect(w.verdictType).not.toBe("bad");
+  });
+});
+
+test.describe("Dashboard 判讀納入路線 3 km 內即時雨量", () => {
+  const route = makeRoute({ segments: [segment("士林區", [0, 5, 10, 15, 20])] });
+  const brief = (observedRainMmPerHr?: number | null) =>
+    briefRoute(route, new Map([[districtKey("台北市", "士林區"), weather(10, { observedRainMmPerHr })]]));
+
+  test("即時雨量 ≥ 2.6 mm/hr 判為危險，0.5–2.5 判為注意，未達 0.5 不示警", () => {
+    const heavy = brief(3);
+    expect(heavy.verdict.level).toBe("risky");
+    expect(heavy.verdict.headline).toContain("即時雨量 3 mm/hr");
+    expect(brief(1).verdict.level).toBe("caution");
+    expect(brief(0.2).verdict.level).toBe("clear");
+  });
+
+  test("附近沒有雨量站時不改判 unknown，但加註", () => {
+    const b = brief(null);
+    expect(b.verdict.level).toBe("clear");
+    expect(b.verdict.note).toContain("附近無即時雨量站");
+  });
+
+  test("沒有查詢即時雨量（undefined）時不加註，維持原判定", () => {
+    const b = brief(undefined);
+    expect(b.verdict.level).toBe("clear");
+    expect(b.verdict.note).toBe("");
+  });
+
+  test("routeDistrictPoints 依 sampleKms 取路線上的座標，各行政區分開", () => {
+    const r = makeRoute({ segments: [segment("士林區", [0, 5]), segment("北投區", [15, 20])] });
+    const points = routeDistrictPoints([r]);
+    expect(points.get(districtKey("台北市", "士林區"))).toHaveLength(2);
+    const beitou = points.get(districtKey("台北市", "北投區"))!;
+    // makeRoute 為往北直線：lat = 25.05 + km / 111（polyline 編碼會四捨五入座標）
+    expect(beitou[0]!.lat).toBeCloseTo(25.05 + 15 / 111, 3);
+    expect(beitou[1]!.lat).toBeCloseTo(25.05 + 20 / 111, 3);
+  });
+
+  test("串接 getDistrictWeather：路線旁小雨 0.5 mm/hr 判為注意，不被 11 km 外的大雨影響", async () => {
+    const restore = stubCwbFetch();
+    try {
+      // 士林區取樣點（約北緯 25.09–25.11）離 0.5 mm/hr 測站約 1 km
+      const r = makeRoute({
+        elevationProfile: flatProfile(20),
+        segments: [segment("士林區", [4.5, 5.5, 6.5])],
+      });
+      const near = routeDistrictPoints([r]).get(districtKey("台北市", "士林區"))!;
+      const w = await getDistrictWeather("台北市", "士林區", { near });
+      const b = briefRoute(r, new Map([[districtKey("台北市", "士林區"), toDistrictWeather(w)]]), {
+        now: new Date("2026-10-01T07:00:00+08:00"),
+      });
+      expect(b.verdict.level).toBe("caution");
+      expect(b.verdict.headline).toContain("即時雨量 0.5 mm/hr");
+    } finally {
+      restore();
+    }
   });
 });
