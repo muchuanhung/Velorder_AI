@@ -14,7 +14,6 @@ import {
 } from "@/lib/cwb/rainfall-stations";
 
 const CWB_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
-/** 伺服器在 Vercel 上是 UTC；時段標籤與「今天」一律以台灣時間計算 */
 const TIME_ZONE = "Asia/Taipei";
 
 export type CWBWeatherCondition = "sunny" | "cloudy" | "rainy" | "stormy" | "snowy";
