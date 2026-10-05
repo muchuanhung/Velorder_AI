@@ -21,7 +21,7 @@ import {
   type VerdictLevel,
 } from "@/lib/routes/recon-geo";
 import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
-import type { LatLon } from "@/lib/cwb/rainfall-stations";
+import { summarizeRainfall, type LatLon, type StationRain } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
   pickRainfallBucketForSegment,
@@ -95,6 +95,27 @@ export function routeDistrictPoints(routes: Route[]): Map<string, LatLon[]> {
       }
       out.set(key, points);
     }
+  }
+  return out;
+}
+
+/**
+ * 此路線專用的天氣查詢表：即時雨量只採「這條路線」經過各行政區的座標 3 km 內測站，
+ * 避免同區其他路線旁的雨影響本路線。縣市測站取不到或附近沒有測站時為 null。
+ */
+export function withRouteObservedRain(
+  route: Route,
+  lookup: WeatherLookup,
+  stationsByCounty: ReadonlyMap<string, StationRain[] | null>
+): WeatherLookup {
+  const points = routeDistrictPoints([route]);
+  const out = new Map(lookup);
+  for (const [key, near] of points) {
+    const w = lookup.get(key);
+    if (!w) continue;
+    const stations = stationsByCounty.get(key.split("|")[0]!);
+    const rain = stations ? summarizeRainfall(stations, near) : null;
+    out.set(key, { ...w, observedRainMmPerHr: rain?.scope === "nearby" ? rain.mmPerHr : null });
   }
   return out;
 }

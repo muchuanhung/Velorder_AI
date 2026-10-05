@@ -14,8 +14,8 @@
 ## 產品鐵律
 - 未判定 ≠ 安全。任何資料缺失、過期、超出預報時段，一律回 unknown，不准判成安全。
 - 判定只用規則式邏輯，LLM 不參與判定，只負責把既有判定翻成一句話。
-- briefing.ts、road-events.ts、recon-geo.ts 要保持純函式，之後 1:1 移植 Python，
-  所以改它們時要同步維護共用的 JSON fixture。
+- briefing.ts、road-events.ts、recon-geo.ts 要保持純函式，之後 1:1 移植 Python。
+  開始移植時再建立共用 JSON fixture；在那之前，改它們只需補 TS 單元測試。
 
 ## 驗證指令
 cd strava-route-system/apps/web
