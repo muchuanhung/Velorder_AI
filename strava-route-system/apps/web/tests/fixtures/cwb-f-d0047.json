@@ -1,0 +1,112 @@
+{
+  "success": "true",
+  "records": {
+    "Locations": [
+      {
+        "LocationsName": "臺北市",
+        "Location": [
+          {
+            "LocationName": "士林區",
+            "WeatherElement": [
+              {
+                "ElementName": "3小時降雨機率",
+                "Time": [
+                  {
+                    "StartTime": "2026-10-01T06:00:00+08:00",
+                    "EndTime": "2026-10-01T09:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "ProbabilityOfPrecipitation": "10"
+                      }
+                    ]
+                  },
+                  {
+                    "StartTime": "2026-10-01T09:00:00+08:00",
+                    "EndTime": "2026-10-01T12:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "ProbabilityOfPrecipitation": "20"
+                      }
+                    ]
+                  },
+                  {
+                    "StartTime": "2026-10-01T12:00:00+08:00",
+                    "EndTime": "2026-10-01T15:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "ProbabilityOfPrecipitation": "80"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "ElementName": "平均溫度",
+                "Time": [
+                  {
+                    "DataTime": "2026-10-01T06:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "Temperature": "25"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "LocationName": "北投區",
+            "WeatherElement": [
+              {
+                "ElementName": "3小時降雨機率",
+                "Time": [
+                  {
+                    "StartTime": "2026-10-01T06:00:00+08:00",
+                    "EndTime": "2026-10-01T09:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "ProbabilityOfPrecipitation": "10"
+                      }
+                    ]
+                  },
+                  {
+                    "StartTime": "2026-10-01T09:00:00+08:00",
+                    "EndTime": "2026-10-01T12:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "ProbabilityOfPrecipitation": "20"
+                      }
+                    ]
+                  },
+                  {
+                    "StartTime": "2026-10-01T12:00:00+08:00",
+                    "EndTime": "2026-10-01T15:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "ProbabilityOfPrecipitation": "80"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "ElementName": "平均溫度",
+                "Time": [
+                  {
+                    "DataTime": "2026-10-01T06:00:00+08:00",
+                    "ElementValue": [
+                      {
+                        "Temperature": "25"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
