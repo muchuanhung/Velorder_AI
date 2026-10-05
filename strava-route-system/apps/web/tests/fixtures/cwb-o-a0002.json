@@ -1,0 +1,51 @@
+{
+  "success": "true",
+  "records": {
+    "Station": [
+      {
+        "StationName": "測站1",
+        "StationId": "C0X001",
+        "GeoInfo": {
+          "CountyName": "臺北市",
+          "Coordinates": [
+            {
+              "CoordinateName": "WGS84",
+              "StationLatitude": 25.1,
+              "StationLongitude": 121.56
+            }
+          ]
+        },
+        "RainfallElement": {
+          "Now": {
+            "Precipitation": 0
+          },
+          "Past1hr": {
+            "Precipitation": 0.5
+          }
+        }
+      },
+      {
+        "StationName": "測站2",
+        "StationId": "C0X002",
+        "GeoInfo": {
+          "CountyName": "臺北市",
+          "Coordinates": [
+            {
+              "CoordinateName": "WGS84",
+              "StationLatitude": 24.99,
+              "StationLongitude": 121.57
+            }
+          ]
+        },
+        "RainfallElement": {
+          "Now": {
+            "Precipitation": 0
+          },
+          "Past1hr": {
+            "Precipitation": 12
+          }
+        }
+      }
+    ]
+  }
+}

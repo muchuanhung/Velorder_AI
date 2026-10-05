@@ -24,6 +24,8 @@ export type RouteStage = {
   condition?: RouteSegment["condition"];
   /** 是否已取得 CWB 天氣；false 時數值為預設 0，顯示端須呈現「無資料」 */
   hasWeather?: boolean;
+  /** 路線 3 km 內雨量站的即時時雨量；null 為附近沒有測站，undefined 為未查詢 */
+  observedRainMmPerHr?: number | null;
 };
 
 /** 單一路線上的 CCTV 錨點（供縮圖列與主畫面同步） */
@@ -197,6 +199,7 @@ export function deriveStages(route: Route): RouteStage[] {
       windSpeed: seg?.windSpeed ?? 0,
       condition: seg?.condition,
       hasWeather: seg?.hasWeather ?? false,
+      observedRainMmPerHr: seg?.observedRainMmPerHr,
     };
   });
 }
@@ -304,6 +307,9 @@ export const RAIN_CAUTION = 40;
 export const RAIN_RISKY = 60;
 export const WIND_CAUTION = 25;
 export const WIND_RISKY = 35;
+/** 即時時雨量門檻（mm/hr），與 district-weather 的 computeVerdict 一致：0.5 起小雨、2.6 起中雨 */
+export const RAIN_NOW_CAUTION = 0.5;
+export const RAIN_NOW_RISKY = 2.6;
 
 const LEVEL_RANK: Record<HazardLevel, number> = { caution: 1, risky: 2 };
 
@@ -313,13 +319,20 @@ export function rainLevel(pct: number): HazardLevel | null {
   return null;
 }
 
+export function observedRainLevel(mmPerHr: number): HazardLevel | null {
+  if (mmPerHr >= RAIN_NOW_RISKY) return "risky";
+  if (mmPerHr >= RAIN_NOW_CAUTION) return "caution";
+  return null;
+}
+
 export function windLevel(kmh: number): HazardLevel | null {
   if (kmh >= WIND_RISKY) return "risky";
   if (kmh >= WIND_CAUTION) return "caution";
   return null;
 }
 
-type RawHazard = Omit<Hazard, "id" | "label"> & { value: number };
+/** observed：即時雨量（value 為 mm/hr），與預報降雨機率（value 為 %）分開合併與標示 */
+type RawHazard = Omit<Hazard, "id" | "label"> & { value: number; observed?: boolean };
 
 /** 相鄰且同類型同等級的區段合併，保留最大值 */
 function mergeAdjacent(items: RawHazard[]): RawHazard[] {
@@ -338,6 +351,7 @@ function mergeAdjacent(items: RawHazard[]): RawHazard[] {
 
 function weatherHazards(stages: RouteStage[]): RawHazard[] {
   const byKind: Record<"rain" | "wind" | "storm", RawHazard[]> = { rain: [], wind: [], storm: [] };
+  const observedRain: RawHazard[] = [];
 
   stages.forEach((s) => {
     if (!s.hasWeather) return;
@@ -352,9 +366,19 @@ function weatherHazards(stages: RouteStage[]): RawHazard[] {
       // 預報有雨但降雨機率未達門檻，與 computeRouteStatus 一致列為注意
       byKind.rain.push({ kind: "rain", level: "caution", startKm, endKm, value: s.rainProbability });
     }
+    const mm = s.observedRainMmPerHr;
+    const observed = mm == null ? null : observedRainLevel(mm);
+    if (observed && mm != null) {
+      observedRain.push({ kind: "rain", level: observed, startKm, endKm, value: mm, observed: true });
+    }
   });
 
-  return [...mergeAdjacent(byKind.rain), ...mergeAdjacent(byKind.wind), ...mergeAdjacent(byKind.storm)];
+  return [
+    ...mergeAdjacent(byKind.rain),
+    ...mergeAdjacent(observedRain),
+    ...mergeAdjacent(byKind.wind),
+    ...mergeAdjacent(byKind.storm),
+  ];
 }
 
 const KIND_LABEL: Record<HazardKind, (v: number) => string> = {
@@ -375,7 +399,7 @@ export function computeHazards(_route: Route, stages: RouteStage[]): Hazard[] {
       level: h.level,
       startKm: h.startKm,
       endKm: h.endKm,
-      label: KIND_LABEL[h.kind](h.value),
+      label: h.observed ? `即時雨量 ${h.value} mm/hr` : KIND_LABEL[h.kind](h.value),
     }));
 }
 
@@ -411,6 +435,8 @@ export function summarizeVerdict(
   const noWeather = withWeather === 0;
   const partial = withWeather > 0 && withWeather < stages.length;
   const eventsIncomplete = eventsFailed === null || (eventsFailed?.length ?? 0) > 0;
+  // 即時雨量只是補充：附近沒有測站時加註，不改判 unknown（預報資料仍在）
+  const noNearbyGauge = stages.some((s) => s.hasWeather && s.observedRainMmPerHr === null);
 
   const worst = hazards.reduce<Hazard | null>(
     (best, h) => (!best || LEVEL_RANK[h.level] > LEVEL_RANK[best.level] ? h : best),
@@ -421,6 +447,7 @@ export function summarizeVerdict(
   if (worst && hazards.length > 1) notes.push(`另有 ${hazards.length - 1} 項示警`);
   if (noWeather && worst) notes.push("尚無天氣資料");
   if (partial) notes.push("部分路段無天氣資料");
+  if (noNearbyGauge) notes.push("部分路段附近無即時雨量站");
   if (eventsFailed === null) notes.push("路況事件暫時取不到");
   else if (eventsFailed?.length) notes.push(`${eventsFailed.join("、")}路況事件取不到`);
   const note = notes.join("・");
@@ -434,5 +461,5 @@ export function summarizeVerdict(
   if (partial || eventsIncomplete) {
     return { level: "unknown", headline: "資料不完整，無法確認安全", note };
   }
-  return { level: "clear", headline: "沿途無示警", note: "" };
+  return { level: "clear", headline: "沿途無示警", note };
 }

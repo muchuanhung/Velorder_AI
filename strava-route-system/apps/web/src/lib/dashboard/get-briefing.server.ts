@@ -4,13 +4,14 @@
  */
 
 import { loadRoutes } from "@/lib/routes/load-routes.server";
-import { getDistrictWeather } from "@/lib/cwb/district-weather.server";
+import { getCountyRainfallStations, getDistrictWeather } from "@/lib/cwb/district-weather.server";
 import { getRoadEvents } from "@/lib/tdx/road-events.server";
 import {
   briefRoute,
   mapCwbCondition,
   pickAlternative,
   routeDistrictKeys,
+  withRouteObservedRain,
   type DistrictWeather,
   type RouteBriefing,
 } from "@/lib/dashboard/briefing";
@@ -39,6 +40,10 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
     console.warn("路況事件取得失敗:", e instanceof Error ? e.message : e);
     return null;
   });
+  // 即時雨量站每縣市抓一次，再依各路線自己的座標篩 3 km 內測站
+  const stationsPromise = Promise.all(
+    counties.map(async (c) => [c, await getCountyRainfallStations(c)] as const)
+  ).then((entries) => new Map(entries));
   const results = await Promise.allSettled(
     keys.map(async (key) => {
       const [county, district] = key.split("|") as [string, string];
@@ -62,11 +67,15 @@ export async function getDashboardBriefing(routeId?: string): Promise<DashboardB
     else console.warn("行政區天氣取得失敗:", r.reason instanceof Error ? r.reason.message : r.reason);
   }
 
-  const eventsResult = await eventsPromise;
+  const [eventsResult, stationsByCounty] = await Promise.all([eventsPromise, stationsPromise]);
   const now = new Date();
   const eventsFailed = eventsResult ? eventsResult.failed : null;
   const briefings = routes.map((route) =>
-    briefRoute(route, lookup, { events: eventsResult?.events ?? [], now, eventsFailed })
+    briefRoute(route, withRouteObservedRain(route, lookup, stationsByCounty), {
+      events: eventsResult?.events ?? [],
+      now,
+      eventsFailed,
+    })
   );
   const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 

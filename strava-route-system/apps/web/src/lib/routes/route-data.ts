@@ -16,6 +16,11 @@ export interface RouteSegment {
   sampleKms?: number[];
   /** 是否已取得 CWB 天氣；false 時 rain/wind/temp 為預設 0，不可當作實際數值顯示 */
   hasWeather?: boolean;
+  /**
+   * 路線 3 km 內雨量站的即時時雨量（mm/hr）；null 代表附近沒有測站，
+   * undefined 代表沒有查詢即時雨量（不列入判定也不加註）
+   */
+  observedRainMmPerHr?: number | null;
 }
 
 export interface CCTVFeed {

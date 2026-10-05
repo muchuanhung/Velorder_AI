@@ -5,10 +5,15 @@
 
 import { getCWBdatasetId, normalizeCountyForCWB } from "@/lib/cwb/county-map";
 import { isForecastStale } from "@/lib/cwb/forecast-freshness";
-import { parseRainfallStations, summarizeRainfall, type LatLon, type RainfallSummary } from "@/lib/cwb/rainfall-stations";
+import {
+  parseRainfallStations,
+  summarizeRainfall,
+  type LatLon,
+  type RainfallSummary,
+  type StationRain,
+} from "@/lib/cwb/rainfall-stations";
 
 const CWB_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
-/** 伺服器在 Vercel 上是 UTC；時段標籤與「今天」一律以台灣時間計算 */
 const TIME_ZONE = "Asia/Taipei";
 
 export type CWBWeatherCondition = "sunny" | "cloudy" | "rainy" | "stormy" | "snowy";
@@ -144,7 +149,29 @@ function computeVerdict(
 }
 
 const timeLabel = (iso: string) =>
-  iso ? new Date(iso).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", timeZone: TIME_ZONE }) : "—";
+  iso ? new Date(iso).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: TIME_ZONE }) : "—";
+
+/** O-A0002 自動雨量站；getDistrictWeather 與 getCountyRainfallStations 用同一網址以共用 fetch 快取 */
+const rainfallUrl = (auth: string, cwbCounty: string) =>
+  `${CWB_BASE}/O-A0002-002?${auth}&format=JSON&locationName=${encodeURIComponent(cwbCounty)}`;
+
+/**
+ * 縣市內有效時雨量的測站，供呼叫端依各自的座標（如每條路線）篩附近測站。
+ * 取不到時回傳 null，呼叫端不可當成「沒有下雨」。
+ */
+export async function getCountyRainfallStations(county: string): Promise<StationRain[] | null> {
+  const key = process.env.CWB_API_KEY;
+  if (!key) return null;
+  const cwbCounty = normalizeCountyForCWB(county);
+  try {
+    const res = await fetch(rainfallUrl(`Authorization=${encodeURIComponent(key)}`, cwbCounty), {
+      next: { revalidate: 600 },
+    });
+    return res.ok ? parseRainfallStations(await res.json(), cwbCounty) : null;
+  } catch {
+    return null;
+  }
+}
 
 /** 台灣時間的今天（YYYY-MM-DD） */
 const todayInTaipei = () => new Date().toLocaleDateString("sv-SE", { timeZone: TIME_ZONE });
@@ -179,9 +206,7 @@ export async function getDistrictWeather(
     [forecastRes, sunsetRes, rainRes] = await Promise.all([
       fetch(forecastUrl, { next: { revalidate: 3600 } }),
       fetch(`${CWB_BASE}/A-B0062-001?${auth}&${format}`, { next: { revalidate: 86400 } }),
-      fetch(`${CWB_BASE}/O-A0002-002?${auth}&${format}&locationName=${encodeURIComponent(cwbCounty)}`, {
-        next: { revalidate: 600 },
-      }),
+      fetch(rainfallUrl(auth, cwbCounty), { next: { revalidate: 600 } }),
     ]);
   } catch (e) {
     throw new CwbError(`CWB 請求失敗：${e instanceof Error ? e.message : String(e)}`, 500);
