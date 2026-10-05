@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { LayoutDashboard, Map, Route, User, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SiteFooter } from "@/components/app-shell/site-footer";
 
 export type AppSection = "dashboard" | "routes" | "maps" | "profile";
 
@@ -39,7 +40,7 @@ export function AppShell({
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-black tracking-wide text-primary">
             <Image src="/dawnline.svg" alt="" width={32} height={32} className="size-8" priority />
-            Dawnline
+            曉行 Dawnline
           </Link>
           <nav aria-label="主要導覽" className="hidden h-full items-stretch gap-6 md:flex">
             {NAV.map((item) => (
@@ -70,6 +71,8 @@ export function AppShell({
         )}
       >
         {children}
+        {/* 地圖等全版面頁不放頁尾，避免壓縮地圖 */}
+        {!fullBleed && <SiteFooter className="mt-12 border-t border-border pt-6" />}
       </main>
 
       <nav

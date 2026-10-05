@@ -14,7 +14,7 @@ export function ProductLogo({ className, size = 40 }: ProductLogoProps) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/dawnline.svg"
-        alt="Dawnline"
+        alt="曉行 Dawnline"
         width={size}
         height={size}
         className="object-contain"

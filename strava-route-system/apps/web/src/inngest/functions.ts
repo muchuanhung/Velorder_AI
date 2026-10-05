@@ -1,65 +1,6 @@
 import { inngest } from "@/inngest/client";
-import {
-  pullRecentActivities,
-} from "@/lib/background/strava-activities";
-import { persistActivitiesFirestore } from "@/lib/background/strava-activities.firestore";
-import {
-  listActiveStravaTokensFirestore,
-  type StravaTokenRecord,
-} from "@/lib/background/strava-token-store.firestore";
 import { fetchAllCCTV, TDX_SYNC_CITIES } from "@/lib/tdx/client";
 import { persistCCTVFirestore } from "@/lib/background/tdx-cctv.firestore";
-
-type StravaSyncEvent = {
-  name: "strava/sync-activities";
-  data: {
-    userId: string;
-    athleteId: number;
-    accessToken: string;
-  };
-};
-
-export const syncActivities = inngest.createFunction(
-  { id: "strava-sync-activities" },
-  { event: "strava/sync-activities" },
-  async ({ event, step }) => {
-    const activities = await step.run("fetch-strava", () =>
-      pullRecentActivities(event.data.accessToken)
-    );
-
-    await step.run("persist-activities", () =>
-      persistActivitiesFirestore({
-        userId: event.data.userId,
-        activities,
-      })
-    );
-  }
-);
-
-export const syncAllUsers = inngest.createFunction(
-  { id: "strava-sync-all", name: "Strava 每小時同步" },
-  { cron: "0 * * * *" },
-  async ({ step }) => {
-    const tokens = await step.run("load-active-tokens", () =>
-      listActiveStravaTokensFirestore()
-    );
-
-    await step.run("dispatch-sync", async () => {
-      await Promise.all(
-        tokens.map((record: StravaTokenRecord) =>
-          step.sendEvent(`sync-user-${record.userId}`, {
-            name: "strava/sync-activities",
-            data: {
-              userId: record.userId,
-              athleteId: record.athleteId,
-              accessToken: record.accessToken,
-            },
-          } satisfies StravaSyncEvent)
-        )
-      );
-    });
-  }
-);
 
 /**
  * TDX CCTV 每日同步
@@ -86,8 +27,4 @@ export const syncTDXCCTV = inngest.createFunction(
   }
 );
 
-export const allInngestFunctions = [
-  syncActivities,
-  syncAllUsers,
-  syncTDXCCTV,
-];
+export const allInngestFunctions = [syncTDXCCTV];

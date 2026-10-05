@@ -6,7 +6,6 @@ import { ScrollArea } from "../ui/scroll-area";
 import {
   Database,
   Target,
-  Link2,
   Cookie,
   Shield,
   Scale,
@@ -20,7 +19,6 @@ const sections = [
   { id: "introduction", label: "導覽", icon: FileText },
   { id: "data-collection", label: "我們蒐集的資料", icon: Database },
   { id: "purpose-of-use", label: "使用目的", icon: Target },
-  { id: "strava-api", label: "Strava API 合規", icon: Link2 },
   { id: "data-storage", label: "資料儲存與安全", icon: Shield },
   { id: "cookies", label: "Cookie 與追蹤", icon: Cookie },
   { id: "user-rights", label: "您的權利", icon: UserCheck },

@@ -18,7 +18,6 @@ if (existsSync(envPath) && !process.env.CWB_API_KEY) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@repo/auth'],
   async headers() {
     return [
       {
@@ -37,10 +36,6 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'dgalywyr863hv.cloudfront.net',
-      },
       {
         protocol: 'https',
         hostname: '**.cloudfront.net',

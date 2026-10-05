@@ -71,7 +71,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
         <div className="flex items-start justify-between gap-3">
           <ProductLogo size={40} />
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-foreground">將 Dawnline 加入主畫面</p>
+            <p className="font-medium text-foreground">將曉行加入主畫面</p>
             {isIOS ? (
               <p className="mt-1 text-sm text-muted-foreground">
                 點選分享按鈕 <Share className="inline size-4 align-text-bottom" aria-label="分享" />，然後選擇「加入主畫面」

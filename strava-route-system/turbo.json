@@ -33,11 +33,6 @@
     "test": {
       "cache": false,
       "passThroughEnv": ["E2E_USER_EMAIL", "E2E_USER_PASSWORD"]
-    },
-    "@repo/auth#build": {
-      "outputs": [
-        "dist/**"
-      ]
     }
   }
 }

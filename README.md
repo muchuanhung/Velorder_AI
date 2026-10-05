@@ -17,7 +17,7 @@
 | `/dashboard` 今日判讀 | 各路線的判定、示警路段與 ETA 降雨時段；天氣卡片優先採用定位 3 km 內的測站雨量 |
 | `/routes` 路線示警 | 路線列表與單一路線偵察：高度圖、依里程對應的行政區路段、沿線 CCTV |
 | `/maps` 降雨地圖 | 全台縣市降雨預報（`/api/weather/cwb/all-counties`） |
-| `/profile` | 個人資料與 Strava 連結（可用 `NEXT_PUBLIC_STRAVA_ENABLED=false` 關閉） |
+| `/profile` | 個人資料與密碼設定 |
 | `/routes/private` 私人路線 | 登入即可使用，不需付費；上傳私人 GPX 功能開發中 |
 | `/lab/route-sim` | 3D 路線沙盤（實驗；正式環境需 `NEXT_PUBLIC_LAB_ENABLED=true`） |
 
@@ -27,9 +27,9 @@
 |------|----------|
 | 前端／API | Next.js 16（App Router、Route Handlers）、React 19、TypeScript、Tailwind CSS v4、Radix UI、three.js（`/lab`） |
 | 認證 | Firebase Authentication（client 登入，server 以 Firebase Admin 驗證 `firebase-id-token` cookie） |
-| 資料儲存 | Firestore（Strava token、活動、CCTV 清單）、Firebase Storage（`gpx/routes/*.gpx` 公開路線） |
-| 背景工作 | Inngest（Strava 同步、TDX CCTV 每日同步） |
-| 外部資料 | CWB 開放資料（`F-D0047-*` 鄉鎮預報、`O-A0002-002` 測站雨量）、TDX（路況事件、CCTV）、Strava API（OAuth 與活動） |
+| 資料儲存 | Firestore（CCTV 清單）、Firebase Storage（`gpx/routes/*.gpx` 公開路線） |
+| 背景工作 | Inngest（TDX CCTV 每日同步） |
+| 外部資料 | CWB 開放資料（`F-D0047-*` 鄉鎮預報、`O-A0002-002` 測站雨量）、TDX（路況事件、CCTV） |
 | 行政區反查 | 內建台灣鄉鎮 TopoJSON + bbox 索引，本地 point-in-polygon，不需外部地理服務 |
 | 部署 | Vercel（見 `strava-route-system/vercel.json`） |
 | 測試／CI | Playwright（unit 與 E2E project）、GitHub Actions 跑型別檢查與 unit 測試 |
@@ -43,10 +43,9 @@ strava-route-system/          # pnpm + Turborepo monorepo
 │   ├── src/lib/              # cwb、tdx、routes、firebase 等邏輯
 │   ├── src/inngest/          # Inngest functions
 │   ├── tests/{unit,e2e}/     # Playwright 測試
-│   └── docs/                 # TDX CCTV、Strava 品牌規範等設定文件
+│   └── docs/                 # TDX CCTV 等設定文件
 ├── apps/docs/                # create-next-app 範本，尚未使用
 └── packages/
-    ├── auth/                 # Strava OAuth token 交換與 refresh
     ├── ui/                   # 共用元件
     ├── eslint-config/
     └── typescript-config/
@@ -56,8 +55,6 @@ strava-route-system/          # pnpm + Turborepo monorepo
 
 | Function | 觸發 | 內容 |
 |----------|------|------|
-| `strava-sync-activities` | 事件 `strava/sync-activities`（完成 Strava OAuth 後送出） | 拉取該使用者最新活動並寫入 Firestore |
-| `strava-sync-all` | Cron `0 * * * *`（每小時） | 對所有有效 token 送出 `strava/sync-activities` |
 | `tdx-cctv-sync` | Cron `0 4 * * *`（台灣 12:00） | 同步 TDX CCTV 清單到 Firestore；開發時也可 `POST /api/cctv/sync` 手動觸發 |
 
 ## 本機開發
@@ -87,12 +84,6 @@ FIREBASE_SERVICE_ACCOUNT_JSON=              # service account JSON 字串
 CWB_API_KEY=
 TDX_CLIENT_ID=
 TDX_CLIENT_SECRET=
-
-# Strava（選用）
-STRAVA_CLIENT_ID=
-STRAVA_CLIENT_SECRET=
-STRAVA_REDIRECT_URI=http://localhost:3000/api/strava
-NEXT_PUBLIC_STRAVA_ENABLED=true
 
 # 其他
 NEXT_PUBLIC_APP_URL=http://localhost:3000

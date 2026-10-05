@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
-import { StravaTeaser } from "@/components/auth/strava-teaser";
+import { LoginHero, loginCopy } from "@/components/auth/login-hero";
+import { SiteFooter } from "@/components/app-shell/site-footer";
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -72,7 +73,7 @@ export default function LoginPage() {
         transition={{ duration: 0.8 }}
         className="hidden lg:block lg:w-1/2 xl:w-3/5"
       >
-        <StravaTeaser />
+        <LoginHero />
       </motion.div>
 
       {/* Right Side - 登入表單 */}
@@ -85,10 +86,14 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10 mb-8 flex items-center gap-2 lg:hidden"
+          className="relative z-10 mb-8 w-full max-w-md lg:hidden"
         >
-          <ProductLogo size={40} />
-          <span className="text-xl font-bold text-foreground">Dawnline</span>
+          <div className="flex items-center gap-2">
+            <ProductLogo size={40} />
+            <span className="text-xl font-bold text-foreground">{loginCopy.brand}</span>
+          </div>
+          <h1 className="mt-4 text-2xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{loginCopy.subtitle}</p>
         </motion.div>
 
         {/* Auth Card */}
@@ -115,12 +120,13 @@ export default function LoginPage() {
           繼續使用即表示您同意我們的{" "}
           <Link href="/terms" className="text-primary hover:underline">
             服務條款
-          </Link>{" "}
-          and 
+          </Link>
+          與
           <Link href="/privacy" className="text-primary hover:underline">
             隱私政策
-          </Link>{" "}
+          </Link>
         </motion.p>
+        <SiteFooter className="relative z-10 mt-3" />
       </div>
     </div>
   );

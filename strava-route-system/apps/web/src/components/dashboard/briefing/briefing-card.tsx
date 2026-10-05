@@ -37,7 +37,7 @@ const LEVEL: Record<
   },
   unknown: {
     word: "未判定",
-    advice: "資料不足，暫時無法判斷這條路線的風險。",
+    advice: "資料不足，無法判定，不代表安全。",
     icon: HelpCircle,
     sign: "bg-muted text-foreground",
     muted: "text-muted-foreground",

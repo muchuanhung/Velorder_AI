@@ -429,7 +429,7 @@ export function summarizeVerdict(
     return { level: worst.level, headline: `${worst.startKm.toFixed(1)} km 起${worst.label}`, note };
   }
   if (noWeather) {
-    return { level: "unknown", headline: "尚無天氣資料", note: note || "無法判定天氣風險" };
+    return { level: "unknown", headline: "尚無天氣資料", note: note || "資料不足，無法判定，不代表安全。" };
   }
   if (partial || eventsIncomplete) {
     return { level: "unknown", headline: "資料不完整，無法確認安全", note };
