@@ -2,6 +2,7 @@
 !/.claude/commands/
 *.md
 !CLAUDE.md
+!AGENTS.md
 !/.claude/commands/*.md
 
 # 設計稿與本機示範頁（僅保留本機，不上遠端）
