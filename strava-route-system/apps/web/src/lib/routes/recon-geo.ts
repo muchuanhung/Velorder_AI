@@ -308,7 +308,7 @@ export interface Hazard {
  */
 export const isWeatherHazard = (h: Hazard) => h.kind === "rain" || h.kind === "wind" || h.kind === "storm";
 
-/** 天氣門檻，與 computeRouteStatus 一致 */
+/** 天氣門檻 */
 export const RAIN_CAUTION = 40;
 export const RAIN_RISKY = 60;
 export const WIND_CAUTION = 25;
@@ -373,7 +373,7 @@ function weatherHazards(stages: RouteStage[]): RawHazard[] {
     } else if (s.condition === "stormy") {
       byKind.storm.push({ kind: "storm", level: "risky", startKm, endKm, value: 0 });
     } else if (s.condition === "rainy" && !rain) {
-      // 預報有雨但降雨機率未達門檻，與 computeRouteStatus 一致列為注意
+      // 預報有雨但降雨機率未達門檻，列為注意
       byKind.rain.push({ kind: "rain", level: "caution", startKm, endKm, value: s.rainProbability });
     }
     const mm = s.observedRainMmPerHr;
