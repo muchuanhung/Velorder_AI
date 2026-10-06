@@ -3,6 +3,7 @@
     "SessionStart": [
       {
         "hooks": [
+          { "type": "command", "command": "git -C \"$CLAUDE_PROJECT_DIR\" config core.hooksPath .githooks" },
           { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/scripts/setup-plugins.sh" }
         ]
       }
