@@ -54,7 +54,9 @@ export function ElevationScrubber({
     [onScrub]
   );
 
-  const hasWeather = stage?.hasWeather ?? false;
+  // 超出預報時段的數值不可當真，比照無資料不顯示
+  const outOfCoverage = (stage?.hasWeather && stage.outOfCoverage) ?? false;
+  const hasWeather = (stage?.hasWeather ?? false) && !outOfCoverage;
   const rain = hasWeather && stage ? rainLevel(stage.rainProbability) : null;
   const wind = hasWeather && stage ? windLevel(stage.windSpeed) : null;
   // 約 100 格，取到 0.1 km
@@ -81,6 +83,8 @@ export function ElevationScrubber({
             <span> · 雨 </span>
             <span className={cn(levelClass(rain))}>{stage.rainProbability}%</span>
           </>
+        ) : outOfCoverage ? (
+          "此處超出預報時段"
         ) : (
           "此處無天氣資料"
         )}

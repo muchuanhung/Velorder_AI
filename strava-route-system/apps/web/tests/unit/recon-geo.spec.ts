@@ -216,4 +216,52 @@ test.describe("summarizeVerdict", () => {
     expect(verdict.level).toBe("clear");
     expect(verdict.headline).toBe("沿途無示警");
   });
+
+  test("未判定帶原因：沒有天氣資料為 no_data", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20])] });
+    const { stages, hazards } = hazardsOf(route);
+    expect(summarizeVerdict(hazards, stages).reasons).toEqual(["no_data"]);
+  });
+
+  test("路況事件取不到也算 no_data", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(10))] });
+    const { stages, hazards } = hazardsOf(route);
+    expect(summarizeVerdict(hazards, stages, { eventsFailed: null }).reasons).toEqual(["no_data"]);
+  });
+
+  test("預報過期時不可判安全，原因為 stale", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(10, { weatherStale: true }))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages);
+    expect(verdict.level).toBe("unknown");
+    expect(verdict.reasons).toEqual(["stale"]);
+    expect(verdict.headline).toBe("預報過期，無法確認安全");
+  });
+
+  test("超出預報時段時不可判安全，原因為 out_of_coverage", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(10, { outOfCoverage: true }))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages);
+    expect(verdict.level).toBe("unknown");
+    expect(verdict.reasons).toEqual(["out_of_coverage"]);
+  });
+
+  test("多個原因依 no_data → stale → out_of_coverage 排列", () => {
+    const route = makeRoute({
+      segments: [
+        segment("士林區", [0, 5], withWeather(10, { weatherStale: true, outOfCoverage: true })),
+        segment("北投區", [10, 15, 20]),
+      ],
+    });
+    const { stages, hazards } = hazardsOf(route);
+    expect(summarizeVerdict(hazards, stages).reasons).toEqual(["no_data", "stale", "out_of_coverage"]);
+  });
+
+  test("預報過期但已有危險示警時，危險優先且不帶原因", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 10, 20], withWeather(70, { weatherStale: true }))] });
+    const { stages, hazards } = hazardsOf(route);
+    const verdict = summarizeVerdict(hazards, stages);
+    expect(verdict.level).toBe("risky");
+    expect(verdict.reasons).toBeUndefined();
+  });
 });

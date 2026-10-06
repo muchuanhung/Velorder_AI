@@ -5,7 +5,8 @@ import { Mountain, Route as RouteIcon, Clock, Sun } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Route } from "@/lib/routes/route-data";
 import { getStatusLabel } from "@/lib/routes/route-data";
-import type { RouteWeatherState } from "@/hooks/useRouteWeather";
+import type { ReconVerdict, VerdictLevel } from "@/lib/routes/recon-geo";
+import { UnknownReasons } from "@/components/verdict/unknown-reasons";
 import { ROUTE_TYPE_ICONS } from "@/constants";
 import { getSvgPath } from "@/lib/routes/polyline";
 import { cn } from "@/lib/utils";
@@ -23,18 +24,24 @@ function pathEndpoints(d: string): { start: [number, number]; end: [number, numb
   return pts.length >= 2 ? { start: pts[0]!, end: pts[pts.length - 1]! } : null;
 }
 
-interface RouteHeaderProps {
-  route: Route;
-  /** 由天氣計算的狀態；null 代表尚無資料（route.status 為 GPX 寫死值，不使用） */
-  statusOverride?: Route["status"] | null;
-  weatherState?: RouteWeatherState;
-  /** 覆寫路線資料中的建議時段 */
-  bestTimeToRide?: string;
+/** 伺服器判定 → 卡片／標頭狀態；未判定為 null（route.status 為 GPX 寫死值，不使用） */
+export function statusOfVerdict(level: VerdictLevel): Route["status"] | null {
+  if (level === "risky" || level === "caution") return level;
+  return level === "clear" ? "safe" : null;
 }
 
-export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRide }: RouteHeaderProps) {
-  const status = statusOverride ?? null;
-  const suggestTime = bestTimeToRide ?? route.bestTimeToRide;
+interface RouteHeaderProps {
+  route: Route;
+  /** 伺服器端判定 */
+  verdict: ReconVerdict;
+  loading?: boolean;
+  /** 伺服器依預報時段算出的建議出發時段；null 不顯示 */
+  bestTimeToRide?: string | null;
+}
+
+export function RouteHeader({ route, verdict, loading = false, bestTimeToRide }: RouteHeaderProps) {
+  const status = statusOfVerdict(verdict.level);
+  const suggestTime = bestTimeToRide ?? null;
   const svgPath = getSvgPath(route.gpxPreviewPath);
   const ends = pathEndpoints(svgPath);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];
@@ -113,12 +120,13 @@ export function RouteHeader({ route, statusOverride, weatherState, bestTimeToRid
               <span className={cn("mr-1.5 h-2 w-2 rounded-full inline-block", STATUS_BADGE[status].dot)} />
               {getStatusLabel(status)}
             </Badge>
+          ) : loading ? (
+            <Badge variant="outline" className="border-0 text-xs font-semibold px-2.5 py-1 bg-card text-muted-foreground">
+              判讀中
+            </Badge>
           ) : (
-            <Badge
-              variant="outline"
-              className="border-0 text-xs font-semibold px-2.5 py-1 bg-card text-muted-foreground"
-            >
-              {weatherState === "loading" ? "天氣載入中" : "無天氣資料"}
+            <Badge variant="outline" className="border-0 text-xs font-semibold px-2.5 py-1 bg-card text-muted-foreground">
+              <UnknownReasons reasons={verdict.reasons}>未判定</UnknownReasons>
             </Badge>
           )}
         </div>

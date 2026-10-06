@@ -26,7 +26,8 @@ export function estimateArrivalTime(
 }
 
 /**
- * 涵蓋 ETA 的時段；ETA 早於所有時段取第一個未來時段，晚於所有時段取最後一個。
+ * 涵蓋 ETA 的時段；ETA 早於所有時段取第一個未來時段。
+ * 晚於所有時段回傳 null：超出預報時段不可拿其他時段頂替（判讀端改判 unknown）。
  * 時間無法解析的時段略過；沒有可用時段回傳 null。
  */
 export function pickRainfallBucketByEta<T extends Pick<RainfallBucket, "startTime" | "endTime">>(
@@ -38,7 +39,6 @@ export function pickRainfallBucketByEta<T extends Pick<RainfallBucket, "startTim
   return (
     valid.find((b) => t >= Date.parse(b.startTime) && t < Date.parse(b.endTime)) ??
     valid.find((b) => Date.parse(b.startTime) > t) ??
-    valid[valid.length - 1] ??
     null
   );
 }
@@ -55,6 +55,7 @@ export function pickRainfallBucketForSegment<T extends TimedPop>(
   buckets: readonly T[],
   speedKmh: number = DEFAULT_CYCLING_SPEED_KMH
 ): T | null {
+  if (isBeyondForecast(sampleKms, departure, buckets, speedKmh)) return null;
   const entryKm = sampleKms?.[0] ?? 0;
   const exitKm = sampleKms?.[sampleKms.length - 1] ?? entryKm;
   const from = estimateArrivalTime(entryKm, departure, speedKmh).getTime();
@@ -66,4 +67,20 @@ export function pickRainfallBucketForSegment<T extends TimedPop>(
   });
   if (overlapping.length === 0) return pickRainfallBucketByEta(new Date(from), buckets);
   return overlapping.reduce((a, b) => (b.pop > a.pop ? b : a));
+}
+
+/**
+ * 路段離開時的 ETA 已超出最後一個預報時段（含部分超出）。
+ * 沒有可用時段時回 false，由「無資料」處理。
+ */
+export function isBeyondForecast(
+  sampleKms: readonly number[] | undefined,
+  departure: Date,
+  buckets: readonly Pick<RainfallBucket, "endTime">[],
+  speedKmh: number = DEFAULT_CYCLING_SPEED_KMH
+): boolean {
+  const ends = buckets.map((b) => Date.parse(b.endTime)).filter((t) => !Number.isNaN(t));
+  if (ends.length === 0) return false;
+  const exitKm = sampleKms?.[sampleKms.length - 1] ?? sampleKms?.[0] ?? 0;
+  return estimateArrivalTime(exitKm, departure, speedKmh).getTime() >= Math.max(...ends);
 }

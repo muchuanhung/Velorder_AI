@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, Bike, Footprints, Mountain, Trophy, X, Lock } from "lucide-react";
@@ -12,10 +12,9 @@ import { cn } from "@/lib/utils";
 import type { Route } from "@/lib/routes/route-data";
 import { useRoutesFromStorage } from "@/hooks/useRoutesFromStorage";
 import { useRouteCCTV } from "@/hooks/useRouteCCTV";
-import { useRouteWeather } from "@/hooks/useRouteWeather";
-import { useRouteEvents } from "@/hooks/useRouteEvents";
+import { useRouteBriefing, verdictOf } from "@/hooks/useRouteBriefing";
 import { RouteCard } from "@/components/routes/route-card";
-import { RouteHeader } from "@/components/routes/route-header";
+import { RouteHeader, statusOfVerdict } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
 
 type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
@@ -64,21 +63,10 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
 
   const selectedRoute = routes.find((r) => r.id === selectedId) || routes[0];
   const { feeds: cctvFeeds, loading: cctvLoading, error: cctvError } = useRouteCCTV(selectedRoute ?? null);
-  const weather = useRouteWeather(selectedRoute ?? null);
-  const roadEvents = useRouteEvents(selectedRoute ?? null);
-  // 卡片與標頭的狀態要和判定列一致：取天氣與路況事件中較嚴重者（災害為危險，事故／管制為注意）
-  const routeStatus = worseStatus(
-    weather.status,
-    roadEvents.events.some((e) => e.category === "disaster")
-      ? "risky"
-      : roadEvents.events.some((e) => e.affectsVerdict)
-        ? "caution"
-        : null
-  );
-  const reconRoute = useMemo(
-    () => (selectedRoute ? { ...selectedRoute, segments: weather.segments } : null),
-    [selectedRoute, weather.segments]
-  );
+  // 判定、示警、建議時段全由伺服器算（與 Dashboard 同一流程），前端只顯示
+  const briefing = useRouteBriefing(selectedRoute?.id);
+  const verdict = verdictOf(briefing);
+  const routeStatus = briefing.briefing ? statusOfVerdict(verdict.level) : null;
   const filteredRoutes = routes.filter((r) => {
     const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) || r.nameZh.includes(search);
     const matchesType = typeFilter === "全部" || r.type === typeFilter;
@@ -218,16 +206,16 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
             >
               <RouteHeader
                 route={selectedRoute}
-                statusOverride={routeStatus}
-                weatherState={weather.state}
-                bestTimeToRide={weather.bestTimeToRide}
+                verdict={verdict}
+                loading={briefing.loading}
+                bestTimeToRide={briefing.briefing?.bestTimeToRide}
               />
               <ReconView
-                route={reconRoute ?? selectedRoute}
+                route={selectedRoute}
                 cctvFeeds={cctvFeeds}
                 cctvLoading={cctvLoading}
                 cctvError={cctvError}
-                roadEvents={roadEvents}
+                briefing={briefing}
               />
             </motion.div>
           )}
@@ -235,14 +223,6 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
       </div>
     </div>
   );
-}
-
-const STATUS_RANK: Record<Route["status"], number> = { safe: 0, caution: 1, risky: 2 };
-
-/** 天氣尚無資料（null）時維持 null，標頭顯示「無天氣資料」；路況事件只會把狀態往嚴重的方向調 */
-function worseStatus(weather: Route["status"] | null, events: Route["status"] | null): Route["status"] | null {
-  if (weather === null || events === null) return weather;
-  return STATUS_RANK[events] > STATUS_RANK[weather] ? events : weather;
 }
 
 function RouteFilters({

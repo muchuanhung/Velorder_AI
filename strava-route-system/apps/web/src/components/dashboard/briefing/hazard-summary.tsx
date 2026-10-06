@@ -1,4 +1,4 @@
-import type { Hazard } from "@/lib/routes/recon-geo";
+import { UNKNOWN_REASON_TEXT, type Hazard } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
 import { CATEGORY_LABEL, groupRouteEvents, type RouteEvent } from "@/lib/routes/road-events";
 import { LevelBadge } from "./level-badge";
@@ -64,7 +64,13 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
       ) : (
         <p className="text-sm text-muted-foreground">
           {briefing.verdict.level === "unknown"
-            ? [briefing.verdict.headline, briefing.verdict.note].filter(Boolean).join("・") + "。"
+            ? [
+                briefing.verdict.headline,
+                briefing.verdict.note,
+                `原因：${(briefing.verdict.reasons ?? ["no_data"]).map((r) => UNKNOWN_REASON_TEXT[r].title).join("、")}`,
+              ]
+                .filter(Boolean)
+                .join("・") + "。"
             : "沿途沒有示警。"}
         </p>
       )}

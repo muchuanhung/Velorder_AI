@@ -125,6 +125,62 @@ test.describe("briefRoute", () => {
     expect(b.periodLabel).toBe("08:00–12:00");
   });
 
+  test("預報過期時為未判定，原因 stale", () => {
+    const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { stale: true }) }), { now: AT_8AM });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.verdict.reasons).toEqual(["stale"]);
+  });
+
+  test("路段 ETA 超出最後一個預報時段時為未判定，原因 out_of_coverage", () => {
+    // 北投區出口 100 km → 13:00，超出 12:00 結束的預報
+    const route = makeRoute({ distance: 100, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 100])] });
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 10)] }),
+      北投區: weather(10, { rainfallBuckets: [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 10)] }),
+    });
+    const b = briefRoute(route, lookup, { now: AT_8AM });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.verdict.reasons).toEqual(["out_of_coverage"]);
+  });
+
+  test("超出預報時段的路段不拿其他時段數值產生示警，也不列入最高降雨", () => {
+    // 北投區 40–100 km → 10:00–13:00 超出 12:00；即使第二時段降雨 90% 也不能拿來判危險
+    const route = makeRoute({ distance: 100, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 100])] });
+    const buckets = [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 90)];
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: buckets }),
+      北投區: weather(90, { rainfallBuckets: buckets, windSpeedKmh: 50 }),
+    });
+    const b = briefRoute(route, lookup, { now: AT_8AM });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.verdict.reasons).toEqual(["out_of_coverage"]);
+    expect(b.hazards).toEqual([]);
+    expect(b.maxRain).toBe(10);
+    expect(b.segments[1]).toMatchObject({ hasWeather: true, outOfCoverage: true });
+  });
+
+  test("回傳合併天氣後的路段、此路線的事件失敗縣市與建議出發時段", () => {
+    const route = makeRoute({ distance: 50, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 50])] });
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+      北投區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+    });
+    const b = briefRoute(route, lookup, { now: AT_8AM, eventsFailed: ["新北市", "台北市"] });
+    expect(b.segments.every((s) => s.hasWeather)).toBe(true);
+    expect(b.eventsFailed).toEqual(["台北市"]);
+    expect(b.bestTimeToRide).toBe("08:00");
+    expect(briefRoute(route, lookup, { now: AT_8AM, eventsFailed: null }).eventsFailed).toBeNull();
+    expect(briefRoute(route, new Map(), { now: AT_8AM }).bestTimeToRide).toBeNull();
+  });
+
+  test("ETA 都在預報時段內且資料新，可判安全", () => {
+    const route = makeRoute({ distance: 50, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 50])] });
+    const buckets = [bucket("08:00", "10:00", 10), bucket("10:00", "12:00", 10)];
+    const lookup = lookupOf({ 士林區: weather(10, { rainfallBuckets: buckets }), 北投區: weather(10, { rainfallBuckets: buckets }) });
+    expect(briefRoute(route, lookup, { now: AT_8AM }).verdict.level).toBe("clear");
+  });
+
   test("完全沒有天氣資料時為未判定，數值為 null", () => {
     const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
     const b = briefRoute(route, new Map());

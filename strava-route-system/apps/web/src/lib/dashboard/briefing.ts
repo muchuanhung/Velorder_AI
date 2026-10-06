@@ -7,7 +7,7 @@
  * 否則陡的路線天天都是危險，示警會失去可信度。
  */
 
-import type { Route, RouteSegment } from "@/lib/routes/route-data";
+import { computeBestTimeToRide, type Route, type RouteSegment } from "@/lib/routes/route-data";
 import { eventHazards, matchEventsToRoute, type RoadEvent, type RouteEvent } from "@/lib/routes/road-events";
 import {
   buildRoutePolylineKm,
@@ -24,6 +24,7 @@ import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
 import { summarizeRainfall, type LatLon, type StationRain } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
+  isBeyondForecast,
   pickRainfallBucketForSegment,
   type RainfallBucket,
 } from "@/lib/cwb/forecast-eta";
@@ -40,6 +41,8 @@ export interface DistrictWeather {
   rainfallBuckets?: RainfallBucket[];
   /** 路線 3 km 內雨量站的即時時雨量（mm/hr）；null 為附近沒有測站，未提供時不列入判定 */
   observedRainMmPerHr?: number | null;
+  /** 重抓後仍是過期預報 */
+  stale?: boolean;
 }
 
 export type WeatherLookup = ReadonlyMap<string, DistrictWeather>;
@@ -50,6 +53,15 @@ const weatherOf = (seg: RouteSegment, lookup: WeatherLookup) =>
   seg.county && seg.districtZh ? lookup.get(districtKey(seg.county, seg.districtZh)) : undefined;
 
 /** 路段騎經時間所落在的降雨時段；沒有出發時間或時段資料時回傳 null */
+function isOutOfCoverage(
+  seg: RouteSegment,
+  w: DistrictWeather,
+  { departureTime, speedKmh = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
+): boolean {
+  if (!departureTime || !w.rainfallBuckets?.length) return false;
+  return isBeyondForecast(seg.sampleKms, departureTime, w.rainfallBuckets, speedKmh);
+}
+
 function bucketForSegment(
   seg: RouteSegment,
   w: DistrictWeather,
@@ -156,6 +168,8 @@ export function applyWeather(route: Route, lookup: WeatherLookup, options: Apply
         condition: w.condition,
         hasWeather: true,
         observedRainMmPerHr: w.observedRainMmPerHr,
+        weatherStale: w.stale ?? false,
+        outOfCoverage: isOutOfCoverage(seg, w, options),
       };
     }),
   };
@@ -201,6 +215,12 @@ export interface RouteBriefing {
   temperature: { min: number; max: number } | null;
   periodLabel: string | null;
   elevationProfile: [number, number][];
+  /** 合併天氣後的路段（含 hasWeather／weatherStale／outOfCoverage），/routes 頁的高程圖與示警用 */
+  segments: RouteSegment[];
+  /** 此路線經過、路況事件取不到的縣市；null 代表整個事件服務失敗 */
+  eventsFailed: string[] | null;
+  /** 沿線各區平均降雨機率最低的預報時段起點，例「14:00」；無時段資料為 null */
+  bestTimeToRide: string | null;
 }
 
 export interface BriefRouteOptions {
@@ -224,7 +244,9 @@ export function briefRoute(
     (a, b) => a.startKm - b.startKm
   );
 
-  const withWeather = enriched.segments.filter((s) => s.hasWeather);
+  // 超出預報時段的路段數值不可當真，不列入統計
+  const withWeather = enriched.segments.filter((s) => s.hasWeather && !s.outOfCoverage);
+  const routeEventsFailed = failedOnRoute(route, eventsFailed);
   const temps = withWeather.map((s) => s.temperature);
 
   return {
@@ -232,7 +254,7 @@ export function briefRoute(
     name: route.nameZh || route.name,
     distanceKm: routeTotalKm(route),
     elevationGainM: route.elevationGain,
-    verdict: summarizeVerdict(hazards, stages, { eventsFailed: failedOnRoute(route, eventsFailed) }),
+    verdict: summarizeVerdict(hazards, stages, { eventsFailed: routeEventsFailed }),
     hazards,
     roadEvents,
     maxRain: withWeather.length ? Math.max(...withWeather.map((s) => s.rainProbability)) : null,
@@ -240,7 +262,19 @@ export function briefRoute(
     temperature: temps.length ? { min: Math.min(...temps), max: Math.max(...temps) } : null,
     periodLabel: usedPeriodLabel(route, lookup, weatherOptions),
     elevationProfile: route.elevationProfile,
+    segments: enriched.segments,
+    eventsFailed: routeEventsFailed === undefined ? [] : routeEventsFailed,
+    bestTimeToRide: bestTimeToRide(route, lookup),
   };
+}
+
+/** 建議出發時段：沿線各行政區預報時段平均降雨機率最低者（與判定無關，只是建議） */
+function bestTimeToRide(route: Route, lookup: WeatherLookup): string | null {
+  const segs = route.segments.flatMap((seg) => {
+    const buckets = weatherOf(seg, lookup)?.rainfallBuckets;
+    return buckets?.length ? [{ ...seg, rainfall12h: buckets }] : [];
+  });
+  return computeBestTimeToRide(segs) || null;
 }
 
 /** 越小越安全；未判定不可拿來推薦 */

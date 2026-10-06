@@ -26,6 +26,10 @@ export type RouteStage = {
   hasWeather?: boolean;
   /** 路線 3 km 內雨量站的即時時雨量；null 為附近沒有測站，undefined 為未查詢 */
   observedRainMmPerHr?: number | null;
+  /** 此路段用的是過期預報 */
+  weatherStale?: boolean;
+  /** 此路段 ETA 超出預報涵蓋時段 */
+  outOfCoverage?: boolean;
 };
 
 /** 單一路線上的 CCTV 錨點（供縮圖列與主畫面同步） */
@@ -200,6 +204,8 @@ export function deriveStages(route: Route): RouteStage[] {
       condition: seg?.condition,
       hasWeather: seg?.hasWeather ?? false,
       observedRainMmPerHr: seg?.observedRainMmPerHr,
+      weatherStale: seg?.weatherStale ?? false,
+      outOfCoverage: seg?.outOfCoverage ?? false,
     };
   });
 }
@@ -302,7 +308,7 @@ export interface Hazard {
  */
 export const isWeatherHazard = (h: Hazard) => h.kind === "rain" || h.kind === "wind" || h.kind === "storm";
 
-/** 天氣門檻，與 computeRouteStatus 一致 */
+/** 天氣門檻 */
 export const RAIN_CAUTION = 40;
 export const RAIN_RISKY = 60;
 export const WIND_CAUTION = 25;
@@ -356,14 +362,18 @@ function weatherHazards(stages: RouteStage[]): RawHazard[] {
   stages.forEach((s) => {
     if (!s.hasWeather) return;
     const { startKm, endKm } = s;
-    const rain = rainLevel(s.rainProbability);
+    // 超出預報時段：沒有對應時段的預報，不拿其他時段的數值產生示警（判定由 summarizeVerdict 改 unknown）
+    const forecastUsable = !s.outOfCoverage;
+    const rain = forecastUsable ? rainLevel(s.rainProbability) : null;
     if (rain) byKind.rain.push({ kind: "rain", level: rain, startKm, endKm, value: s.rainProbability });
-    const wind = windLevel(s.windSpeed);
+    const wind = forecastUsable ? windLevel(s.windSpeed) : null;
     if (wind) byKind.wind.push({ kind: "wind", level: wind, startKm, endKm, value: s.windSpeed });
-    if (s.condition === "stormy") {
+    if (!forecastUsable) {
+      // 不產生預報類示警
+    } else if (s.condition === "stormy") {
       byKind.storm.push({ kind: "storm", level: "risky", startKm, endKm, value: 0 });
     } else if (s.condition === "rainy" && !rain) {
-      // 預報有雨但降雨機率未達門檻，與 computeRouteStatus 一致列為注意
+      // 預報有雨但降雨機率未達門檻，列為注意
       byKind.rain.push({ kind: "rain", level: "caution", startKm, endKm, value: s.rainProbability });
     }
     const mm = s.observedRainMmPerHr;
@@ -405,8 +415,20 @@ export function computeHazards(_route: Route, stages: RouteStage[]): Hazard[] {
 
 export type VerdictLevel = HazardLevel | "clear" | "unknown";
 
+/** 未判定的原因：資料缺漏／預報過期／超出預報時段 */
+export type UnknownReason = "no_data" | "stale" | "out_of_coverage";
+
+/** 未判定原因的說明文案（badge 相同，點開看原因） */
+export const UNKNOWN_REASON_TEXT: Record<UnknownReason, { title: string; detail: string }> = {
+  no_data: { title: "資料缺漏", detail: "部分路段的天氣或路況資料取不到。" },
+  stale: { title: "預報過期", detail: "氣象署預報尚未更新，目前只有過期的預報。" },
+  out_of_coverage: { title: "超出預報時段", detail: "預計抵達時間超出目前預報涵蓋的時段。" },
+};
+
 export interface ReconVerdict {
   level: VerdictLevel;
+  /** 僅 level 為 unknown 時有值，依 no_data → stale → out_of_coverage 排序 */
+  reasons?: UnknownReason[];
   /** 最嚴重示警的描述，例：「12.4 km 起降雨 70%」 */
   headline: string;
   /** 其他補充，例：「另有 2 項示警」「部分路段無天氣資料」 */
@@ -455,11 +477,19 @@ export function summarizeVerdict(
   if (worst) {
     return { level: worst.level, headline: `${worst.startKm.toFixed(1)} km 起${worst.label}`, note };
   }
+  const reasons: UnknownReason[] = [];
+  if (noWeather || partial || eventsIncomplete) reasons.push("no_data");
+  if (stages.some((s) => s.hasWeather && s.weatherStale)) reasons.push("stale");
+  if (stages.some((s) => s.hasWeather && s.outOfCoverage)) reasons.push("out_of_coverage");
   if (noWeather) {
-    return { level: "unknown", headline: "尚無天氣資料", note: note || "資料不足，無法判定，不代表安全。" };
+    return { level: "unknown", reasons, headline: "尚無天氣資料", note: note || "資料不足，無法判定，不代表安全。" };
   }
-  if (partial || eventsIncomplete) {
-    return { level: "unknown", headline: "資料不完整，無法確認安全", note };
+  if (reasons.length > 0) {
+    const headline =
+      reasons.length === 1 && reasons[0] !== "no_data"
+        ? `${UNKNOWN_REASON_TEXT[reasons[0]!].title}，無法確認安全`
+        : "資料不完整，無法確認安全";
+    return { level: "unknown", reasons, headline, note };
   }
   return { level: "clear", headline: "沿途無示警", note };
 }
