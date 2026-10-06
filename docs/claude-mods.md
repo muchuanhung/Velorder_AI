@@ -1,6 +1,6 @@
 # Claude Code mod 清單與本機測試計畫
 
-2026-10-06 在雲端 session 實測 5 個 mod。結論：雲端 session 只適合純背景 hook 的 mod；有畫面的 mod（面板、提示列、按鈕）要在本機 Claude Code（終端機或桌面版 Code 分頁）測。
+2026-10-06 在雲端 session 實測 5 個 mod。結論：雲端 session 只適合純背景 hook 的 mod；有畫面的 mod（面板、提示列、按鈕）要在本機 Claude Code（終端機或桌面版 Code 分頁）測。repo 已移除雲端自動安裝 mod 的機制（`.claude/plugins.list`、`setup-plugins.sh`），要用 mod 照下方指令手動裝。
 
 ## 雲端實測結果
 
@@ -16,7 +16,7 @@ house-rules 的 bug：
 1. 多行 commit 訊息中間有署名時，會把該行之後的指令一起刪掉，造成引號不成對、整條指令失敗。
 2. `git push origin HEAD:refs/heads/bot/x` 能繞過 branch 前綴檢查。
 
-另外：house-rules 與 check-ledger 是 claude.ai 帳號層級同步安裝的，不在本 repo 的 `.claude/plugins.list`；要停用 house-rules 得從帳號的 plugin 設定關掉。
+另外：house-rules 與 check-ledger 是 claude.ai 帳號層級同步安裝的，不在本 repo；要停用 house-rules 得從帳號的 plugin 設定關掉。
 
 ## 本機安裝
 
