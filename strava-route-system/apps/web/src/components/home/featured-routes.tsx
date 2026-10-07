@@ -30,8 +30,8 @@ export async function FeaturedRoutes() {
   if (briefings.length === 0) return null;
 
   return (
-    <section aria-label="精選路線現在狀況" className="space-y-3">
-      <h2 className="text-base font-bold text-foreground lg:text-lg">精選路線・現在狀況</h2>
+    <section aria-label="精選路線即時與未來狀況判定" className="space-y-3">
+      <h2 className="text-base font-bold text-foreground lg:text-lg">精選路線・即時與未來狀況判定</h2>
       <ul className="grid gap-2 lg:gap-3">
         {briefings.map((b) => {
           const chip = CHIP[b.verdict.level];

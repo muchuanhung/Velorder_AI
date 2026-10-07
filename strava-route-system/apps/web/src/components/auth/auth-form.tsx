@@ -21,7 +21,7 @@ type AuthMode = "login" | "signup" | "forgot";
 
 const authFormConfig = {
   header: {
-    login: { title: "登入或註冊", subtitle: "上傳 GPX，看你自己的路線" },
+    login: { title: "登入或註冊", subtitle: "上傳 GPX，每一段都幫你查好" },
     signup: { title: "歡迎加入", subtitle: "註冊後上傳 GPX，逐段看路況" },
     forgot: { title: "重置密碼", subtitle: "輸入您的電子郵件以接收重置連結" },
   },
