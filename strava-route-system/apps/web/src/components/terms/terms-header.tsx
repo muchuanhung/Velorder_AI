@@ -28,7 +28,7 @@ export function TermsHeader() {
     <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-8">
         <div className="flex items-center gap-3">
-          <Link href="/login" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <ProductLogo size={32} />
             <span className="hidden sm:block font-semibold text-foreground text-sm">
               曉行 Dawnline
