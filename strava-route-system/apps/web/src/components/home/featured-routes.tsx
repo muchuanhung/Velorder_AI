@@ -35,7 +35,7 @@ export async function FeaturedRoutes() {
       <ul className="grid gap-2 lg:gap-3">
         {briefings.map((b) => {
           const chip = CHIP[b.verdict.level];
-          // chip 疊在整張卡的連結上方，未判定的 Popover 才點得到
+          // chip 疊在整張卡的連結上方，未判定的 Popover 才點得到；入口頁的 chip 不加虛線底線（其他頁維持）
           // 手機版（< lg）只留 chip＋路線名稱＋箭頭一行，判定說明與距離在點進 /routes 後看
           const chipClass = cn(
             "relative z-10 shrink-0 rounded-md px-2 py-0.5 text-xs font-black tracking-widest",
@@ -47,7 +47,7 @@ export async function FeaturedRoutes() {
               className="group relative flex items-center gap-3 rounded-xl border border-border bg-card/80 px-3 py-2.5 backdrop-blur lg:items-start lg:p-4 transition-colors focus-within:border-primary hover:border-primary/60"
             >
               {b.verdict.level === "unknown" ? (
-                <UnknownReasons reasons={b.verdict.reasons} className={chipClass}>
+                <UnknownReasons reasons={b.verdict.reasons} className={cn(chipClass, "no-underline")}>
                   {chip.word}
                 </UnknownReasons>
               ) : (
