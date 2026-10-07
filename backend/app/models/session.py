@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.db import Base, utcnow
 from app.core.types import DateTime3, UBigInt
-from app.models.member import Member
+from app.models.user import User
 
 
 class AuthSession(Base):
@@ -13,17 +13,17 @@ class AuthSession(Base):
 
     __tablename__ = "sessions"
     __table_args__ = (
-        Index("idx_sessions_member", "member_id"),
+        Index("idx_sessions_user", "user_id"),
         Index("idx_sessions_expires", "expires_at"),
     )
 
     token_hash: Mapped[str] = mapped_column(CHAR(64), primary_key=True)
-    member_id: Mapped[int] = mapped_column(
-        UBigInt, ForeignKey("members.id", name="fk_sessions_member", ondelete="CASCADE")
+    user_id: Mapped[int] = mapped_column(
+        UBigInt, ForeignKey("users.id", name="fk_sessions_user", ondelete="CASCADE")
     )
     created_at: Mapped[datetime] = mapped_column(DateTime3, default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime3)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime3)
     user_agent: Mapped[str | None] = mapped_column(String(255))
 
-    member: Mapped[Member] = relationship(lazy="joined")
+    user: Mapped[User] = relationship(lazy="joined")

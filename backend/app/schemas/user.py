@@ -1,7 +1,7 @@
 from app.schemas.base import CamelModel, UtcDatetime
 
 
-class MemberOut(CamelModel):
+class UserOut(CamelModel):
     """不回傳內部流水號 id。"""
 
     email: str | None

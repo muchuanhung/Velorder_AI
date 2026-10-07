@@ -5,11 +5,11 @@ FastAPI + SQLAlchemy 2 + Alembic + MySQL 8.4。登入用 Firebase ID token 換�
 ```
 app/
   core/      設定、DB、錯誤格式、Firebase 驗證、cookie
-  models/    members、sessions、routes
+  models/    users、sessions、routes、segments、cctv
   schemas/   API 輸入輸出（camelCase）
-  services/  auth_service（upsert member、建／查／撤銷 session）
+  services/  auth_service（upsert user、建／查／撤銷 session）
   routers/   health、auth、me
-alembic/     0001 members、sessions；0002 routes（raw DDL，InnoDB／utf8mb4）
+alembic/     0001 members、sessions；0002 routes；0003 segments、cctv；0004 members 改名 users（raw DDL，InnoDB／utf8mb4）
 tests/       pytest，SQLite + 假 verifier，不連 MySQL、不連 Firebase
 docs/        deploy-aws.md
 ```
