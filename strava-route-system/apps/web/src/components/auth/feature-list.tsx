@@ -12,7 +12,7 @@ const features = [
     icon: CloudSun,
     title: "天氣與路況一起看",
     short: "天氣＋路況",
-    description: "交通部中央氣象署鄉鎮預報與雨量，加上 TDX 路況事件。",
+    description: "氣象署鄉鎮預報與雨量、TDX 路況事件，加上沿線 CCTV 即時影像。",
   },
   {
     icon: HelpCircle,
