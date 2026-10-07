@@ -16,7 +16,7 @@
 - commit 訊息、PR 標題與內文都不加 AI 署名：不寫 Co-Authored-By: Claude、Claude-Session、「Generated with Claude Code」或 session 連結。
 - PR 一律開 draft，內文依序寫：摘要、動了哪些檔案、驗證指令與結果、已知未處理事項。
 - 同一個任務的後續修正推到同一個 branch／PR，不另開 PR。
-- 上面的身分、署名、branch 前綴由 `.githooks/`（pre-commit、commit-msg、pre-push）強制擋下；SessionStart 會自動設 `core.hooksPath`，本機第一次 clone 後手動跑 `git config core.hooksPath .githooks`。被擋時照訊息修正，不准用 `--no-verify` 繞過。改規則只動 `.githooks/config`，改完跑 `bash .githooks/test.sh`。
+- 上面的身分、署名、branch 前綴由 `.githooks/`（pre-commit、commit-msg、pre-push）強制擋下；SessionStart 會自動設 `core.hooksPath`，本機第一次 clone 後手動跑 `git config core.hooksPath .githooks`。被擋時照訊息修正，不准用 `--no-verify` 繞過。改規則只動 `.githooks/config`。
 
 ## 產品鐵律
 - 未判定 ≠ 安全。任何資料缺失、過期、超出預報時段，一律回 unknown，不准判成安全。
