@@ -32,10 +32,11 @@ export async function FeaturedRoutes() {
   return (
     <section aria-label="精選路線即時判定" className="space-y-3">
       <h2 className="text-base font-bold text-foreground lg:text-lg">精選路線・即時判定</h2>
-      <ul className="grid gap-3">
+      <ul className="grid gap-2 lg:gap-3">
         {briefings.map((b) => {
           const chip = CHIP[b.verdict.level];
           // chip 疊在整張卡的連結上方，未判定的 Popover 才點得到
+          // 手機版（< lg）只留 chip＋路線名稱＋箭頭一行，判定說明與距離在點進 /routes 後看
           const chipClass = cn(
             "relative z-10 shrink-0 rounded-md px-2 py-0.5 text-xs font-black tracking-widest",
             chip.className
@@ -43,7 +44,7 @@ export async function FeaturedRoutes() {
           return (
             <li
               key={b.id}
-              className="group relative flex items-start gap-3 rounded-xl border border-border bg-card/80 p-4 backdrop-blur transition-colors focus-within:border-primary hover:border-primary/60"
+              className="group relative flex items-center gap-3 rounded-xl border border-border bg-card/80 px-3 py-2.5 backdrop-blur lg:items-start lg:p-4 transition-colors focus-within:border-primary hover:border-primary/60"
             >
               {b.verdict.level === "unknown" ? (
                 <UnknownReasons reasons={b.verdict.reasons} className={chipClass}>
@@ -52,21 +53,21 @@ export async function FeaturedRoutes() {
               ) : (
                 <span className={chipClass}>{chip.word}</span>
               )}
-              <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="min-w-0 flex-1 lg:space-y-0.5">
                 <Link
                   href={`/routes?route=${encodeURIComponent(b.id)}`}
-                  className="font-bold leading-snug outline-none after:absolute after:inset-0 after:rounded-xl group-hover:underline"
+                  className="block truncate font-bold leading-snug outline-none after:absolute after:inset-0 after:rounded-xl group-hover:underline lg:whitespace-normal"
                 >
                   {b.name}
                 </Link>
-                <p className="text-sm">{b.verdict.headline}</p>
-                <p className="font-mono text-xs text-muted-foreground">
+                <p className="hidden text-sm lg:block">{b.verdict.headline}</p>
+                <p className="hidden font-mono text-xs text-muted-foreground lg:block">
                   {b.distanceKm.toFixed(1)} km・爬升 {b.elevationGainM} m
                   {b.periodLabel && `・依 ${b.periodLabel} 預報`}
                 </p>
               </div>
               <ChevronRight
-                className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                className="size-4 shrink-0 lg:mt-0.5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
                 aria-hidden
               />
             </li>
