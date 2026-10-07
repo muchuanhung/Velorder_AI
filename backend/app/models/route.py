@@ -14,15 +14,13 @@ class Route(Base):
     __tablename__ = "routes"
     __table_args__ = (
         UniqueConstraint("public_id", name="uq_routes_public_id"),
-        Index("idx_routes_member_list", "member_id", "deleted_at", "created_at"),
+        Index("idx_routes_user_list", "user_id", "deleted_at", "created_at"),
         Index("sp_routes_bbox", "bbox", mysql_prefix="SPATIAL"),
     )
 
     id: Mapped[int] = mapped_column(UBigInt, primary_key=True, autoincrement=True)
     public_id: Mapped[str] = mapped_column(CHAR(26))  # ULID，對外只用這個
-    member_id: Mapped[int] = mapped_column(
-        UBigInt, ForeignKey("members.id", name="fk_routes_member")
-    )
+    user_id: Mapped[int] = mapped_column(UBigInt, ForeignKey("users.id", name="fk_routes_user"))
     name: Mapped[str] = mapped_column(String(100))
     s3_key: Mapped[str] = mapped_column(String(255))
     file_size: Mapped[int] = mapped_column(UInt)

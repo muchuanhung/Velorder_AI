@@ -2,11 +2,11 @@ import hashlib
 
 from sqlalchemy import func, select
 
-from app.models import AuthSession, Member
+from app.models import AuthSession, User
 from tests.conftest import COOKIE, login
 
 
-def test_login_sets_httponly_cookie_and_returns_member(client):
+def test_login_sets_httponly_cookie_and_returns_user(client):
     res = client.post(
         "/api/v1/auth/session", json={"idToken": "valid:uid-1"}, headers={"User-Agent": "pytest"}
     )
@@ -45,7 +45,7 @@ def test_invalid_token_returns_401_without_cookie(client, db):
     assert res.status_code == 401
     assert res.json() == {"error": {"code": "unauthenticated", "message": "ID token 驗證失敗"}}
     assert "set-cookie" not in res.headers
-    assert db.scalar(select(func.count()).select_from(Member)) == 0
+    assert db.scalar(select(func.count()).select_from(User)) == 0
 
 
 def test_missing_id_token_returns_422_validation_error(client):
@@ -54,13 +54,13 @@ def test_missing_id_token_returns_422_validation_error(client):
     assert res.json()["error"]["code"] == "validation_error"
 
 
-def test_second_login_updates_member_instead_of_inserting(client, db):
+def test_second_login_updates_user_instead_of_inserting(client, db):
     login(client, "valid:uid-1:old@example.com")
     client.cookies.clear()
     res = client.post("/api/v1/auth/session", json={"idToken": "valid:uid-1:new@example.com"})
     assert res.status_code == 200
     assert res.json()["email"] == "new@example.com"
-    assert db.scalar(select(func.count()).select_from(Member)) == 1
+    assert db.scalar(select(func.count()).select_from(User)) == 1
     assert db.scalar(select(func.count()).select_from(AuthSession)) == 2
 
 

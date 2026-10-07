@@ -15,7 +15,7 @@ from app.core.config import Settings, get_settings
 from app.core.db import Base, get_db
 from app.core.firebase import FirebaseIdentity, InvalidIdTokenError, get_token_verifier
 from app.main import create_app
-from app.models import AuthSession, Member
+from app.models import AuthSession, User
 
 COOKIE = "rc_session"
 
@@ -40,7 +40,7 @@ def session_factory() -> Iterator[sessionmaker[Session]]:
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
-    Base.metadata.create_all(engine, tables=[Member.__table__, AuthSession.__table__])
+    Base.metadata.create_all(engine, tables=[User.__table__, AuthSession.__table__])
     yield sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     engine.dispose()
 

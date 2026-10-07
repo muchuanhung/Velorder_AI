@@ -7,9 +7,9 @@ from app.core.db import Base, utcnow
 from app.core.types import DateTime3, UBigInt
 
 
-class Member(Base):
-    __tablename__ = "members"
-    __table_args__ = (UniqueConstraint("firebase_uid", name="uq_members_firebase_uid"),)
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("firebase_uid", name="uq_users_firebase_uid"),)
 
     id: Mapped[int] = mapped_column(UBigInt, primary_key=True, autoincrement=True)
     firebase_uid: Mapped[str] = mapped_column(String(128))
