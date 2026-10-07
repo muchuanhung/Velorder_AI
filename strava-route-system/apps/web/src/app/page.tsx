@@ -11,7 +11,7 @@ export default async function HomePage() {
   return (
     <LoginView
       featured={
-        <Suspense fallback={<p className="text-sm text-muted-foreground">判讀中…</p>}>
+        <Suspense fallback={null}>
           <FeaturedRoutes />
         </Suspense>
       }

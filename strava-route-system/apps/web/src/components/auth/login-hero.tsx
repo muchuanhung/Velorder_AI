@@ -4,16 +4,15 @@ import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { DecorativeMapBackground } from "@/components/ui/decorative-map-background";
 import { ProductLogo } from "@/components/ui/product-logo";
-import { FeatureCarousel } from "@/components/auth/feature-carousel";
+import { FeatureList } from "@/components/auth/feature-list";
 
 export const loginCopy = {
   brand: "曉行 Dawnline",
   title: "出發前，整條路線一次判定。",
   subtitle: "上傳 GPX，逐公里標出走、慢、停與未判定。缺資料，不說安全。",
-  featuredTitle: "精選路線・即時判定",
 };
 
-/** 桌機版左側：品牌標語、功能小卡、精選路線即時判定 */
+/** 桌機版左側：品牌標語、功能說明、精選路線即時判定 */
 export function LoginHero({ featured }: { featured: ReactNode }) {
   return (
     <div className="relative flex h-full flex-col justify-center p-12">
@@ -35,21 +34,17 @@ export function LoginHero({ featured }: { featured: ReactNode }) {
           <p className="mt-3 text-muted-foreground">{loginCopy.subtitle}</p>
         </motion.div>
 
-        <FeatureCarousel className="mb-8 max-w-xl" />
+        <FeatureList className="mb-10 max-w-xl" />
 
-        {/* 精選路線 */}
-        <motion.section
-          aria-labelledby="featured-title"
+        {/* 精選路線（取不到資料時整區不顯示） */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="max-w-xl space-y-3"
+          className="max-w-xl"
         >
-          <h2 id="featured-title" className="text-lg font-bold text-foreground">
-            {loginCopy.featuredTitle}
-          </h2>
           {featured}
-        </motion.section>
+        </motion.div>
       </div>
     </div>
   );

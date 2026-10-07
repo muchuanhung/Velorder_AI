@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { LoginHero, loginCopy } from "@/components/auth/login-hero";
-import { FeatureCarousel } from "@/components/auth/feature-carousel";
+import { FeatureList } from "@/components/auth/feature-list";
 import { SiteFooter } from "@/components/app-shell/site-footer";
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -97,7 +97,7 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           </div>
           <h1 className="mt-4 text-2xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{loginCopy.subtitle}</p>
-          <FeatureCarousel className="mt-4" />
+          <FeatureList variant="compact" className="mt-4" />
         </motion.div>
 
         {/* Auth Card */}
@@ -114,19 +114,15 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           />
         </motion.div>
 
-        {/* Mobile 精選路線：桌機版在左側 hero */}
-        <motion.section
-          aria-labelledby="featured-title-mobile"
+        {/* Mobile 精選路線：桌機版在左側 hero；取不到資料時整區不顯示 */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative z-10 mt-8 w-full max-w-md space-y-3 lg:hidden"
+          className="relative z-10 mt-8 w-full max-w-md lg:hidden"
         >
-          <h2 id="featured-title-mobile" className="text-base font-bold text-foreground">
-            {loginCopy.featuredTitle}
-          </h2>
           {featured}
-        </motion.section>
+        </motion.div>
 
         {/* Footer */}
         <motion.p
