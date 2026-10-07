@@ -1,6 +1,6 @@
 """測試用 SQLite 記憶體 DB + 假的 Firebase 驗證，不連 MySQL、不連 Firebase。
 
-routes 表有 MySQL 空間欄位，不在 SQLite 建；它的 migration 在 MySQL 容器上驗。
+routes、segments、cctv 有 MySQL 空間欄位，不在 SQLite 建；它們的 migration 在 MySQL 容器上驗。
 """
 
 from collections.abc import Iterator
