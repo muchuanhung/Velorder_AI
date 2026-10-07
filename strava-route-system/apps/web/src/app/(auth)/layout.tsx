@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  alternates: { canonical: "/login" },
+  alternates: { canonical: "/" },
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

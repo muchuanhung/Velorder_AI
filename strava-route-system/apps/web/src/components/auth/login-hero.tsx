@@ -1,35 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Route, CloudSun, HelpCircle } from "lucide-react";
+import type { ReactNode } from "react";
 import { DecorativeMapBackground } from "@/components/ui/decorative-map-background";
 import { ProductLogo } from "@/components/ui/product-logo";
+import { FeatureList } from "@/components/auth/feature-list";
 
 export const loginCopy = {
   brand: "曉行 Dawnline",
-  title: "出發前，整條路線一次判定。",
-  subtitle: "上傳 GPX，逐公里標出走、慢、停與未判定。缺資料，不說安全。",
+  // 一行：手機 360px 也不換行；整合哪些資料交給下方功能說明
+  title: "好天氣出發，壞路況繞開",
 };
 
-const features = [
-  {
-    icon: Route,
-    title: "逐公里判定",
-    description: "沿 GPX 軌跡逐段標出走、慢、停，一眼看出哪一段要注意。",
-  },
-  {
-    icon: CloudSun,
-    title: "天氣與路況一起看",
-    description: "交通部中央氣象署鄉鎮預報與雨量，加上 TDX 路況事件。",
-  },
-  {
-    icon: HelpCircle,
-    title: "缺資料標未判定",
-    description: "資料不足，無法判定，不代表安全。",
-  },
-];
-
-export function LoginHero() {
+/** 桌機版左側：品牌標語、功能說明、精選路線即時判定 */
+export function LoginHero({ featured }: { featured: ReactNode }) {
   return (
     <div className="relative flex h-full flex-col justify-center p-12">
       <DecorativeMapBackground />
@@ -47,32 +31,19 @@ export function LoginHero() {
             <span className="text-2xl font-bold tracking-tight text-foreground">{loginCopy.brand}</span>
           </div>
           <h1 className="text-3xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
-          <p className="mt-3 text-muted-foreground">{loginCopy.subtitle}</p>
         </motion.div>
 
-        {/* Features */}
-        <div className="space-y-4">
-          {features.map((feature, index) => {
-            const FeatureIcon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
-                className="flex items-start gap-3"
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                  <FeatureIcon className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-medium text-foreground">{feature.title}</h2>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        <FeatureList className="mb-10 max-w-xl" />
+
+        {/* 精選路線（取不到資料時整區不顯示） */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="max-w-xl"
+        >
+          {featured}
+        </motion.div>
       </div>
     </div>
   );
