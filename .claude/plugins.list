@@ -1,7 +1,0 @@
-# 雲端 session 啟動時自動安裝的 plugin / mod。改完下個新 session 生效。
-# marketplace <git-url> [<repo 內 marketplace 子目錄>]
-# plugin <plugin>@<marketplace 名稱>
-marketplace https://github.com/anthropics/claude-code-playground.git claude-code/mods
-plugin token-weather@claude-code-playground-mods
-plugin blast-radius@claude-code-playground-mods
-plugin replay-theater@claude-code-playground-mods

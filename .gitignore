@@ -1,8 +1,6 @@
 /.claude/*
 !/.claude/commands/
 !/.claude/settings.json
-!/.claude/plugins.list
-!/.claude/scripts/
 *.md
 !CLAUDE.md
 !AGENTS.md

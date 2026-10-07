@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# 擋 AI 署名：訊息裡有 AI co-author、Claude-Session、Generated with Claude 或 session 連結就拒絕（不自動刪，避免改壞訊息）。
+set -eu
+
+pattern='^[[:space:]]*(co-authored-by:.*(claude|anthropic|copilot|cursor|codex|openai|chatgpt|gpt-|devin|noreply@anthropic)|claude-session:|generated-by:|assisted-by:|(🤖[[:space:]]*)?generated (with|by) \[?claude)|claude\.ai/code/session'
+
+hits=$(grep -v '^#' "$1" | grep -inE "$pattern" || true)
+if [ -n "$hits" ]; then
+  echo "commit-msg: 訊息含 AI 署名，請刪掉這幾行再 commit：" >&2
+  echo "$hits" >&2
+  exit 1
+fi

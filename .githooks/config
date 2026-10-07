@@ -1,0 +1,5 @@
+# git hooks 共用設定。換公司或換人時只改這個檔。
+EXPECTED_NAME="MuChuan Hung"
+EXPECTED_EMAIL="mu.chuan.hung@gmail.com"
+# 禁止 push 的 branch 前綴（後面接 / 或 -）。claude/ 不在內：雲端 session 指定的 branch 必須是 claude/ 開頭。
+BLOCKED_BRANCH_PREFIXES="ai bot bots copilot cursor codex gpt openai anthropic assistant agent llm devin"

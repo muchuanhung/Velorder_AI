@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# 擋錯誤身分：author 與 committer 都必須是 config 裡的名字與 email。
+set -eu
+. "$(dirname "$0")/config"
+
+check() {
+  local who=$1 label=$2 ident name email
+  ident=$(git var "GIT_${who}_IDENT")
+  name=${ident% <*}
+  email=${ident#*<}; email=${email%%>*}
+  if [ "$name" != "$EXPECTED_NAME" ] || [ "$email" != "$EXPECTED_EMAIL" ]; then
+    echo "pre-commit: $label 是「$name <$email>」，必須是「$EXPECTED_NAME <$EXPECTED_EMAIL>」。" >&2
+    exit 1
+  fi
+}
+
+check AUTHOR author
+check COMMITTER committer

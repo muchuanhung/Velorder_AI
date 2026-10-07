@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# 擋 AI 前綴的 branch：從 stdin 讀 git 實際要更新的遠端 ref，refs/heads/... 寫法也擋得到。
+set -eu
+. "$(dirname "$0")/config"
+
+blocked=0
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  branch=${remote_ref#refs/heads/}
+  for prefix in $BLOCKED_BRANCH_PREFIXES; do
+    case "$branch" in
+      "$prefix"/*|"$prefix"-*)
+        echo "pre-push: branch「$branch」用了 AI 前綴「$prefix」，請改成 feat/、fix/、test/、refactor/、docs/ 或 chore/ 開頭。" >&2
+        blocked=1 ;;
+    esac
+  done
+done
+exit "$blocked"
