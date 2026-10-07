@@ -8,8 +8,8 @@ import { FeatureList } from "@/components/auth/feature-list";
 
 export const loginCopy = {
   brand: "曉行 Dawnline",
-  // 兩行：第一行點出整合的三種資料來源，第二行講好處；以 \n 斷行（h1 用 whitespace-pre-line）
-  title: "天氣、路況、CCTV，\n出發前一次看完。",
+  // 一行：手機 360px 也不換行；整合哪些資料交給下方功能說明
+  title: "好天氣出發，壞路況繞開",
 };
 
 /** 桌機版左側：品牌標語、功能說明、精選路線即時判定 */
@@ -30,7 +30,7 @@ export function LoginHero({ featured }: { featured: ReactNode }) {
             <ProductLogo size={48} />
             <span className="text-2xl font-bold tracking-tight text-foreground">{loginCopy.brand}</span>
           </div>
-          <h1 className="whitespace-pre-line text-3xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
+          <h1 className="text-3xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
         </motion.div>
 
         <FeatureList className="mb-10 max-w-xl" />
