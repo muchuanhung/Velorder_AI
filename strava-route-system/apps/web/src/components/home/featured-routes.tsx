@@ -56,7 +56,7 @@ export async function FeaturedRoutes() {
               <div className="min-w-0 flex-1 lg:space-y-0.5">
                 <Link
                   href={`/routes?route=${encodeURIComponent(b.id)}`}
-                  className="block truncate font-bold leading-snug outline-none after:absolute after:inset-0 after:rounded-xl group-hover:underline lg:whitespace-normal"
+                  className="block truncate font-bold leading-snug outline-none after:absolute after:inset-0 after:rounded-xl transition-colors group-focus-within:text-primary group-hover:text-primary lg:whitespace-normal"
                 >
                   {b.name}
                 </Link>
