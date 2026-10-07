@@ -1,0 +1,39 @@
+# 本機開發用：MySQL 8.4 + API。正式環境用 RDS，見 docs/deploy-aws.md
+services:
+  mysql:
+    image: mysql:8.4
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: velorder
+      MYSQL_USER: velorder
+      MYSQL_PASSWORD: velorder
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  api:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+pymysql://velorder:velorder@mysql:3306/velorder?charset=utf8mb4
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
+      # 本機走 http，Secure cookie 不會被瀏覽器送回
+      SESSION_COOKIE_SECURE: "false"
+    ports:
+      - "8000:8000"
+
+volumes:
+  mysql-data:
