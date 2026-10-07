@@ -1,4 +1,4 @@
-<img src="strava-route-system/apps/web/public/icon.svg" alt="曉行 Dawnline app icon" width="100" />
+<img src="strava-route-system/apps/web/src/app/icon.svg" alt="曉行 Dawnline app icon" width="100" />
 
 # 曉行 Dawnline
 
