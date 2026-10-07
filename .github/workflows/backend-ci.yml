@@ -77,7 +77,7 @@ jobs:
           q 'SHOW CREATE TABLE segments' | grep -q 'SPATIAL KEY `sp_segments_geom`'
           q 'SHOW CREATE TABLE segments' | grep -q 'fk_segments_route.*ON DELETE CASCADE'
           q 'SHOW CREATE TABLE cctv' | tee /dev/stderr | grep -q 'SPATIAL KEY `sp_cctv_location`'
-          q 'SHOW CREATE TABLE cctv' | grep -q 'POINT NOT NULL /\*!80003 SRID 4326 \*/'
+          q 'SHOW CREATE TABLE cctv' | grep -qi 'point NOT NULL /\*!80003 SRID 4326 \*/'
           q 'SHOW CREATE TABLE sessions' | grep -q 'fk_sessions_member.*ON DELETE CASCADE'
 
       - name: 容器以非 root 執行
