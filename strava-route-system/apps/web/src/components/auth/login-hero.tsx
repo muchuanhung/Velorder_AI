@@ -9,7 +9,6 @@ import { FeatureList } from "@/components/auth/feature-list";
 export const loginCopy = {
   brand: "曉行 Dawnline",
   title: "出發前，整條路線一次判定。",
-  subtitle: "上傳 GPX，逐公里標出走、慢、停與未判定。缺資料，不說安全。",
 };
 
 /** 桌機版左側：品牌標語、功能說明、精選路線即時判定 */
@@ -31,7 +30,6 @@ export function LoginHero({ featured }: { featured: ReactNode }) {
             <span className="text-2xl font-bold tracking-tight text-foreground">{loginCopy.brand}</span>
           </div>
           <h1 className="text-3xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
-          <p className="mt-3 text-muted-foreground">{loginCopy.subtitle}</p>
         </motion.div>
 
         <FeatureList className="mb-10 max-w-xl" />

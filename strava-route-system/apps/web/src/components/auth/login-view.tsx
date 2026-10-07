@@ -96,7 +96,6 @@ export function LoginView({ featured }: { featured: ReactNode }) {
             <span className="text-xl font-bold text-foreground">{loginCopy.brand}</span>
           </div>
           <h1 className="mt-4 text-2xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{loginCopy.subtitle}</p>
           <FeatureList variant="compact" className="mt-4" />
         </motion.div>
 
