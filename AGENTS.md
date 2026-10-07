@@ -18,6 +18,13 @@
 - 同一個任務的後續修正推到同一個 branch／PR，不另開 PR。
 - 上面的身分、署名、branch 前綴由 `.githooks/`（pre-commit、commit-msg、pre-push）強制擋下；SessionStart 會自動設 `core.hooksPath`，本機第一次 clone 後手動跑 `git config core.hooksPath .githooks`。被擋時照訊息修正，不准用 `--no-verify` 繞過。改規則只動 `.githooks/config`。
 
+## 雲端 session（claude.ai/code）
+- 不在雲端容器跑 Docker：不啟動 dockerd，不跑 `docker build`、`docker compose`、`docker pull`。容器會重啟，daemon、映像和沒 commit 的進度會一起消失，網路還會遇到 429 和 proxy 憑證問題。
+- 後端在雲端只跑不需要 Docker 的檢查：`cd backend && pip install -e ".[dev]" && pytest && ruff check . && ruff format --check .`。
+- Docker 和真實 MySQL 的驗證交給 GitHub Actions：先 commit、push，再看 PR 的 CI 結果；紅燈就修好再 push。
+- 一個步驟做完就 commit、push，不要累積到最後；容器重啟時才不會丟掉進度。
+- 本機（自己的電腦）可以照常用 `docker compose` 驗證。
+
 ## 產品鐵律
 - 未判定 ≠ 安全。任何資料缺失、過期、超出預報時段，一律回 unknown，不准判成安全。
 - 判定只用規則式邏輯，LLM 不參與判定，只負責把既有判定翻成一句話。
