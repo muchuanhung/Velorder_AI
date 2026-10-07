@@ -13,9 +13,9 @@ const CHIP: Record<VerdictLevel, { word: string; className: string }> = {
   unknown: { word: "未判定", className: "bg-muted text-foreground" },
 };
 
-/** 桌機 hero 與手機版各渲染一次，同一個 request 只判讀一次 */
+/** 只放 2 條：3 條時桌機左側約 800px，瀏覽器可用高度 720px 上會出現捲軸。桌機 hero 與手機版各渲染一次，同一個 request 只判讀一次 */
 const getFeaturedBriefings = cache(() =>
-  getPublicBriefings(3).catch((e) => {
+  getPublicBriefings(2).catch((e) => {
     console.warn("精選路線判讀失敗:", e instanceof Error ? e.message : e);
     return [];
   })

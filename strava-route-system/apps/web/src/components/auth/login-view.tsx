@@ -68,7 +68,7 @@ export function LoginView({ featured }: { featured: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen overflow-x-clip bg-background">
       {/* Left Side - 功能預告 */}
       <motion.div
         initial={{ opacity: 0 }}

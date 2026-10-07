@@ -44,7 +44,7 @@ export function FeatureList({ variant = "full", className }: { variant?: "full" 
   }
 
   return (
-    <ul className={cn("space-y-4", className)} aria-label="功能">
+    <ul className={cn("space-y-3", className)} aria-label="功能">
       {features.map(({ icon: Icon, title, description }) => (
         <li key={title} className="flex items-start gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
