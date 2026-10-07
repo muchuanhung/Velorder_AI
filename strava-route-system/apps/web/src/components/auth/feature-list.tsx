@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 const features = [
   {
     icon: Route,
-    title: "逐公里判定",
-    short: "逐公里判定",
+    title: "逐公里標示",
+    short: "逐公里標示",
     description: "沿 GPX 軌跡逐段標出走、慢、停，一眼看出哪一段要注意。",
   },
   {
@@ -18,7 +18,7 @@ const features = [
     icon: HelpCircle,
     title: "缺資料標未判定",
     short: "缺資料標未判定",
-    description: "資料不足，無法判定，不代表安全。",
+    description: "資料不足或過期，一律不當成安全。",
   },
 ];
 

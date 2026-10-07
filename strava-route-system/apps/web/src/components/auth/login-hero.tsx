@@ -8,7 +8,7 @@ import { FeatureList } from "@/components/auth/feature-list";
 
 export const loginCopy = {
   brand: "曉行 Dawnline",
-  title: "出發前，整條路線一次判定。",
+  title: "出發前，整條路線先看一遍。",
 };
 
 /** 桌機版左側：品牌標語、功能說明、精選路線即時判定 */
