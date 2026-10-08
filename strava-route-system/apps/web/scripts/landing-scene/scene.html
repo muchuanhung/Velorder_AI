@@ -115,7 +115,7 @@
   const ROUTE_KM = 20;
   const LEVELS = ["go", "go", "slow", "unknown", "stop"];
   const EVENTS = [
-    { km: 9.6, kind: "work", label: "TDX 施工・單線通行", side: 1, dy: 74 },
+    { km: 9.6, kind: "work", label: "TDX 施工・單線通行", side: -1, dy: 56 },
     { km: 14, kind: "nodata", label: "缺資料・未判定", side: -1, dy: -58 },
     { km: 17.8, kind: "rock", label: "TDX 落石・封閉", side: -1, dy: -86 },
   ];
@@ -400,7 +400,7 @@
     // 手機橫幅：判定、里程牌與示警都畫完的畫面，裁出山路區塊（390:300）
     const full = document.createElement("canvas"); full.width = w; full.height = h;
     sceneHillside(full.getContext("2d"), w, h, 20, rand(7), null, st);
-    const k = h / 1000, sw = 1600 * 0.46 * k, sh = sw * (300 / 390), sx = 1600 * 0.315 * k, sy = h - sh - 6 * k;
+    const k = h / 1000, sw = 1600 * 0.46 * k, sh = sw * (300 / 390), sx = 1600 * 0.29 * k, sy = h - sh - 6 * k;
     const m = document.createElement("canvas"); m.width = 780; m.height = 600;
     m.getContext("2d").drawImage(full, sx, sy, sw, sh, 0, 0, 780, 600);
     return { bg: webp(st.bg, 0.84), front: webp(st.front, 0.86), leaves: webp(st.leavesR, 0.86), mobile: webp(m, 0.84) };

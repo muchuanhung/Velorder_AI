@@ -137,23 +137,25 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           {featured}
         </motion.div>
 
-        {/* Footer */}
-        <motion.p
+        {/* Footer：桌機壓在背景圖上，加半透明底保持可讀 */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative z-10 mt-8 text-center text-xs text-muted-foreground"
+          className="relative z-10 mt-8 lg:mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
         >
-          繼續使用即表示您同意我們的{" "}
-          <Link href="/terms" className="text-primary hover:underline">
-            服務條款
-          </Link>
-          與
-          <Link href="/privacy" className="text-primary hover:underline">
-            隱私政策
-          </Link>
-        </motion.p>
-        <SiteFooter className="relative z-10 mt-3" />
+          <p className="text-center text-xs text-muted-foreground">
+            繼續使用即表示您同意我們的{" "}
+            <Link href="/terms" className="text-primary hover:underline">
+              服務條款
+            </Link>
+            與
+            <Link href="/privacy" className="text-primary hover:underline">
+              隱私政策
+            </Link>
+          </p>
+          <SiteFooter className="mt-1.5" />
+        </motion.div>
       </div>
     </div>
   );

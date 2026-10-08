@@ -20,7 +20,7 @@ const ROUTE_KM = 20;
 type EventKind = "work" | "nodata" | "rock";
 /** TDX 示警與缺資料的位置（示意），side 為標示卡在路的哪一側，dy 為垂直位移 */
 const EVENTS: { km: number; kind: EventKind; label: string; side: 1 | -1; dy: number }[] = [
-  { km: 9.6, kind: "work", label: "TDX 施工・單線通行", side: 1, dy: 74 },
+  { km: 9.6, kind: "work", label: "TDX 施工・單線通行", side: -1, dy: 56 },
   { km: 14, kind: "nodata", label: "缺資料・未判定", side: -1, dy: -58 },
   { km: 17.8, kind: "rock", label: "TDX 落石・封閉", side: -1, dy: -86 },
 ];
