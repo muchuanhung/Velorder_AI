@@ -15,7 +15,7 @@ export const loginCopy = {
 /** 桌機版左側：品牌標語、功能說明、精選路線即時判定 */
 export function LoginHero({ featured }: { featured: ReactNode }) {
   return (
-    <div className="relative flex h-full flex-col justify-center p-12">
+    <div className="relative flex h-full flex-col justify-center px-12 py-8">
       <DecorativeMapBackground />
 
       <div className="relative z-10">
@@ -24,16 +24,16 @@ export function LoginHero({ featured }: { featured: ReactNode }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-10"
+          className="mb-8"
         >
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-5 flex items-center gap-3">
             <ProductLogo size={48} />
             <span className="text-2xl font-bold tracking-tight text-foreground">{loginCopy.brand}</span>
           </div>
           <h1 className="text-3xl font-black leading-tight text-foreground">{loginCopy.title}</h1>
         </motion.div>
 
-        <FeatureList className="mb-10 max-w-xl" />
+        <FeatureList className="mb-8 max-w-xl" />
 
         {/* 精選路線（取不到資料時整區不顯示） */}
         <motion.div
