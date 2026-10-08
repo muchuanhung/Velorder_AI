@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { LoginHero, loginCopy } from "@/components/auth/login-hero";
 import { FeatureList } from "@/components/auth/feature-list";
+import { DawnSceneBackground } from "@/components/auth/dawn-scene-background";
 import { SiteFooter } from "@/components/app-shell/site-footer";
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -68,21 +69,34 @@ export function LoginView({ featured }: { featured: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen overflow-x-clip bg-background">
+    <div className="relative flex min-h-screen overflow-x-clip bg-background">
+      {/* 桌機滿版背景動畫；手機改用頂部靜態圖 */}
+      <DawnSceneBackground />
+
       {/* Left Side - 功能預告 */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="hidden lg:block lg:w-1/2 xl:w-3/5"
+        className="relative z-10 hidden lg:block lg:w-1/2"
       >
         <LoginHero featured={featured} />
       </motion.div>
 
       {/* Right Side - 登入表單 */}
-      <div className="relative flex w-full flex-col items-center justify-center p-8 lg:w-1/2 xl:w-2/5">
+      <div className="relative flex w-full flex-col items-center justify-start p-8 lg:w-1/2 lg:justify-center">
         {/* Background gradient for mobile */}
         <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent lg:hidden" />
+
+        {/* 手機頂部靜態圖：和桌機背景同一個畫面，裁出山路、里程與示警 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/dawn-mobile.webp"
+          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
+          width={780}
+          height={600}
+          className="relative -mx-8 -mt-8 mb-8 aspect-[390/300] w-[calc(100%+4rem)] max-w-none object-cover lg:hidden"
+        />
 
         {/* Mobile Logo */}
         <motion.div
