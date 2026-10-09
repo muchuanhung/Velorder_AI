@@ -28,7 +28,7 @@ const FILTERS: { value: FilterType; icon?: React.ComponentType<{ className?: str
 ];
 
 /**
- * 路線示警（客戶端）：路線清單＋偵察畫面。
+ * 路線（客戶端）：路線清單＋偵察畫面（逐段示警、坡度、CCTV）。
  * 外框由 AppShell 提供；initialRouteId 來自 ?route=，可從 Dashboard 直接連到指定路線。
  */
 export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
@@ -150,7 +150,7 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
       <div className="relative min-w-0 space-y-5">
         {/* 窄螢幕整列換行，不讓標題或連結被拆字 */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h1 className="mr-auto whitespace-nowrap text-2xl font-black tracking-tight sm:text-3xl">路線示警</h1>
+          <h1 className="mr-auto whitespace-nowrap text-2xl font-black tracking-tight sm:text-3xl">路線</h1>
           <Link
             href="/routes/private"
             className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-sm font-medium text-primary hover:underline"

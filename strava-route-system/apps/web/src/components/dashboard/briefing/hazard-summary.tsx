@@ -1,56 +1,40 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { UNKNOWN_REASON_TEXT, type Hazard } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
-import { CATEGORY_LABEL, groupRouteEvents, type RouteEvent } from "@/lib/routes/road-events";
-import { LevelBadge } from "./level-badge";
+import { groupRouteEvents } from "@/lib/routes/road-events";
+import { HAZARD_ROW_GRID, HazardRowContent } from "@/components/verdict/hazard-row";
 import { ProfileStrip } from "./profile-strip";
 
-const kmRange = (h: Hazard) =>
-  h.endKm - h.startKm < 0.1 ? `${h.startKm.toFixed(1)} km` : `${h.startKm.toFixed(1)}–${h.endKm.toFixed(1)} km`;
+/** 今日判讀只列最要緊的幾項，完整清單在路線頁 */
+const SUMMARY_LIMIT = 3;
 
-function HazardList({ hazards }: { hazards: Hazard[] }) {
-  return (
-    <ul className="divide-y divide-border">
-      {hazards.map((h) => (
-        <li key={h.id} className="flex items-center gap-3 py-2.5">
-          <LevelBadge level={h.level} />
-          <span className="min-w-0 flex-1 font-medium">{h.label}</span>
-          <span className="shrink-0 font-mono text-sm text-muted-foreground">{kmRange(h)}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function NoticeList({ events }: { events: RouteEvent[] }) {
-  return (
-    <ul className="divide-y divide-border text-sm">
-      {events.map((e) => (
-        <li key={e.id} className="flex items-center gap-3 py-2">
-          <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
-            {CATEGORY_LABEL[e.category]}
-          </span>
-          <span className="min-w-0 flex-1 truncate">{e.description || e.title}</span>
-          <span className="shrink-0 font-mono text-muted-foreground">{e.km.toFixed(1)} km</span>
-        </li>
-      ))}
-    </ul>
-  );
+/** 危險優先，同等級依里程 */
+function topHazards(hazards: Hazard[]): Hazard[] {
+  return [...hazards]
+    .sort((a, b) => (a.level === b.level ? a.startKm - b.startKm : a.level === "risky" ? -1 : 1))
+    .slice(0, SUMMARY_LIMIT);
 }
 
 /**
- * 沿途示警：影響判定的條件（天氣、災害、事故、管制、異常告警）在上；
- * 施工、壅塞等只列出不影響判定，「其他的施工」收合成一行（原生 details，不需客戶端 JS）。
- * 陡坡是路線固定特性，不列入。
+ * 沿途示警摘要：今日判讀只回答「要不要出發」，這裡列出影響判定的前幾項與總數；
+ * 逐段清單、點擊跳到該處、坡度與 CCTV 在路線頁。陡坡是路線固定特性，不列入。
  */
 export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
   const { hazards } = briefing;
   const { notices, routine } = groupRouteEvents(briefing.roadEvents);
+  const shown = topHazards(hazards);
+  const roadNotices = notices.length + routine.length;
+  const routeHref = `/routes?route=${encodeURIComponent(briefing.id)}`;
 
   return (
-    <section aria-labelledby="hazard-title" className="space-y-5 rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <section aria-labelledby="hazard-title" className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="hazard-title" className="text-lg font-bold">
           沿途示警
+          {hazards.length > 0 && (
+            <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">{hazards.length}</span>
+          )}
         </h2>
         <p className="font-mono text-sm text-muted-foreground">
           {briefing.distanceKm.toFixed(1)} km・爬升 {briefing.elevationGainM} m
@@ -59,8 +43,14 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
 
       <ProfileStrip profile={briefing.elevationProfile} distanceKm={briefing.distanceKm} hazards={hazards} />
 
-      {hazards.length > 0 ? (
-        <HazardList hazards={hazards} />
+      {shown.length > 0 ? (
+        <ul className="divide-y divide-border/60 border-y border-border/60">
+          {shown.map((h) => (
+            <li key={h.id} className={HAZARD_ROW_GRID}>
+              <HazardRowContent hazard={h} />
+            </li>
+          ))}
+        </ul>
       ) : (
         <p className="text-sm text-muted-foreground">
           {briefing.verdict.level === "unknown"
@@ -75,22 +65,17 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
         </p>
       )}
 
-      {notices.length > 0 && (
-        <div className="space-y-1 border-t border-border pt-4">
-          <h3 className="text-sm font-bold">沿線路況・{notices.length}</h3>
-          <p className="text-xs text-muted-foreground">施工、壅塞等不列入今日判讀。</p>
-          <NoticeList events={notices} />
-        </div>
-      )}
-
-      {routine.length > 0 && (
-        <details className="group border-t border-border pt-3">
-          <summary className="cursor-pointer text-sm text-muted-foreground">
-            沿線 {routine.length} 處其他施工（多為道路維護）
-            <span className="ml-1 text-primary group-open:hidden">展開</span>
-          </summary>
-          <NoticeList events={routine} />
-        </details>
+      {(hazards.length > shown.length || roadNotices > 0) && (
+        <p className="text-sm text-muted-foreground">
+          {hazards.length > shown.length && `還有 ${hazards.length - shown.length} 項示警`}
+          {hazards.length > shown.length && roadNotices > 0 && "，"}
+          {roadNotices > 0 && `沿線另有 ${roadNotices} 則施工、壅塞等路況（不影響判定）`}
+          。
+          <Link href={routeHref} className="ml-1 inline-flex items-center gap-0.5 font-medium text-primary hover:underline">
+            看完整清單
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        </p>
       )}
     </section>
   );

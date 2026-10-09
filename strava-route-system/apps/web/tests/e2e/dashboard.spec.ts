@@ -43,9 +43,9 @@ test.describe("Dashboard 今日判讀", () => {
     await expect(page.getByRole("link", { name: "個人資料" }).first()).toBeVisible();
   });
 
-  test("「查看路線示警」帶著目前路線前往 /routes", async ({ page }) => {
+  test("「看逐段示警與 CCTV」帶著目前路線前往 /routes", async ({ page }) => {
     await page.goto("/dashboard");
-    const link = page.getByRole("link", { name: "查看路線示警" });
+    const link = page.getByRole("link", { name: "看逐段示警與 CCTV" });
     await expect(link).toBeVisible({ timeout: 30_000 });
     await expect(link).toHaveAttribute("href", /^\/routes\?route=/);
     await link.click();

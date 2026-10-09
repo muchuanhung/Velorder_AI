@@ -138,7 +138,7 @@ export function BriefingCard({ featured, alternative }: { featured: RouteBriefin
           href={`/routes?route=${encodeURIComponent(featured.id)}`}
           className="ml-auto inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 font-bold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          查看路線示警
+          看逐段示警與 CCTV
           <ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>
