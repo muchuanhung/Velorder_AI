@@ -6,6 +6,8 @@
  * 座標一律用設計稿單位：寬 1600、高 1000（與圖片相同比例），由呼叫端負責縮放與裁切。
  */
 
+import params from "@/components/auth/dawn-scene-params.json";
+
 export const DESIGN_W = 1600;
 export const DESIGN_H = 1000;
 
@@ -13,25 +15,31 @@ type Pt = [number, number];
 type Level = "go" | "slow" | "unknown" | "stop";
 
 const LEVEL_COLOR: Record<Level, string> = { go: "#3E9F69", slow: "#e3a53a", stop: "#c4483f", unknown: "#a9ada4" };
-/** 0–20K 每 4K 一段的判定（示意） */
-const LEVELS: Level[] = ["go", "go", "slow", "unknown", "stop"];
-const ROUTE_KM = 20;
 
 type EventKind = "work" | "nodata" | "rock";
-/** TDX 示警與缺資料的位置（示意），side 為標示卡在路的哪一側，dy 為垂直位移 */
-const EVENTS: { km: number; kind: EventKind; label: string; side: 1 | -1; dy: number }[] = [
-  { km: 9.6, kind: "work", label: "TDX 施工・單線通行", side: -1, dy: 56 },
-  { km: 14, kind: "nodata", label: "缺資料・未判定", side: -1, dy: -58 },
-  { km: 17.8, kind: "rock", label: "TDX 落石・封閉", side: -1, dy: -86 },
-];
+/**
+ * 場景參數與 scripts/landing-scene/scene.html（產生靜態圖）共用同一份 JSON，改這裡兩邊都會跟著變；
+ * 改完路線或標示位置要重跑 render.mjs 更新手機靜態圖。
+ */
+// JSON 匯入的型別是寬鬆的 number[]／string，這裡收窄成場景用的型別
+const P = params as unknown as {
+  routeKm: number;
+  /** 0–20K 每 4K 一段的判定（示意） */
+  levels: Level[];
+  /** TDX 示警與缺資料的位置（示意），side 為標示卡在路的哪一側，dy 為垂直位移 */
+  events: { km: number; kind: EventKind; label: string; side: 1 | -1; dy: number }[];
+  /** 個別里程牌的位移 [dx, dy]，避免被登入卡蓋住 */
+  mileLabelOffset: Record<string, Pt>;
+  /** 山路控制點：x 為寬度比例、y 為設計稿座標 */
+  roadCtrl: Pt[];
+  sun: Pt;
+};
+const LEVELS = P.levels;
+const ROUTE_KM = P.routeKm;
+const EVENTS = P.events;
 const EVENT_RGB: Record<EventKind, string> = { rock: "196,72,63", work: "232,116,44", nodata: "143,148,140" };
-
-/** 山路控制點（佔寬度與高度的比例），和產生靜態圖時相同 */
-const ROAD_CTRL: Pt[] = [
-  [0.5, 1090], [0.47, 970], [0.6, 905], [0.63, 862], [0.49, 805], [0.46, 765],
-  [0.58, 708], [0.605, 672], [0.52, 625], [0.505, 594], [0.565, 553], [0.555, 505],
-];
-const SUN: Pt = [DESIGN_W * 0.54, 205];
+const ROAD_CTRL = P.roadCtrl;
+const SUN: Pt = [DESIGN_W * P.sun[0], P.sun[1]];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
@@ -246,8 +254,8 @@ export function drawDawnFrame(ctx: CanvasRenderingContext2D, img: DawnImages, g:
   for (let s = 0; s <= LEVELS.length; s++) {
     const j = indexAt(s * 4);
     if (j > prog + 0.5) break;
-    const p = S[j]!, n = N[j]!, r = roadWidth(p[1]), side = n[0] >= 0 ? 1 : -1;
-    const x = p[0] + n[0] * r * 0.9 * side + side * 20, y = p[1] + n[1] * r * 0.9 * side;
+    const p = S[j]!, n = N[j]!, r = roadWidth(p[1]), side = n[0] >= 0 ? 1 : -1, [ox, oy] = P.mileLabelOffset[s * 4] ?? [0, 0];
+    const x = p[0] + n[0] * r * 0.9 * side + side * 20 + ox, y = p[1] + n[1] * r * 0.9 * side + oy;
     ctx.fillStyle = "rgba(251,250,244,.95)";
     ctx.beginPath();
     ctx.roundRect(x - 21, y - 11, 42, 22, 5);
