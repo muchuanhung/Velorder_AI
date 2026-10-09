@@ -12,14 +12,13 @@ const features = [
     icon: CloudSun,
     title: "天氣與路況一起看",
     short: "天氣＋路況",
-    description: "氣象署鄉鎮預報與雨量、TDX 路況事件，加上沿線 CCTV 即時影像。",
+    description: "氣象署鄉鎮預報與雨量，加上 TDX 路況事件。",
   },
   {
     icon: Cctv,
-    title: "缺資料標未判定",
-    /** 手機版短標籤改講 CCTV；桌機版標題與說明仍是缺資料標未判定，圖示兩邊一致 */
+    title: "沿線 CCTV 監控",
     short: "CCTV 監控",
-    description: "資料不足或過期，一律不當成安全。",
+    description: "出發前先看沿線公路 CCTV 即時影像，確認現場路況。",
   },
 ];
 
