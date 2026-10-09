@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ProductLogo } from "@/components/ui/product-logo";
 
-/** 入口頁（/ 與 /login）：左側品牌＋精選路線即時判定，右側登入表單；手機版精選路線排在表單下方 */
+/** 入口頁（/ 與 /login）：左側品牌＋精選路線即時判定，右側登入表單；手機版不顯示精選路線 */
 export function LoginView({ featured }: { featured: ReactNode }) {
   const router = useRouter();
   const auth = useAuth();
@@ -88,16 +88,6 @@ export function LoginView({ featured }: { featured: ReactNode }) {
         {/* Background gradient for mobile */}
         <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent lg:hidden" />
 
-        {/* 手機頂部靜態圖：和桌機背景同一個畫面，裁出山路、里程與示警 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/landing/dawn-mobile.webp"
-          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
-          width={780}
-          height={600}
-          className="relative -mx-8 -mt-8 mb-8 aspect-[390/300] w-[calc(100%+4rem)] max-w-none object-cover lg:hidden"
-        />
-
         {/* Mobile Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -125,27 +115,9 @@ export function LoginView({ featured }: { featured: ReactNode }) {
             onEmailAuth={handleEmailAuth}
             onForgotPassword={handleForgotPassword}
           />
-        </motion.div>
-
-        {/* Mobile 精選路線：桌機版在左側 hero；取不到資料時整區不顯示 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative z-10 mt-8 w-full max-w-md lg:hidden"
-        >
-          {featured}
-        </motion.div>
-
-        {/* Footer：桌機壓在背景圖上，加半透明底保持可讀 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative z-10 mt-8 lg:mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
-        >
-          <p className="text-center text-xs text-muted-foreground">
-            繼續使用即表示您同意我們的{" "}
+          {/* 同意聲明放在登入、註冊動作旁，使用者按下前看得到 */}
+          <p className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+            繼續使用即表示同意
             <Link href="/terms" className="text-primary hover:underline">
               服務條款
             </Link>
@@ -154,8 +126,29 @@ export function LoginView({ featured }: { featured: ReactNode }) {
               隱私政策
             </Link>
           </p>
-          <SiteFooter className="mt-1.5" />
         </motion.div>
+
+        {/* Footer：資料來源。桌機壓在背景圖上，加半透明底保持可讀；手機精簡成一行，放在靜態圖上方 */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="relative z-10 mt-8 lg:mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
+        >
+          <SiteFooter className="hidden lg:block" />
+          <p className="text-center text-xs text-muted-foreground lg:hidden">資料來源：氣象署、TDX</p>
+        </motion.div>
+
+        {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/dawn-mobile.webp"
+          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
+          width={780}
+          height={700}
+          loading="lazy"
+          className="relative -mx-8 -mb-8 mt-4 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
+        />
       </div>
     </div>
   );

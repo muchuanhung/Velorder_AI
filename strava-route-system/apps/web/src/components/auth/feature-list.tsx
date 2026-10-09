@@ -1,4 +1,4 @@
-import { Route, CloudSun, HelpCircle } from "lucide-react";
+import { Route, CloudSun, Cctv } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const features = [
@@ -12,13 +12,13 @@ const features = [
     icon: CloudSun,
     title: "天氣與路況一起看",
     short: "天氣＋路況",
-    description: "氣象署鄉鎮預報與雨量、TDX 路況事件，加上沿線 CCTV 即時影像。",
+    description: "氣象署鄉鎮預報與雨量，加上 TDX 路況事件。",
   },
   {
-    icon: HelpCircle,
-    title: "缺資料標未判定",
-    short: "缺資料標未判定",
-    description: "資料不足或過期，一律不當成安全。",
+    icon: Cctv,
+    title: "沿線即時影像",
+    short: "現場影像",
+    description: "出發前先看沿線 CCTV，確認現場路況。",
   },
 ];
 

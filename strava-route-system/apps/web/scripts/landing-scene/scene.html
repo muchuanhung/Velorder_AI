@@ -396,9 +396,9 @@
     // 手機橫幅：判定、里程牌與示警都畫完的畫面，裁出山路區塊（390:300）
     const full = document.createElement("canvas"); full.width = w; full.height = h;
     sceneHillside(full.getContext("2d"), w, h, 20, rand(7), null, st);
-    const k = h / 1000, sw = 1600 * 0.46 * k, sh = sw * (300 / 390), sx = 1600 * 0.29 * k, sy = h - sh - 6 * k;
-    const m = document.createElement("canvas"); m.width = 780; m.height = 600;
-    m.getContext("2d").drawImage(full, sx, sy, sw, sh, 0, 0, 780, 600);
+    const k = h / 1000, sw = 1600 * 0.46 * k, sh = sw * (350 / 390), sx = 1600 * 0.29 * k, sy = h - sh - 6 * k;
+    const m = document.createElement("canvas"); m.width = 780; m.height = 700; // 上方多留一段森林給頁面上的淡入漸層
+    m.getContext("2d").drawImage(full, sx, sy, sw, sh, 0, 0, 780, 700);
     return { bg: webp(st.bg, 0.84), front: webp(st.front, 0.86), leaves: webp(st.leavesR, 0.86), mobile: webp(m, 0.84) };
   };
 })();
