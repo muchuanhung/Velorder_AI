@@ -17,7 +17,7 @@ const features = [
   {
     icon: HelpCircle,
     title: "缺資料標未判定",
-    short: "缺資料標未判定",
+    short: "CCTV 監控",
     description: "資料不足或過期，一律不當成安全。",
   },
 ];
