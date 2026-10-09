@@ -13,7 +13,7 @@ const CHIP: Record<VerdictLevel, { word: string; className: string }> = {
   unknown: { word: "未判定", className: "bg-muted text-foreground" },
 };
 
-/** 只放 2 條：3 條時桌機左側約 800px，瀏覽器可用高度 720px 上會出現捲軸。桌機 hero 與手機版各渲染一次，同一個 request 只判讀一次 */
+/** 只放 2 條：3 條時桌機左側約 800px，瀏覽器可用高度 720px 上會出現捲軸 */
 const getFeaturedBriefings = cache(() =>
   getPublicBriefings(2).catch((e) => {
     console.warn("精選路線判讀失敗:", e instanceof Error ? e.message : e);
@@ -31,12 +31,11 @@ export async function FeaturedRoutes() {
 
   return (
     <section aria-label="精選路線即時與未來狀況判定" className="space-y-3">
-      <h2 className="text-base font-bold text-foreground lg:text-lg">精選路線・即時與未來狀況判定</h2>
-      <ul className="grid gap-2 lg:gap-3">
+      <h2 className="text-lg font-bold text-foreground">精選路線・即時與未來狀況判定</h2>
+      <ul className="grid gap-3">
         {briefings.map((b) => {
           const chip = CHIP[b.verdict.level];
           // chip 疊在整張卡的連結上方，未判定的 Popover 才點得到；入口頁的 chip 不加虛線底線（其他頁維持）
-          // 手機版（< lg）只留 chip＋路線名稱＋箭頭一行，判定說明與距離在點進 /routes 後看
           // chip 固定寬度（容得下「未判定」），右側內容 flex-1，各卡標題起點對齊
           const chipClass = cn(
             "relative z-10 w-16 shrink-0 rounded-md py-0.5 text-center text-xs font-black tracking-widest",
@@ -45,7 +44,7 @@ export async function FeaturedRoutes() {
           return (
             <li
               key={b.id}
-              className="group relative flex items-center gap-3 rounded-xl border border-border bg-card/80 px-3 py-2.5 backdrop-blur lg:items-start lg:p-4 transition-colors focus-within:border-primary hover:border-primary/60"
+              className="group relative flex items-start gap-3 rounded-xl border border-border bg-card/80 p-4 backdrop-blur transition-colors focus-within:border-primary hover:border-primary/60"
             >
               {b.verdict.level === "unknown" ? (
                 <UnknownReasons reasons={b.verdict.reasons} className={cn(chipClass, "no-underline")}>
@@ -54,21 +53,21 @@ export async function FeaturedRoutes() {
               ) : (
                 <span className={chipClass}>{chip.word}</span>
               )}
-              <div className="min-w-0 flex-1 lg:space-y-0.5">
+              <div className="min-w-0 flex-1 space-y-0.5">
                 <Link
                   href={`/routes?route=${encodeURIComponent(b.id)}`}
-                  className="block truncate font-bold leading-snug outline-none after:absolute after:inset-0 after:rounded-xl transition-colors group-focus-within:text-primary group-hover:text-primary lg:whitespace-normal"
+                  className="block font-bold leading-snug outline-none after:absolute after:inset-0 after:rounded-xl transition-colors group-focus-within:text-primary group-hover:text-primary"
                 >
                   {b.name}
                 </Link>
-                <p className="hidden text-sm lg:block">{b.verdict.headline}</p>
-                <p className="hidden font-mono text-xs text-muted-foreground lg:block">
+                <p className="text-sm">{b.verdict.headline}</p>
+                <p className="font-mono text-xs text-muted-foreground">
                   {b.distanceKm.toFixed(1)} km・爬升 {b.elevationGainM} m
                   {b.periodLabel && `・依 ${b.periodLabel} 預報`}
                 </p>
               </div>
               <ChevronRight
-                className="size-4 shrink-0 lg:mt-0.5 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
                 aria-hidden
               />
             </li>
