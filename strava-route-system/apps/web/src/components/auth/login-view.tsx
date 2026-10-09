@@ -133,13 +133,13 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative z-10 mt-8 lg:mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
+          className="relative z-10 mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
         >
           <SiteFooter className="hidden lg:block" />
           <p className="text-center text-xs text-muted-foreground lg:hidden">資料來源：氣象署、TDX</p>
         </motion.div>
 
-        {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色 */}
+        {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色，往上疊到資料來源那行下面，避免中間空一大段 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/landing/dawn-mobile.webp"
@@ -147,7 +147,7 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           width={780}
           height={700}
           loading="lazy"
-          className="relative -mx-8 -mb-8 mt-4 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
+          className="relative -mx-8 -mb-8 -mt-6 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
         />
       </div>
     </div>
