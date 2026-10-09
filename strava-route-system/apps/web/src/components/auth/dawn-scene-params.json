@@ -2,7 +2,7 @@
   "routeKm": 20,
   "levels": ["go", "go", "slow", "unknown", "stop"],
   "events": [
-    { "km": 9.6, "kind": "work", "label": "TDX 施工・單線通行", "side": -1, "dy": 56 },
+    { "km": 9.6, "kind": "work", "label": "TDX 施工・單線通行", "side": -1, "dy": 125 },
     { "km": 14, "kind": "nodata", "label": "缺資料・未判定", "side": -1, "dy": -58 },
     { "km": 17.8, "kind": "rock", "label": "TDX 落石・封閉", "side": -1, "dy": -86 }
   ],
