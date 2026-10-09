@@ -6,7 +6,6 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { LoginHero, loginCopy } from "@/components/auth/login-hero";
 import { FeatureList } from "@/components/auth/feature-list";
 import { DawnSceneBackground } from "@/components/auth/dawn-scene-background";
-import { SiteFooter } from "@/components/app-shell/site-footer";
 import Spinner from "@/components/ui/Spinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -126,20 +125,11 @@ export function LoginView({ featured }: { featured: ReactNode }) {
               隱私政策
             </Link>
           </p>
+          {/* 資料來源接在同意聲明下方（桌機、手機一致） */}
+          <p className="mt-1 text-center text-xs text-muted-foreground">資料來源：氣象署、TDX</p>
         </motion.div>
 
-        {/* Footer：資料來源。桌機壓在背景圖上，加半透明底保持可讀；手機精簡成一行，放在靜態圖上方 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative z-10 mt-8 lg:mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
-        >
-          <SiteFooter className="hidden lg:block" />
-          <p className="text-center text-xs text-muted-foreground lg:hidden">資料來源：氣象署、TDX</p>
-        </motion.div>
-
-        {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色 */}
+        {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色，往上疊到登入卡下方，避免中間空一大段 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/landing/dawn-mobile.webp"
@@ -147,7 +137,7 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           width={780}
           height={700}
           loading="lazy"
-          className="relative -mx-8 -mb-8 mt-4 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
+          className="relative -mx-8 -mb-8 -mt-2 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
         />
       </div>
     </div>
