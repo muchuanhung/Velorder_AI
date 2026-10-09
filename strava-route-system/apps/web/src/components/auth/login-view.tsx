@@ -88,16 +88,6 @@ export function LoginView({ featured }: { featured: ReactNode }) {
         {/* Background gradient for mobile */}
         <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent lg:hidden" />
 
-        {/* 手機頂部靜態圖：和桌機背景同一個畫面，裁出山路、里程與示警 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/landing/dawn-mobile.webp"
-          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
-          width={780}
-          height={600}
-          className="relative -mx-8 -mt-8 mb-8 aspect-[390/300] w-[calc(100%+4rem)] max-w-none object-cover lg:hidden"
-        />
-
         {/* Mobile Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -126,6 +116,17 @@ export function LoginView({ featured }: { featured: ReactNode }) {
             onForgotPassword={handleForgotPassword}
           />
         </motion.div>
+
+        {/* 手機靜態圖：和桌機背景同一個畫面，放在表單下方；上緣漸層淡入頁面底色 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/dawn-mobile.webp"
+          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
+          width={780}
+          height={700}
+          loading="lazy"
+          className="relative -mx-8 mt-4 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
+        />
 
         {/* Footer：桌機壓在背景圖上，加半透明底保持可讀 */}
         <motion.div
