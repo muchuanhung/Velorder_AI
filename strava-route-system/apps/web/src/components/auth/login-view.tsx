@@ -115,17 +115,9 @@ export function LoginView({ featured }: { featured: ReactNode }) {
             onEmailAuth={handleEmailAuth}
             onForgotPassword={handleForgotPassword}
           />
-        </motion.div>
-
-        {/* Footer：桌機壓在背景圖上，加半透明底保持可讀；手機精簡成兩行，放在靜態圖上方 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative z-10 mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
-        >
-          <p className="text-center text-xs text-muted-foreground">
-            繼續使用即表示<span className="hidden lg:inline">您</span>同意<span className="hidden lg:inline">我們的 </span>
+          {/* 同意聲明放在登入、註冊動作旁，使用者按下前看得到 */}
+          <p className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+            繼續使用即表示同意
             <Link href="/terms" className="text-primary hover:underline">
               服務條款
             </Link>
@@ -134,8 +126,17 @@ export function LoginView({ featured }: { featured: ReactNode }) {
               隱私政策
             </Link>
           </p>
-          <SiteFooter className="mt-1.5 hidden lg:block" />
-          <p className="mt-1 text-center text-xs text-muted-foreground lg:hidden">資料來源：氣象署、TDX</p>
+        </motion.div>
+
+        {/* Footer：資料來源。桌機壓在背景圖上，加半透明底保持可讀；手機精簡成一行，放在靜態圖上方 */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="relative z-10 mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
+        >
+          <SiteFooter className="hidden lg:block" />
+          <p className="text-center text-xs text-muted-foreground lg:hidden">資料來源：氣象署、TDX</p>
         </motion.div>
 
         {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色 */}
