@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ProductLogo } from "@/components/ui/product-logo";
 
-/** 入口頁（/ 與 /login）：左側品牌＋精選路線即時判定，右側登入表單；手機版精選路線排在表單下方 */
+/** 入口頁（/ 與 /login）：左側品牌＋精選路線即時判定，右側登入表單；手機版不顯示精選路線 */
 export function LoginView({ featured }: { featured: ReactNode }) {
   const router = useRouter();
   const auth = useAuth();
@@ -125,16 +125,6 @@ export function LoginView({ featured }: { featured: ReactNode }) {
             onEmailAuth={handleEmailAuth}
             onForgotPassword={handleForgotPassword}
           />
-        </motion.div>
-
-        {/* Mobile 精選路線：桌機版在左側 hero；取不到資料時整區不顯示 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative z-10 mt-8 w-full max-w-md lg:hidden"
-        >
-          {featured}
         </motion.div>
 
         {/* Footer：桌機壓在背景圖上，加半透明底保持可讀 */}
