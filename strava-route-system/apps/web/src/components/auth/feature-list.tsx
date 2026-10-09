@@ -16,9 +16,9 @@ const features = [
   },
   {
     icon: Cctv,
-    title: "沿線 CCTV 監控",
-    short: "CCTV 監控",
-    description: "出發前先看沿線公路 CCTV 即時影像，確認現場路況。",
+    title: "沿線即時影像",
+    short: "路況影像",
+    description: "出發前先看沿線 CCTV，確認現場路況。",
   },
 ];
 
