@@ -37,8 +37,9 @@ export async function FeaturedRoutes() {
           const chip = CHIP[b.verdict.level];
           // chip 疊在整張卡的連結上方，未判定的 Popover 才點得到；入口頁的 chip 不加虛線底線（其他頁維持）
           // 手機版（< lg）只留 chip＋路線名稱＋箭頭一行，判定說明與距離在點進 /routes 後看
+          // chip 固定寬度（容得下「未判定」），右側內容 flex-1，各卡標題起點對齊
           const chipClass = cn(
-            "relative z-10 shrink-0 rounded-md px-2 py-0.5 text-xs font-black tracking-widest",
+            "relative z-10 w-16 shrink-0 rounded-md py-0.5 text-center text-xs font-black tracking-widest",
             chip.className
           );
           return (
