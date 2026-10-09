@@ -1,4 +1,4 @@
-import { Route, CloudSun, HelpCircle, Cctv } from "lucide-react";
+import { Route, CloudSun, Cctv } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const features = [
@@ -15,12 +15,11 @@ const features = [
     description: "氣象署鄉鎮預報與雨量、TDX 路況事件，加上沿線 CCTV 即時影像。",
   },
   {
-    icon: HelpCircle,
+    icon: Cctv,
     title: "缺資料標未判定",
-    description: "資料不足或過期，一律不當成安全。",
-    /** 手機版短標籤改講 CCTV，圖示跟著換；桌機版仍是缺資料標未判定 */
+    /** 手機版短標籤改講 CCTV；桌機版標題與說明仍是缺資料標未判定，圖示兩邊一致 */
     short: "CCTV 監控",
-    shortIcon: Cctv,
+    description: "資料不足或過期，一律不當成安全。",
   },
 ];
 
@@ -32,18 +31,15 @@ export function FeatureList({ variant = "full", className }: { variant?: "full" 
   if (variant === "compact") {
     return (
       <ul className={cn("grid grid-cols-3 gap-2", className)} aria-label="功能">
-        {features.map(({ icon, shortIcon, title, short }) => {
-          const Icon = shortIcon ?? icon;
-          return (
-            <li
-              key={title}
-              className="flex flex-col items-center gap-1 rounded-lg bg-secondary/70 px-1 py-2 text-center text-xs font-medium text-foreground"
-            >
-              <Icon className="size-4 text-primary" aria-hidden />
-              <span className="whitespace-nowrap">{short}</span>
-            </li>
-          );
-        })}
+        {features.map(({ icon: Icon, title, short }) => (
+          <li
+            key={title}
+            className="flex flex-col items-center gap-1 rounded-lg bg-secondary/70 px-1 py-2 text-center text-xs font-medium text-foreground"
+          >
+            <Icon className="size-4 text-primary" aria-hidden />
+            <span className="whitespace-nowrap">{short}</span>
+          </li>
+        ))}
       </ul>
     );
   }
