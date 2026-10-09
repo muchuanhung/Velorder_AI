@@ -117,26 +117,15 @@ export function LoginView({ featured }: { featured: ReactNode }) {
           />
         </motion.div>
 
-        {/* 手機靜態圖：和桌機背景同一個畫面，放在表單下方；上下緣漸層淡入頁面底色 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/landing/dawn-mobile.webp"
-          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
-          width={780}
-          height={700}
-          loading="lazy"
-          className="relative -mx-8 mt-4 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_93%,transparent)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%,black_93%,transparent)] lg:hidden"
-        />
-
-        {/* Footer：桌機壓在背景圖上，加半透明底保持可讀 */}
+        {/* Footer：桌機壓在背景圖上，加半透明底保持可讀；手機精簡成兩行，放在靜態圖上方 */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative z-10 mt-8 lg:mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
+          className="relative z-10 mt-6 lg:rounded-xl lg:bg-card/80 lg:px-4 lg:py-2 lg:backdrop-blur-xl"
         >
           <p className="text-center text-xs text-muted-foreground">
-            繼續使用即表示您同意我們的{" "}
+            繼續使用即表示<span className="hidden lg:inline">您</span>同意<span className="hidden lg:inline">我們的 </span>
             <Link href="/terms" className="text-primary hover:underline">
               服務條款
             </Link>
@@ -145,8 +134,20 @@ export function LoginView({ featured }: { featured: ReactNode }) {
               隱私政策
             </Link>
           </p>
-          <SiteFooter className="mt-1.5" />
+          <SiteFooter className="mt-1.5 hidden lg:block" />
+          <p className="mt-1 text-center text-xs text-muted-foreground lg:hidden">資料來源：氣象署、TDX</p>
         </motion.div>
+
+        {/* 手機靜態圖：和桌機背景同一個畫面，放在頁面最下方當結尾；上緣漸層淡入頁面底色 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/landing/dawn-mobile.webp"
+          alt="山路逐段判定示意：9.6K 施工、14K 缺資料、17.8K 落石"
+          width={780}
+          height={700}
+          loading="lazy"
+          className="relative -mx-8 -mb-8 mt-4 aspect-[390/350] w-[calc(100%+4rem)] max-w-none object-cover [mask-image:linear-gradient(to_bottom,transparent,black_18%)] [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_18%)] lg:hidden"
+        />
       </div>
     </div>
   );
