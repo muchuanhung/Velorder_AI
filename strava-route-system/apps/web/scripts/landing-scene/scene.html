@@ -236,9 +236,11 @@
       ctx.fillStyle = "#e8742c"; ctx.beginPath(); ctx.moveTo(x, y - s * 0.6); ctx.lineTo(x + s * 0.34, y + s * 0.36); ctx.lineTo(x - s * 0.34, y + s * 0.36); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#fbfaf2"; ctx.fillRect(x - s * 0.2, y - s * 0.12, s * 0.4, s * 0.12); ctx.fillRect(x - s * 0.27, y + s * 0.1, s * 0.54, s * 0.11);
       ctx.fillStyle = "#3b3f42"; ctx.fillRect(x - s * 0.46, y + s * 0.36, s * 0.92, s * 0.1);
-    } else { // 未判定：灰色問號
-      ctx.fillStyle = "#fbfaf2"; ctx.strokeStyle = "#8f948c"; ctx.lineWidth = s * 0.1; ctx.beginPath(); ctx.arc(x, y, s * 0.46, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = "#5b6058"; ctx.font = `800 ${s * 0.62}px 'JetBrains Mono', monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", x, y + s * 0.03);
+    } else { // 大雨：雲朵＋雨滴
+      ctx.fillStyle = "#7d8a94"; [[-0.2, -0.08, 0.24], [0.06, -0.2, 0.3], [0.28, -0.04, 0.22]].forEach(([dx, dy, r]) => { ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); ctx.fill(); });
+      ctx.fillRect(x - s * 0.2, y - s * 0.08, s * 0.48, s * 0.22);
+      ctx.strokeStyle = "#3a78b8"; ctx.lineWidth = s * 0.09; ctx.lineCap = "round";
+      [-0.18, 0.04, 0.26].forEach((dx) => { ctx.beginPath(); ctx.moveTo(x + dx * s, y + s * 0.26); ctx.lineTo(x + (dx - 0.07) * s, y + s * 0.46); ctx.stroke(); });
     }
   }
 
@@ -299,7 +301,7 @@
     }
     ctx.globalAlpha = 1;
     const at = (km) => Math.min(S.length - 1, Math.round((km / ROUTE_KM) * (S.length - 1)));
-    const evCol = (e) => (e.kind === "rock" ? "196,72,63" : e.kind === "work" ? "232,116,44" : "143,148,140");
+    const evCol = (e) => (e.kind === "rock" ? "196,72,63" : e.kind === "work" ? "232,116,44" : "58,120,184");
     const evPos = (j) => { const p = S[j], r = rw(p[1]); return [p[0] + N[j][0] * r * 0.22, p[1] + N[j][1] * r * 0.22, r]; };
     // 示警點（在路面上，會被前景樹擋住）
     EVENTS.forEach((e, n) => {

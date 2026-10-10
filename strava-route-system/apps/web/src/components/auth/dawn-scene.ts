@@ -16,7 +16,7 @@ type Level = "go" | "slow" | "unknown" | "stop";
 
 const LEVEL_COLOR: Record<Level, string> = { go: "#3E9F69", slow: "#e3a53a", stop: "#c4483f", unknown: "#a9ada4" };
 
-type EventKind = "work" | "nodata" | "rock";
+type EventKind = "work" | "rain" | "rock";
 /**
  * 場景參數與 scripts/landing-scene/scene.html（產生靜態圖）共用同一份 JSON，改這裡兩邊都會跟著變；
  * 改完路線或標示位置要重跑 render.mjs 更新手機靜態圖。
@@ -26,7 +26,7 @@ const P = params as unknown as {
   routeKm: number;
   /** 0–20K 每 4K 一段的判定（示意） */
   levels: Level[];
-  /** TDX 示警與未判定路段的位置（示意），side 為標示卡在路的哪一側，dx、dy 為水平、垂直位移 */
+  /** TDX、氣象署示警的位置（示意），side 為標示卡在路的哪一側，dx、dy 為水平、垂直位移 */
   events: { km: number; kind: EventKind; label: string; side: 1 | -1; dx?: number; dy: number }[];
   /** 個別里程牌的位移 [dx, dy]，避免被登入卡蓋住 */
   mileLabelOffset: Record<string, Pt>;
@@ -37,7 +37,7 @@ const P = params as unknown as {
 const LEVELS = P.levels;
 const ROUTE_KM = P.routeKm;
 const EVENTS = P.events;
-const EVENT_RGB: Record<EventKind, string> = { rock: "196,72,63", work: "232,116,44", nodata: "143,148,140" };
+const EVENT_RGB: Record<EventKind, string> = { rock: "196,72,63", work: "232,116,44", rain: "58,120,184" };
 const ROAD_CTRL = P.roadCtrl;
 const SUN: Pt = [DESIGN_W * P.sun[0], P.sun[1]];
 
@@ -283,7 +283,7 @@ export function drawDawnFrame(ctx: CanvasRenderingContext2D, img: DawnImages, g:
     ctx.beginPath();
     ctx.roundRect(bx, ly - 17, tw + 74, 34, 8);
     ctx.fill();
-    drawSign(ctx, e.kind, bx + 20, ly, 22, fonts.mono);
+    drawSign(ctx, e.kind, bx + 20, ly, 22);
     ctx.fillStyle = "#1f2b20";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
@@ -310,7 +310,7 @@ function ellipseFill(ctx: CanvasRenderingContext2D, x: number, y: number, sxScal
   ctx.restore();
 }
 
-function drawSign(ctx: CanvasRenderingContext2D, kind: EventKind, x: number, y: number, s: number, mono: string) {
+function drawSign(ctx: CanvasRenderingContext2D, kind: EventKind, x: number, y: number, s: number) {
   if (kind === "rock") {
     // 紅框三角警告牌＋落石
     ctx.fillStyle = "#fbfaf2";
@@ -345,18 +345,22 @@ function drawSign(ctx: CanvasRenderingContext2D, kind: EventKind, x: number, y: 
     ctx.fillStyle = "#3b3f42";
     ctx.fillRect(x - s * 0.46, y + s * 0.36, s * 0.92, s * 0.1);
   } else {
-    // 未判定：灰色問號
-    ctx.fillStyle = "#fbfaf2";
-    ctx.strokeStyle = "#8f948c";
-    ctx.lineWidth = s * 0.1;
-    ctx.beginPath();
-    ctx.arc(x, y, s * 0.46, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "#5b6058";
-    ctx.font = `800 ${s * 0.62}px ${mono}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("?", x, y + s * 0.03);
+    // 大雨：雲朵＋雨滴
+    ctx.fillStyle = "#7d8a94";
+    ([[-0.2, -0.08, 0.24], [0.06, -0.2, 0.3], [0.28, -0.04, 0.22]] as const).forEach(([dx, dy, r]) => {
+      ctx.beginPath();
+      ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.fillRect(x - s * 0.2, y - s * 0.08, s * 0.48, s * 0.22);
+    ctx.strokeStyle = "#3a78b8";
+    ctx.lineWidth = s * 0.09;
+    ctx.lineCap = "round";
+    ([-0.18, 0.04, 0.26] as const).forEach((dx) => {
+      ctx.beginPath();
+      ctx.moveTo(x + dx * s, y + s * 0.26);
+      ctx.lineTo(x + (dx - 0.07) * s, y + s * 0.46);
+      ctx.stroke();
+    });
   }
 }

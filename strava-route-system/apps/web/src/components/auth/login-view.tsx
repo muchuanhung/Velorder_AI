@@ -133,7 +133,7 @@ export function LoginView({ featured }: { featured: ReactNode }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/landing/dawn-mobile.webp"
-          alt="山路逐段判定示意：9.6K 施工、14K 未判定、17.8K 落石"
+          alt="山路逐段判定示意：9.6K 施工、14K 大雨、17.8K 落石"
           width={780}
           height={700}
           loading="lazy"
