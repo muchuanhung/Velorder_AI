@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { withTrip, type TripParams } from "@/lib/routes/trip";
-import { RouteChipLabel } from "./route-chip-label";
 
 /** 今日判讀只做快速切換；找路線、搜尋、篩選在路線頁 */
 const MAX_CHIPS = 5;
@@ -47,7 +46,7 @@ export function RouteSwitcher({
                     : "border-border bg-card text-muted-foreground hover:text-foreground"
                 )}
               >
-                <RouteChipLabel name={r.name} />
+                <span className="truncate">{r.name}</span>
               </Link>
             </li>
           );

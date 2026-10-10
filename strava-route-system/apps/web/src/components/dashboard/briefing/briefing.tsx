@@ -28,7 +28,7 @@ export async function Briefing({
     );
   }
 
-  const { featured, alternative, routes, weatherCoverage, eventsFailed } = data;
+  const { featured, alternative, routes } = data;
   /** 換路線、換頁時帶著的行程設定 */
   const tripParams: TripParams = { depart: trip.departure?.toISOString(), activity: trip.activity };
 
@@ -50,16 +50,6 @@ export async function Briefing({
         <BriefingCard featured={featured} alternative={alternative} trip={tripParams} />
         <HazardSummary briefing={featured} trip={tripParams} />
       </div>
-      <p className="text-xs text-muted-foreground">
-        天氣：中央氣象署鄉鎮預報
-        {weatherCoverage.ok < weatherCoverage.total &&
-          `（${weatherCoverage.total - weatherCoverage.ok} 個行政區暫時取不到資料）`}
-        ・路況：TDX 即時道路事件
-        {eventsFailed === null
-          ? "（暫時取不到）"
-          : eventsFailed.length > 0 && `（${eventsFailed.join("、")}暫時取不到）`}
-        ・判讀僅供參考，出發前請再確認現場狀況。
-      </p>
     </div>
   );
 }
