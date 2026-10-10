@@ -297,16 +297,24 @@ export function drawDawnFrame(
   const [sx, sy] = SUN;
   ctx.drawImage(img.bg, 0, 0, W, H);
 
-  // 光束：角度與亮度緩慢變化，整體強弱也會呼吸
+  // 光束：整束緩慢擺動，每道光各自搖曳、寬窄與亮度起伏，並有一段亮光沿著光束往外流；整體強弱也會呼吸
   const breathe = 0.75 + 0.25 * Math.sin(T * 0.16);
+  const fan = Math.sin(T * 0.05) * 0.05;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   for (let i = 0; i < 12; i++) {
-    const a = 0.15 + i * 0.255 + Math.sin(T * 0.06 + i * 0.7) * 0.05, len = 1600, spread = 0.02 + hash(i + 1) * 0.03;
-    const alpha = (0.03 + 0.035 * (0.5 + 0.5 * Math.sin(T * 0.4 + i * 1.3))) * breathe;
+    const a = 0.15 + i * 0.255 + fan + Math.sin(T * 0.22 + i * 0.7) * 0.035, len = 1600;
+    const spread = (0.02 + hash(i + 1) * 0.03) * (0.8 + 0.4 * (0.5 + 0.5 * Math.sin(T * 0.5 + i * 2.3)));
+    const alpha = (0.02 + 0.06 * (0.5 + 0.5 * Math.sin(T * 0.6 + i * 1.3))) * breathe;
+    // 沿光束的基本亮度：光源處最亮，往外漸淡
+    const base = (u: number) => (u < 0.55 ? lerp(alpha * 2.2, alpha, u / 0.55) : lerp(alpha, 0, (u - 0.55) / 0.45));
+    // 流動亮帶的位置：每道光速度相同、起點錯開，在 0.15–0.85 之間循環
+    const phase = T * 0.08 + hash(i + 7), m = 0.15 + 0.7 * (phase - Math.floor(phase));
     const grad = ctx.createLinearGradient(sx, sy, sx + Math.cos(a) * len, sy + Math.sin(a) * len);
-    grad.addColorStop(0, `rgba(255,240,200,${alpha * 2.2})`);
-    grad.addColorStop(0.55, `rgba(255,240,200,${alpha})`);
+    grad.addColorStop(0, `rgba(255,240,200,${base(0)})`);
+    grad.addColorStop(m - 0.12, `rgba(255,240,200,${base(m - 0.12)})`);
+    grad.addColorStop(m, `rgba(255,240,200,${base(m) + alpha * 1.2})`);
+    grad.addColorStop(m + 0.12, `rgba(255,240,200,${base(m + 0.12)})`);
     grad.addColorStop(1, "rgba(255,240,200,0)");
     ctx.fillStyle = grad;
     ctx.beginPath();
