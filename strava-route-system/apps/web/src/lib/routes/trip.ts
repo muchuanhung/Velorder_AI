@@ -4,16 +4,46 @@
  */
 
 import type { Route } from "@/lib/routes/route-data";
-import { DEFAULT_CYCLING_SPEED_KMH, estimateArrivalTime } from "@/lib/cwb/forecast-eta";
+import { DEFAULT_CYCLING_SPEED_KMH, estimateArrivalTime, type Pace } from "@/lib/cwb/forecast-eta";
 
 export type Activity = "cycling" | "running" | "hiking";
 
-/** 均速含停等，規則式估算；健行未依爬升修正，爬升多的路線 ETA 會偏早 */
-export const ACTIVITY: Record<Activity, { label: string; speedKmh: number }> = {
-  cycling: { label: "自行車", speedKmh: DEFAULT_CYCLING_SPEED_KMH },
-  running: { label: "跑步", speedKmh: 10 },
-  hiking: { label: "健行", speedKmh: 4 },
+/**
+ * 均速含停等，規則式估算。健行另依爬升加時間（Naismith 規則：每爬升 600 m 加 1 小時，即每 100 m 加 10 分鐘）；
+ * 自行車、跑步不另加（均速已含一般起伏）。
+ */
+export const ACTIVITY: Record<Activity, { label: string; speedKmh: number; climbMinPer100m: number }> = {
+  cycling: { label: "自行車", speedKmh: DEFAULT_CYCLING_SPEED_KMH, climbMinPer100m: 0 },
+  running: { label: "跑步", speedKmh: 10, climbMinPer100m: 0 },
+  hiking: { label: "健行", speedKmh: 4, climbMinPer100m: 10 },
 };
+
+/**
+ * 行進速度：不加爬升時就是均速；加爬升時回傳「起點到某里程所需小時數」＝ 距離 ÷ 均速 ＋ 累計爬升 × 每 100 m 分鐘數。
+ * profile 為 [里程 km, 海拔 m]，依里程排序；里程落在兩點之間時線性內插。
+ */
+export function paceFor(activity: Activity, profile: readonly (readonly [number, number])[]): Pace {
+  const { speedKmh, climbMinPer100m } = ACTIVITY[activity];
+  if (climbMinPer100m === 0 || profile.length < 2) return speedKmh;
+  const kms = profile.map((p) => p[0]);
+  const ascent: number[] = [0];
+  for (let i = 1; i < profile.length; i++) ascent.push(ascent[i - 1]! + Math.max(0, profile[i]![1] - profile[i - 1]![1]));
+  const ascentAt = (km: number) => {
+    if (km <= kms[0]!) return 0;
+    if (km >= kms[kms.length - 1]!) return ascent[ascent.length - 1]!;
+    let lo = 0;
+    let hi = kms.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (kms[mid]! <= km) lo = mid;
+      else hi = mid;
+    }
+    const span = kms[hi]! - kms[lo]!;
+    const f = span > 0 ? (km - kms[lo]!) / span : 0;
+    return ascent[lo]! + Math.max(0, profile[hi]![1] - profile[lo]![1]) * f;
+  };
+  return (km: number) => km / speedKmh + (ascentAt(km) / 100) * (climbMinPer100m / 60);
+}
 
 export const ACTIVITIES = Object.keys(ACTIVITY) as Activity[];
 
@@ -66,9 +96,9 @@ export function formatClock(date: Date, now: Date): string {
   return `${day.slice(5).replace("-", "/")} ${clock}`;
 }
 
-/** 某里程的預估到達時間（台灣時間字串），與判讀挑預報時段用同一組出發時間與均速 */
-export function etaLabel(km: number, trip: { departure: string; speedKmh: number }, now: Date): string {
-  return formatClock(estimateArrivalTime(km, new Date(trip.departure), trip.speedKmh), now);
+/** 某里程的預估到達時間（台灣時間字串），與判讀挑預報時段用同一組出發時間與行進速度 */
+export function etaLabel(km: number, departure: string, pace: Pace, now: Date): string {
+  return formatClock(estimateArrivalTime(km, new Date(departure), pace), now);
 }
 
 export interface TripParams {

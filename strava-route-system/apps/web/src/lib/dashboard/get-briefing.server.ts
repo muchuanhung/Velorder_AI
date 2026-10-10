@@ -99,6 +99,7 @@ async function briefRoutes(routes: Route[], trip: TripOptions = {}, suggestFor?:
         condition: mapCwbCondition(w.condition),
         periodLabel: first ? `${first.label}–${first.endLabel}` : null,
         rainfallBuckets: w.rainfall12h,
+        windBuckets: w.windBuckets,
         stale: w.stale,
       };
       return [key, weather] as const;

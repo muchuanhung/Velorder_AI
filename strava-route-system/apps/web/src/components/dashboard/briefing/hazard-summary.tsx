@@ -4,7 +4,7 @@ import { UNKNOWN_REASON_TEXT, type Hazard } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
 import { groupRouteEvents } from "@/lib/routes/road-events";
 import { HAZARD_ROW_GRID, HazardRowContent } from "@/components/verdict/hazard-row";
-import { etaLabel, withTrip, type TripParams } from "@/lib/routes/trip";
+import { etaLabel, paceFor, withTrip, type TripParams } from "@/lib/routes/trip";
 import { ProfileStrip } from "./profile-strip";
 
 /** 今日判讀只列最要緊的幾項，完整清單在路線頁 */
@@ -28,6 +28,7 @@ export function HazardSummary({ briefing, trip }: { briefing: RouteBriefing; tri
   const roadNotices = notices.length + routine.length;
   const routeHref = withTrip(`/routes?route=${encodeURIComponent(briefing.id)}`, trip);
   const now = new Date();
+  const pace = paceFor(briefing.activity, briefing.elevationProfile);
 
   return (
     <section aria-labelledby="hazard-title" className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -49,7 +50,7 @@ export function HazardSummary({ briefing, trip }: { briefing: RouteBriefing; tri
         <ul className="divide-y divide-border/60 border-y border-border/60">
           {shown.map((h) => (
             <li key={h.id} className={HAZARD_ROW_GRID}>
-              <HazardRowContent hazard={h} eta={etaLabel(h.startKm, briefing, now)} />
+              <HazardRowContent hazard={h} eta={etaLabel(h.startKm, briefing.departure, pace, now)} />
             </li>
           ))}
         </ul>

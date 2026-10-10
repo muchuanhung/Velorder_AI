@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, SlidersHorizontal, Bike, Footprints, Mountain, Trophy, X, Lock } from "lucide-react";
+import { Search, SlidersHorizontal, Bike, Footprints, Mountain, Trophy, X } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -160,13 +159,6 @@ export function RoutesClient({
         {/* 窄螢幕整列換行，不讓標題或連結被拆字 */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h1 className="mr-auto whitespace-nowrap text-2xl font-black tracking-tight sm:text-3xl">路線</h1>
-          <Link
-            href="/routes/private"
-            className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-sm font-medium text-primary hover:underline"
-          >
-            <Lock className="size-3.5" aria-hidden />
-            私人路線
-          </Link>
           <Drawer open={mobileListOpen} onOpenChange={setMobileListOpen}>
             <DrawerTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5 lg:hidden">

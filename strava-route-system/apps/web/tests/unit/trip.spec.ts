@@ -5,6 +5,7 @@ import {
   departureAfter,
   etaLabel,
   formatClock,
+  paceFor,
   parseActivity,
   parseDeparture,
   withTrip,
@@ -51,9 +52,22 @@ test.describe("行程設定", () => {
   });
 
   test("預估到達時間＝出發時間＋里程÷均速", () => {
-    const trip = { departure: "2026-10-01T00:00:00.000Z", speedKmh: 20 }; // 08:00 出發
-    expect(etaLabel(30, trip, NOW)).toBe("09:30");
-    expect(etaLabel(30, { ...trip, speedKmh: 4 }, NOW)).toBe("15:30");
+    const depart = "2026-10-01T00:00:00.000Z"; // 08:00 出發
+    expect(etaLabel(30, depart, 20, NOW)).toBe("09:30");
+    expect(etaLabel(30, depart, 4, NOW)).toBe("15:30");
+  });
+
+  test("健行依爬升加時間（每 100 m 加 10 分鐘）；自行車、跑步不加", () => {
+    // 0–6 km 爬升 600 m，6–10 km 下降 300 m（下降不加時間）
+    const profile: [number, number][] = [[0, 100], [6, 700], [10, 400]];
+    const depart = "2026-10-01T00:00:00.000Z";
+    const hiking = paceFor("hiking", profile);
+    expect(etaLabel(6, depart, hiking, NOW)).toBe("10:30"); // 6/4 = 1.5 h + 600 m = 1 h
+    expect(etaLabel(3, depart, hiking, NOW)).toBe("09:15"); // 0.75 h + 300 m 內插 = 0.5 h
+    expect(etaLabel(10, depart, hiking, NOW)).toBe("11:30"); // 2.5 h + 1 h
+    expect(paceFor("cycling", profile)).toBe(20);
+    expect(paceFor("running", profile)).toBe(10);
+    expect(paceFor("hiking", [])).toBe(4);
   });
 
   test("連結帶著行程設定", () => {
