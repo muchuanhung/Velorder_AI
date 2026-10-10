@@ -35,7 +35,7 @@ interface RouteHeaderProps {
   /** 伺服器端判定 */
   verdict: ReconVerdict;
   loading?: boolean;
-  /** 伺服器依預報時段算出的建議出發時段；null 不顯示 */
+  /** 伺服器試算未來 12 小時天氣最佳的出發時間（已格式化）；null 不顯示 */
   bestTimeToRide?: string | null;
 }
 

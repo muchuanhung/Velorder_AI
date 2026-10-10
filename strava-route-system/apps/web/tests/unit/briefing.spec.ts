@@ -201,9 +201,7 @@ test.describe("briefRoute", () => {
     const b = briefRoute(route, lookup, { now: AT_8AM, eventsFailed: ["新北市", "台北市"] });
     expect(b.segments.every((s) => s.hasWeather)).toBe(true);
     expect(b.eventsFailed).toEqual(["台北市"]);
-    expect(b.bestTimeToRide).toBe("08:00");
     expect(briefRoute(route, lookup, { now: AT_8AM, eventsFailed: null }).eventsFailed).toBeNull();
-    expect(briefRoute(route, new Map(), { now: AT_8AM }).bestTimeToRide).toBeNull();
   });
 
   test("ETA 都在預報時段內且資料新，可判安全", () => {
@@ -270,5 +268,39 @@ test.describe("pickAlternative", () => {
     const unknown = briefRoute(makeRoute({ id: "u", segments: [segment("萬華區", [0, 20])] }), lookup);
     expect(pickAlternative(clearLong, [clearLong, clearShort])).toBeNull();
     expect(pickAlternative(unknown, [unknown, clearShort])).toBeNull();
+  });
+});
+
+test.describe("建議出發時段", () => {
+  // 20 km、自行車 20 km/h：全程 1 小時
+  const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
+  const at = (hhmm: string) => new Date(`2026-10-01T${hhmm}:00+08:00`).toISOString();
+
+  test("現在出發天氣最好：區間從現在開始，到會碰上下雨時段前為止", () => {
+    // 08:00–10:00 降雨 10%、10:00–12:00 降雨 70%；09:00 出發會在 10:00 進入下雨時段
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }), { now: AT_8AM });
+    expect(b.departureSuggestion).toEqual({ from: at("08:00"), to: at("08:30"), level: null, nowIsBest: true });
+  });
+
+  test("現在出發會淋雨：建議較晚、沿途無天氣示警的時段", () => {
+    const rainThenClear = [bucket("08:00", "10:00", 70), bucket("10:00", "12:00", 10)];
+    const b = briefRoute(route, lookupOf({ 士林區: weather(70, { rainfallBuckets: rainThenClear }) }), { now: AT_8AM });
+    expect(b.verdict.level).toBe("risky");
+    expect(b.departureSuggestion).toMatchObject({ from: at("10:00"), level: null, nowIsBest: false });
+  });
+
+  test("天氣資料不足或過期時不建議（未判定不可拿來推薦）", () => {
+    expect(briefRoute(route, new Map(), { now: AT_8AM }).departureSuggestion).toBeNull();
+    const stale = lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN, stale: true }) });
+    expect(briefRoute(route, stale, { now: AT_8AM }).departureSuggestion).toBeNull();
+  });
+
+  test("路況事件取不到不影響天氣建議，但判定仍為未判定", () => {
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }), {
+      now: AT_8AM,
+      eventsFailed: null,
+    });
+    expect(b.verdict.level).toBe("unknown");
+    expect(b.departureSuggestion?.nowIsBest).toBe(true);
   });
 });

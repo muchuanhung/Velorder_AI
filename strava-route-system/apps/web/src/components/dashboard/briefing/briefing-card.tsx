@@ -5,6 +5,7 @@ import type { VerdictLevel } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
 import { UnknownReasons } from "@/components/verdict/unknown-reasons";
 import { withTrip, type TripParams } from "@/lib/routes/trip";
+import { DepartureSuggestionRow } from "./departure-suggestion";
 
 /** 判定牌的顏色跟著狀態走：危險紅、注意琥珀；安全與未判定用中性底，絕不用品牌綠表示危險 */
 const LEVEL: Record<
@@ -122,6 +123,10 @@ export function BriefingCard({
           <p className="text-xs text-muted-foreground">依 {featured.periodLabel} 預報・中央氣象署</p>
         )}
       </div>
+
+      {featured.departureSuggestion && (
+        <DepartureSuggestionRow suggestion={featured.departureSuggestion} routeId={featured.id} trip={trip} />
+      )}
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-dashed border-border pt-4 text-sm">
         {alternative && (

@@ -7,7 +7,7 @@
  * 否則陡的路線天天都是危險，示警會失去可信度。
  */
 
-import { computeBestTimeToRide, type Route, type RouteSegment } from "@/lib/routes/route-data";
+import type { Route, RouteSegment } from "@/lib/routes/route-data";
 import { eventHazards, matchEventsToRoute, type RoadEvent, type RouteEvent } from "@/lib/routes/road-events";
 import {
   buildRoutePolylineKm,
@@ -17,6 +17,7 @@ import {
   routeTotalKm,
   summarizeVerdict,
   type Hazard,
+  type HazardLevel,
   type ReconVerdict,
   type VerdictLevel,
 } from "@/lib/routes/recon-geo";
@@ -220,8 +221,8 @@ export interface RouteBriefing {
   segments: RouteSegment[];
   /** 此路線經過、路況事件取不到的縣市；null 代表整個事件服務失敗 */
   eventsFailed: string[] | null;
-  /** 沿線各區平均降雨機率最低的預報時段起點，例「14:00」；無時段資料為 null */
-  bestTimeToRide: string | null;
+  /** 未來 12 小時內天氣最佳的出發時段；天氣資料不足以比較時為 null */
+  departureSuggestion: DepartureSuggestion | null;
   /** 估算各段 ETA 用的出發時間（ISO）與運動類型、均速；畫面用同一組數字顯示預估到達時間 */
   departure: string;
   activity: Activity;
@@ -240,12 +241,14 @@ export interface BriefRouteOptions {
   activity?: Activity;
   /** 路況事件取不到的縣市；null 代表整個事件服務失敗 */
   eventsFailed?: string[] | null;
+  /** 是否試算建議出發時段（內部試算時關閉，避免遞迴） */
+  suggest?: boolean;
 }
 
 export function briefRoute(
   route: Route,
   lookup: WeatherLookup,
-  { events = [], now = new Date(), departure = now, activity, eventsFailed }: BriefRouteOptions = {}
+  { events = [], now = new Date(), departure = now, activity, eventsFailed, suggest = true }: BriefRouteOptions = {}
 ): RouteBriefing {
   const defaultActivity = activityOfRouteType(route.type);
   const tripActivity = activity ?? defaultActivity;
@@ -278,7 +281,7 @@ export function briefRoute(
     elevationProfile: route.elevationProfile,
     segments: enriched.segments,
     eventsFailed: routeEventsFailed === undefined ? [] : routeEventsFailed,
-    bestTimeToRide: bestTimeToRide(route, lookup),
+    departureSuggestion: suggest ? suggestDeparture(route, lookup, { now, activity: tripActivity }) : null,
     departure: departure.toISOString(),
     activity: tripActivity,
     speedKmh,
@@ -286,13 +289,54 @@ export function briefRoute(
   };
 }
 
-/** 建議出發時段：沿線各行政區預報時段平均降雨機率最低者（與判定無關，只是建議） */
-function bestTimeToRide(route: Route, lookup: WeatherLookup): string | null {
-  const segs = route.segments.flatMap((seg) => {
-    const buckets = weatherOf(seg, lookup)?.rainfallBuckets;
-    return buckets?.length ? [{ ...seg, rainfall12h: buckets }] : [];
+export interface DepartureSuggestion {
+  /** 天氣最佳的連續出發區間起訖（ISO）；只有一個試算點時 from === to */
+  from: string;
+  to: string;
+  /** 區間內沿途最嚴重的天氣示警；null 為沿途無天氣示警 */
+  level: HazardLevel | null;
+  /** 現在出發已在最佳區間內 */
+  nowIsBest: boolean;
+}
+
+/** 建議出發時段的試算範圍：現在起 12 小時、每 30 分鐘一個出發時間 */
+export const SUGGEST_HORIZON_H = 12;
+export const SUGGEST_STEP_MIN = 30;
+
+const WEATHER_RANK = (hazards: Hazard[]) =>
+  hazards.reduce((worst, h) => Math.max(worst, h.level === "risky" ? 2 : 1), 0);
+
+/**
+ * 建議出發時段：對未來每個出發時間各跑一次同樣的判讀（依 ETA 挑時段），取天氣示警最輕的最早連續區間。
+ * 只比天氣：路況事件以「現在」為準、對每個出發時間都一樣，不影響排序；因此建議只代表天氣，不代表安全。
+ * 任一路段沒有天氣、預報過期或超出預報時段的出發時間不列入比較（未判定不可拿來推薦）。
+ */
+export function suggestDeparture(
+  route: Route,
+  lookup: WeatherLookup,
+  { now, activity }: { now: Date; activity: Activity }
+): DepartureSuggestion | null {
+  const steps = (SUGGEST_HORIZON_H * 60) / SUGGEST_STEP_MIN;
+  const ranked = Array.from({ length: steps + 1 }, (_, i) => {
+    const departure = new Date(now.getTime() + i * SUGGEST_STEP_MIN * 60_000);
+    const b = briefRoute(route, lookup, { now, departure, activity, suggest: false });
+    const comparable = b.segments.length > 0 && b.segments.every((s) => s.hasWeather && !s.weatherStale && !s.outOfCoverage);
+    return { departure, rank: comparable ? WEATHER_RANK(b.hazards) : null };
   });
-  return computeBestTimeToRide(segs) || null;
+
+  const usable = ranked.filter((r): r is { departure: Date; rank: number } => r.rank !== null);
+  if (usable.length === 0) return null;
+  const best = Math.min(...usable.map((r) => r.rank));
+  const start = ranked.findIndex((r) => r.rank === best);
+  let end = start;
+  while (ranked[end + 1]?.rank === best) end++;
+
+  return {
+    from: ranked[start]!.departure.toISOString(),
+    to: ranked[end]!.departure.toISOString(),
+    level: best === 2 ? "risky" : best === 1 ? "caution" : null,
+    nowIsBest: start === 0,
+  };
 }
 
 /** 越小越安全；未判定不可拿來推薦 */
