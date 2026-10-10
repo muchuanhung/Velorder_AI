@@ -96,12 +96,14 @@ test.describe("/routes 與 Dashboard 判定一致", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Second Route" })).toBeVisible();
   });
 
-  test("標題列有私人路線入口", async ({ page }) => {
+  test("私人路線上傳尚未完成：沒有入口，網址回 404", async ({ page }) => {
     await stubRoutes(page, [ROUTE]);
     await stubWeather(page, { 大安區: 10, 士林區: 10 });
     await stubCctv(page, [CCTV_FEED]);
     await page.goto("/routes");
-    await expect(page.getByRole("link", { name: /私人路線/ })).toHaveAttribute("href", "/routes/private");
+    await expect(page.getByRole("link", { name: /私人路線/ })).toHaveCount(0);
+    const res = await page.goto("/routes/private");
+    expect(res?.status()).toBe(404);
   });
 });
 

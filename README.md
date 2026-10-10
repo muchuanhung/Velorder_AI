@@ -17,9 +17,8 @@
 | `/` 首頁 | 未登入可看前 3 條路線的即時判定；已登入轉 `/dashboard` |
 | `/dashboard` 今日判讀 | 各路線的判定、示警路段與 ETA 降雨時段；天氣卡片優先採用定位 3 km 內的測站雨量 |
 | `/routes` 路線示警 | 路線列表與單一路線偵察：高度圖、依里程對應的行政區路段、沿線 CCTV；判定取自 `/api/routes/briefing`，與 Dashboard 同一份伺服器端判讀 |
-| `/maps` 降雨地圖 | 全台縣市降雨預報（`/api/weather/cwb/all-counties`） |
 | `/profile` | 個人資料與密碼設定 |
-| `/routes/private` 私人路線 | 登入即可使用，不需付費；上傳私人 GPX 功能開發中 |
+| `/routes/private` 私人路線 | 上傳私人 GPX 開發中，暫時隱藏（無入口，網址回 404） |
 | `/lab/route-sim` | 3D 路線沙盤（實驗；正式環境需 `NEXT_PUBLIC_LAB_ENABLED=true`） |
 
 ## 技術架構
