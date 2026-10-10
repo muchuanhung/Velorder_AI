@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { CCTV_FEED, makeRoute, segment, slopeProfile } from "../fixtures/route";
 import { stubCctv, stubEvents, stubRoutes, stubWeather } from "./stubs";
 
-// 大安區在起點；士林區涵蓋 10 km 之後，對應的示警從 7.5 km 開始
+// 大安區在起點；士林區涵蓋 10 km 之後，兩區以取樣點中點（5 km）分段，士林區的示警從 5.0 km 開始
 const ROUTE = makeRoute({
   segments: [segment("大安區", [0]), segment("士林區", [10, 15, 20])],
 });
@@ -22,7 +22,7 @@ test.describe("/routes 路線偵察", () => {
 
     const verdict = verdictBar(page);
     await expect(verdict).toContainText("危險");
-    await expect(verdict).toContainText("7.5 km 起降雨 70%");
+    await expect(verdict).toContainText("5.0 km 起降雨 70%");
 
     // 資訊層級：判定 → 示警 → 高程圖 → 監視器
     const order = await Promise.all(
@@ -50,7 +50,7 @@ test.describe("/routes 路線偵察", () => {
 
     await expect(verdictBar(page)).toContainText("未判定");
     await expect(verdictBar(page)).toContainText("尚無天氣資料");
-    await expect(page.getByText("無天氣資料", { exact: true })).toBeVisible();
+    await expect(page.getByText("此處無天氣資料", { exact: true })).toBeVisible();
     await expect(page.getByText("安全", { exact: true })).toHaveCount(0);
   });
 
@@ -60,9 +60,9 @@ test.describe("/routes 路線偵察", () => {
     await page.goto("/routes");
 
     const readout = page.getByRole("region", { name: "海拔與位置" });
-    await expect(readout).not.toContainText("7.5 km");
+    await expect(readout).not.toContainText("5.0 km");
     await page.getByRole("button", { name: /降雨 70%/ }).click();
-    await expect(readout).toContainText("7.5 km");
+    await expect(readout).toContainText("5.0 km");
   });
 
   test("CCTV 載入失敗與沿途無監視器分開顯示", async ({ page }) => {
@@ -129,14 +129,16 @@ test.describe("/routes 路況事件分級", () => {
     await expect(page.getByRole("button", { name: /施工：道路維護/ }).first()).toBeHidden();
   });
 
-  test("路況事件取不到時如實告知，不影響天氣判定", async ({ page }) => {
+  test("路況事件取不到時如實告知，判未判定（不可判安全）", async ({ page }) => {
     await stubRoutes(page, [ROUTE]);
     await stubEvents(page, "error");
     await stubWeather(page, { 大安區: 10, 士林區: 10 });
     await stubCctv(page, [CCTV_FEED]);
     await page.goto("/routes");
 
-    await expect(verdictBar(page)).toContainText("安全");
+    // 天氣良好但事件缺失：依產品鐵律不可判安全（注意「無法確認安全」也含「安全」二字，改驗未判定）
+    await expect(verdictBar(page)).toContainText("未判定");
+    await expect(verdictBar(page)).toContainText("路況事件暫時取不到");
     await expect(page.getByText("路況事件暫時取不到，請稍後再試。")).toBeVisible();
   });
 });
