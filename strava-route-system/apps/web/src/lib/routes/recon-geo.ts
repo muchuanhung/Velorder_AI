@@ -311,8 +311,9 @@ export const isWeatherHazard = (h: Hazard) => h.kind === "rain" || h.kind === "w
 /** 天氣門檻 */
 export const RAIN_CAUTION = 40;
 export const RAIN_RISKY = 60;
-export const WIND_CAUTION = 25;
-export const WIND_RISKY = 35;
+/** 風速（km/h）依蒲福風級：5 級（8.0 m/s≈29 km/h）起騎乘明顯吃力；7 級（13.9 m/s≈50 km/h）起難以控車 */
+export const WIND_CAUTION = 29;
+export const WIND_RISKY = 50;
 /** 即時時雨量門檻（mm/hr），與 district-weather 的 computeVerdict 一致：0.5 起小雨、2.6 起中雨 */
 export const RAIN_NOW_CAUTION = 0.5;
 export const RAIN_NOW_RISKY = 2.6;
