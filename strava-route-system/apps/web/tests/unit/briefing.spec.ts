@@ -271,6 +271,39 @@ test.describe("pickAlternative", () => {
   });
 });
 
+test.describe("風速與健行爬升依 ETA", () => {
+  test("風速依路段 ETA 挑時段：早段風小、晚段到達時起強風才示警", () => {
+    const route = makeRoute({ distance: 60, segments: [segment("士林區", [0, 20]), segment("北投區", [40, 60])] });
+    const wind = [
+      { startTime: "2026-10-01T08:00:00+08:00", endTime: "2026-10-01T10:00:00+08:00", kmh: 10 },
+      { startTime: "2026-10-01T10:00:00+08:00", endTime: "2026-10-01T12:00:00+08:00", kmh: 55 },
+    ];
+    const w = (rain: number) => weather(rain, { windSpeedKmh: 10, windBuckets: wind, rainfallBuckets: [bucket("08:00", "12:00", 10)] });
+    const b = briefRoute(route, lookupOf({ 士林區: w(10), 北投區: w(10) }), { now: AT_8AM });
+    expect(b.segments[0]!.windSpeed).toBe(10);
+    expect(b.segments[1]!.windSpeed).toBe(55);
+    expect(b.verdict.level).toBe("risky");
+    expect(b.verdict.headline).toContain("風速 55 km/h");
+    // 示警只在後段（前段 0–20 km 風速 10）
+    expect(b.hazards.every((h) => h.startKm > 20)).toBe(true);
+  });
+
+  test("健行爬升讓後段晚到：同樣的路線，健行比不計爬升晚進入下雨時段", () => {
+    // 0–8 km 爬升 1200 m；後段 8–10 km
+    const route = makeRoute({
+      distance: 10,
+      elevationProfile: [[0, 0], [8, 1200], [10, 1200]],
+      segments: [segment("士林區", [0, 2]), segment("北投區", [8, 10])],
+    });
+    // 08:00–12:00 降雨 10%、12:00–16:00 降雨 70%
+    const buckets = [bucket("08:00", "12:00", 10), bucket("12:00", "16:00", 70)];
+    const lookup = lookupOf({ 士林區: weather(10, { rainfallBuckets: buckets }), 北投區: weather(10, { rainfallBuckets: buckets }) });
+    // 健行 4 km/h：8 km = 2 h，再加爬升 1200 m = 2 h → 12:00 到 8 km，落在下雨時段
+    const b = briefRoute(route, lookup, { now: AT_8AM, activity: "hiking" });
+    expect(b.verdict.level).toBe("risky");
+  });
+});
+
 test.describe("建議出發時段", () => {
   // 20 km、自行車 20 km/h：全程 1 小時
   const route = makeRoute({ segments: [segment("士林區", [0, 20])] });

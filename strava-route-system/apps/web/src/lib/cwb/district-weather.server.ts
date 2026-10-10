@@ -5,6 +5,7 @@
 
 import { getCWBdatasetId, normalizeCountyForCWB } from "@/lib/cwb/county-map";
 import { isForecastStale } from "@/lib/cwb/forecast-freshness";
+import { windBucketsFromCwb, type WindBucket } from "@/lib/cwb/forecast-eta";
 import {
   parseRainfallStations,
   summarizeRainfall,
@@ -51,6 +52,8 @@ export type CWBWeatherResponse = {
   uvLevel: string;
   sunset: string;
   rainfall12h: Array<{ startTime: string; endTime: string; pop: number; label: string; endLabel: string }>;
+  /** 風速時段（km/h），判讀依各路段 ETA 挑選 */
+  windBuckets: WindBucket[];
   /** 重抓後仍是過期預報；判讀端須改判 unknown（stale） */
   stale: boolean;
   verdict: string;
@@ -74,7 +77,7 @@ export class CwbError extends Error {
 
 type WeatherElement = {
   ElementName?: string;
-  Time?: Array<{ StartTime?: string; EndTime?: string; ElementValue?: Array<Record<string, string>> }>;
+  Time?: Array<{ StartTime?: string; EndTime?: string; DataTime?: string; ElementValue?: Array<Record<string, string>> }>;
 };
 
 type CWBLocation = {
@@ -274,6 +277,7 @@ export async function getDistrictWeather(
   const windEl = getVal("風速");
   const windMs = parseFloat(windEl?.WindSpeed ?? windEl?.value ?? "0") || 0;
   const windKmh = Math.round(windMs * 3.6);
+  const windBuckets = windBucketsFromCwb(weatherElements.find((e) => e.ElementName === "風速")?.Time);
 
   const rhEl = getVal("平均相對濕度");
   const humidity = parseInt(rhEl?.RelativeHumidity ?? rhEl?.value ?? "0", 10) || 0;
@@ -324,6 +328,7 @@ export async function getDistrictWeather(
     uvLevel,
     sunset: sunsetStr,
     rainfall12h,
+    windBuckets,
     stale,
     verdict,
     verdictType,

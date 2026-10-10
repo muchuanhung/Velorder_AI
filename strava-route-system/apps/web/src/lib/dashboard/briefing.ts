@@ -22,13 +22,16 @@ import {
   type VerdictLevel,
 } from "@/lib/routes/recon-geo";
 import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
-import { ACTIVITY, activityOfRouteType, type Activity } from "@/lib/routes/trip";
+import { ACTIVITY, activityOfRouteType, paceFor, type Activity } from "@/lib/routes/trip";
 import { summarizeRainfall, type LatLon, type StationRain } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
   isBeyondForecast,
   pickRainfallBucketForSegment,
+  pickWindForSegment,
+  type Pace,
   type RainfallBucket,
+  type WindBucket,
 } from "@/lib/cwb/forecast-eta";
 
 export interface DistrictWeather {
@@ -41,6 +44,8 @@ export interface DistrictWeather {
   periodLabel: string | null;
   /** 完整降雨機率時段，依各路段 ETA 挑選 */
   rainfallBuckets?: RainfallBucket[];
+  /** 風速時段，依各路段 ETA 挑選；沒有時用 windSpeedKmh（第一個時段） */
+  windBuckets?: WindBucket[];
   /** 路線 3 km 內雨量站的即時時雨量（mm/hr）；null 為附近沒有測站，未提供時不列入判定 */
   observedRainMmPerHr?: number | null;
   /** 重抓後仍是過期預報 */
@@ -58,19 +63,29 @@ const weatherOf = (seg: RouteSegment, lookup: WeatherLookup) =>
 function isOutOfCoverage(
   seg: RouteSegment,
   w: DistrictWeather,
-  { departureTime, speedKmh = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
+  { departureTime, pace = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
 ): boolean {
   if (!departureTime || !w.rainfallBuckets?.length) return false;
-  return isBeyondForecast(seg.sampleKms, departureTime, w.rainfallBuckets, speedKmh);
+  return isBeyondForecast(seg.sampleKms, departureTime, w.rainfallBuckets, pace);
 }
 
 function bucketForSegment(
   seg: RouteSegment,
   w: DistrictWeather,
-  { departureTime, speedKmh = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
+  { departureTime, pace = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
 ): RainfallBucket | null {
   if (!departureTime || !w.rainfallBuckets?.length) return null;
-  return pickRainfallBucketForSegment(seg.sampleKms, departureTime, w.rainfallBuckets, speedKmh);
+  return pickRainfallBucketForSegment(seg.sampleKms, departureTime, w.rainfallBuckets, pace);
+}
+
+/** 路段行經時間的風速（km/h）；沒有出發時間或風速時段時退回第一個時段 */
+function windForSegment(
+  seg: RouteSegment,
+  w: DistrictWeather,
+  { departureTime, pace = DEFAULT_CYCLING_SPEED_KMH }: ApplyWeatherOptions
+): number {
+  if (!departureTime || !w.windBuckets?.length) return w.windSpeedKmh;
+  return pickWindForSegment(seg.sampleKms, departureTime, w.windBuckets, pace) ?? w.windSpeedKmh;
 }
 
 /** CWB condition → 路段 condition */
@@ -147,9 +162,10 @@ function nearestIndex(sorted: number[], target: number): number {
 }
 
 export interface ApplyWeatherOptions {
-  /** 出發時間；提供時各路段的降雨機率改用其 ETA 所在的時段 */
+  /** 出發時間；提供時各路段的降雨機率、風速改用其 ETA 所在的時段 */
   departureTime?: Date;
-  speedKmh?: number;
+  /** 行進速度（均速或依爬升修正的耗時函式），預設自行車均速 */
+  pace?: Pace;
 }
 
 /**
@@ -165,7 +181,7 @@ export function applyWeather(route: Route, lookup: WeatherLookup, options: Apply
       return {
         ...seg,
         rainProbability: bucketForSegment(seg, w, options)?.pop ?? w.rainProbability,
-        windSpeed: w.windSpeedKmh,
+        windSpeed: windForSegment(seg, w, options),
         temperature: w.temperature,
         condition: w.condition,
         hasWeather: true,
@@ -253,7 +269,8 @@ export function briefRoute(
   const defaultActivity = activityOfRouteType(route.type);
   const tripActivity = activity ?? defaultActivity;
   const speedKmh = ACTIVITY[tripActivity].speedKmh;
-  const weatherOptions: ApplyWeatherOptions = { departureTime: departure, speedKmh };
+  const pace = paceFor(tripActivity, route.elevationProfile);
+  const weatherOptions: ApplyWeatherOptions = { departureTime: departure, pace };
   const enriched = applyWeather(route, lookup, weatherOptions);
   const stages = deriveStages(enriched);
   const roadEvents = matchEventsToRoute(events, buildRoutePolylineKm(route), { now });
@@ -281,7 +298,7 @@ export function briefRoute(
     elevationProfile: route.elevationProfile,
     segments: enriched.segments,
     eventsFailed: routeEventsFailed === undefined ? [] : routeEventsFailed,
-    departureSuggestion: suggest ? suggestDeparture(route, lookup, { now, speedKmh }) : null,
+    departureSuggestion: suggest ? suggestDeparture(route, lookup, { now, pace }) : null,
     departure: departure.toISOString(),
     activity: tripActivity,
     speedKmh,
@@ -338,7 +355,7 @@ function weatherRankAt(
 export function suggestDeparture(
   route: Route,
   lookup: WeatherLookup,
-  { now, speedKmh }: { now: Date; speedKmh: number }
+  { now, pace }: { now: Date; pace: Pace }
 ): DepartureSuggestion | null {
   const steps = (SUGGEST_HORIZON_H * 60) / SUGGEST_STEP_MIN;
   const ranked: { departure: Date; rank: number | null }[] = [];
@@ -347,7 +364,7 @@ export function suggestDeparture(
     const rank = weatherRankAt(
       route,
       lookup,
-      { departureTime: departure, speedKmh },
+      { departureTime: departure, pace },
       i * SUGGEST_STEP_MIN <= OBSERVED_RAIN_RELEVANT_MIN
     );
     ranked.push({ departure, rank });

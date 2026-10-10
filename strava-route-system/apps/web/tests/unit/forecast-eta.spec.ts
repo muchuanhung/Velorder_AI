@@ -5,6 +5,8 @@ import {
   pickRainfallBucketByEta,
   pickRainfallBucketForSegment,
   isBeyondForecast,
+  pickWindForSegment,
+  windBucketsFromCwb,
   type RainfallBucket,
 } from "@/lib/cwb/forecast-eta";
 
@@ -84,5 +86,40 @@ test.describe("超出預報時段", () => {
 
   test("沒有可用時段時不算超出（交給無資料處理）", () => {
     expect(isBeyondForecast([0, 60], at("16:00"), [])).toBe(false);
+  });
+});
+
+test.describe("風速時段", () => {
+  test("有起訖時間時直接用；風速 m/s 換算 km/h", () => {
+    const b = windBucketsFromCwb([
+      { StartTime: at("06:00").toISOString(), EndTime: at("09:00").toISOString(), ElementValue: [{ WindSpeed: "5" }] },
+    ]);
+    expect(b).toEqual([{ startTime: at("06:00").toISOString(), endTime: at("09:00").toISOString(), kmh: 18 }]);
+  });
+
+  test("只有時間點時以到下一個時間點為一段，最後一段沿用前一段長度；缺值略過", () => {
+    const b = windBucketsFromCwb([
+      { DataTime: at("06:00").toISOString(), ElementValue: [{ WindSpeed: "3" }] },
+      { DataTime: at("09:00").toISOString(), ElementValue: [{ WindSpeed: "12" }] },
+      { DataTime: at("12:00").toISOString(), ElementValue: [{}] },
+    ]);
+    expect(b.map((x) => [x.endTime, x.kmh])).toEqual([
+      [at("09:00").toISOString(), 11],
+      [at("12:00").toISOString(), 43],
+    ]);
+    expect(windBucketsFromCwb(undefined)).toEqual([]);
+  });
+
+  test("路段行經時間重疊的時段取最大風速；不重疊取 ETA 之後第一段", () => {
+    const wind = [
+      { startTime: at("08:00").toISOString(), endTime: at("10:00").toISOString(), kmh: 10 },
+      { startTime: at("10:00").toISOString(), endTime: at("12:00").toISOString(), kmh: 55 },
+    ];
+    // 0–20 km、08:00 出發、20 km/h：08:00–09:00 只碰第一段
+    expect(pickWindForSegment([0, 20], at("08:00"), wind)).toBe(10);
+    // 20–60 km：09:00–11:00 橫跨兩段，取較大
+    expect(pickWindForSegment([20, 60], at("08:00"), wind)).toBe(55);
+    expect(pickWindForSegment([0], at("07:00"), wind)).toBe(10);
+    expect(pickWindForSegment([0], at("08:00"), [])).toBeNull();
   });
 });

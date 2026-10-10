@@ -13,7 +13,7 @@ import {
   type ChartDataPoint,
 } from "@/lib/routes/recon-geo";
 import { useReconPosition } from "@/hooks/useReconPosition";
-import { etaLabel } from "@/lib/routes/trip";
+import { etaLabel, paceFor } from "@/lib/routes/trip";
 import { roadEventsOf, verdictOf, type RouteBriefingState } from "@/hooks/useRouteBriefing";
 import { RouteVerdictBar } from "./recon/route-verdict-bar";
 import { HazardList } from "./recon/hazard-list";
@@ -66,7 +66,8 @@ export function ReconView({
   const etaOf = useMemo(() => {
     if (!trip) return undefined;
     const now = new Date();
-    return (km: number) => etaLabel(km, trip, now);
+    const pace = paceFor(trip.activity, trip.elevationProfile);
+    return (km: number) => etaLabel(km, trip.departure, pace, now);
   }, [trip]);
 
   const chartData = useMemo<ChartDataPoint[]>(
