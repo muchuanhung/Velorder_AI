@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createGeometry, drawDawnFrame, DESIGN_H, DESIGN_W, type DawnImages } from "@/components/auth/dawn-scene";
+import { createGeometry, drawDawnFrame, DESIGN_H, DESIGN_W, mileLabelsRightEdge, type DawnImages } from "@/components/auth/dawn-scene";
 
 const SRC = { bg: "/landing/dawn-bg.webp", front: "/landing/dawn-front.webp" } as const;
 /** 畫面比例和設計稿不同時，垂直方向依這個比例裁切（多裁天空、保留山路） */
 const ANCHOR_Y = 0.6;
 const DESKTOP = "(min-width: 1024px)";
+/** 里程牌右緣和登入卡左緣至少留的距離（CSS px） */
+const CARD_GAP = 16;
+/** 登入卡（LoginView 標上 data-auth-card），場景依它的位置往左推 */
+const CARD_SELECTOR = "[data-auth-card]";
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -44,11 +48,28 @@ export function DawnSceneBackground() {
       canvas.width = Math.round(r.width * dpr);
       canvas.height = Math.round(r.height * dpr);
     };
+    /**
+     * 等比放大到蓋滿畫布後置中。頁面變高（例如精選路線撐高左欄）時放大倍率變大，路線右側的里程牌會滑進登入卡底下，
+     * 所以在仍蓋滿畫布的範圍內把場景往左推；推到底仍被蓋住的里程牌，由 drawDawnFrame 改畫到路的另一側。
+     */
+    const layout = () => {
+      const cw = canvas.width, ch = canvas.height, s = Math.max(cw / DESIGN_W, ch / DESIGN_H);
+      const ty = (ch - DESIGN_H * s) * ANCHOR_Y, center = (cw - DESIGN_W * s) / 2;
+      const card = document.querySelector(CARD_SELECTOR)?.getBoundingClientRect();
+      const r = canvas.getBoundingClientRect();
+      if (!card || card.width === 0 || r.width === 0) return { s, tx: center, ty, cover: undefined };
+      const k = cw / r.width;
+      const toDesignY = (y: number) => ((y - r.top) * k - ty) / s;
+      const band = { top: toDesignY(card.top), bottom: toDesignY(card.bottom) };
+      const limit = (card.left - r.left - CARD_GAP) * k, right = mileLabelsRightEdge(geometry, band);
+      const tx = right === null ? center : Math.max(cw - DESIGN_W * s, Math.min(center, limit - right * s));
+      return { s, tx, ty, cover: { left: (limit - tx) / s, ...band } };
+    };
     const draw = (t: number) => {
       if (!images) return;
-      const s = Math.max(canvas.width / DESIGN_W, canvas.height / DESIGN_H);
-      ctx.setTransform(s, 0, 0, s, (canvas.width - DESIGN_W * s) / 2, (canvas.height - DESIGN_H * s) * ANCHOR_Y);
-      drawDawnFrame(ctx, images, geometry, t, reduce, fonts);
+      const { s, tx, ty, cover } = layout();
+      ctx.setTransform(s, 0, 0, s, tx, ty);
+      drawDawnFrame(ctx, images, geometry, t, reduce, fonts, cover);
     };
     const loop = (now: number) => {
       draw((now - start) / 1000);

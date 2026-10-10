@@ -103,11 +103,65 @@ export interface DawnFonts {
   mono: string;
 }
 
+const MILE_LABEL_HALF_W = 21, MILE_LABEL_HALF_H = 11;
+
+/** 畫面上被 HTML 蓋住的區域（設計稿座標），例如右側登入卡；右側一律視為延伸到畫面右緣 */
+export interface DawnCover {
+  left: number;
+  top: number;
+  bottom: number;
+}
+
+/**
+ * 里程牌中心點（設計稿座標）：預設放在路的外側並套 mileLabelOffset；flip 時改放到路的另一側（不套位移），
+ * 給會被登入卡蓋住的里程牌用。
+ */
+function mileLabelCenter(g: DawnGeometry, km: number, flip = false): Pt {
+  const last = g.road.length - 1, j = Math.min(last, Math.round((km / ROUTE_KM) * last));
+  const p = g.road[j]!, n = g.normals[j]!, r = roadWidth(p[1]), side = (n[0] >= 0 ? 1 : -1) * (flip ? -1 : 1);
+  const [ox, oy] = flip ? [0, 0] : (P.mileLabelOffset[km] ?? [0, 0]);
+  return [p[0] + n[0] * r * 0.9 * side + side * 20 + ox, p[1] + n[1] * r * 0.9 * side + oy];
+}
+
+const covered = ([x, y]: Pt, c: DawnCover | undefined) =>
+  !!c && x + MILE_LABEL_HALF_W > c.left && y + MILE_LABEL_HALF_H > c.top && y - MILE_LABEL_HALF_H < c.bottom;
+
+/** 里程牌位置：外側被蓋住就改放路的另一側；兩側都被蓋住時留在外側，往左推到 cover 左緣外 */
+function mileLabelPlacement(g: DawnGeometry, km: number, cover: DawnCover | undefined): Pt {
+  const outer = mileLabelCenter(g, km);
+  if (!cover || !covered(outer, cover)) return outer;
+  const flipped = mileLabelCenter(g, km, true);
+  if (!covered(flipped, cover)) return flipped;
+  return [cover.left - MILE_LABEL_HALF_W, outer[1]];
+}
+
+/**
+ * 和 cover 垂直範圍重疊的里程牌中，最右緣的 x（設計稿座標）；呼叫端據此把場景往左推，讓里程牌露在登入卡左側。
+ * 示警卡都在路的左側，不需要算進來。沒有重疊的里程牌時回傳 null。
+ */
+export function mileLabelsRightEdge(g: DawnGeometry, cover: Omit<DawnCover, "left">): number | null {
+  let right: number | null = null;
+  for (let s = 0; s <= LEVELS.length; s++) {
+    const [x, y] = mileLabelCenter(g, s * 4);
+    if (covered([x, y], { ...cover, left: -Infinity })) right = Math.max(right ?? -Infinity, x + MILE_LABEL_HALF_W);
+  }
+  return right;
+}
+
 /**
  * 畫一格。ctx 須已轉換到設計稿座標（1600×1000）。
  * t：開場後經過的秒數；reduce：減少動態效果時傳 true，畫判定與示警都完成的靜態畫面。
+ * cover：被登入卡蓋住的區域；落在裡面的里程牌改畫到路的另一側或 cover 左緣外。
  */
-export function drawDawnFrame(ctx: CanvasRenderingContext2D, img: DawnImages, g: DawnGeometry, t: number, reduce: boolean, fonts: DawnFonts) {
+export function drawDawnFrame(
+  ctx: CanvasRenderingContext2D,
+  img: DawnImages,
+  g: DawnGeometry,
+  t: number,
+  reduce: boolean,
+  fonts: DawnFonts,
+  cover?: DawnCover
+) {
   const W = DESIGN_W, H = DESIGN_H, S = g.road, N = g.normals, T = reduce ? 6 : t;
   const [sx, sy] = SUN;
   ctx.drawImage(img.bg, 0, 0, W, H);
@@ -251,13 +305,11 @@ export function drawDawnFrame(ctx: CanvasRenderingContext2D, img: DawnImages, g:
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (let s = 0; s <= LEVELS.length; s++) {
-    const j = indexAt(s * 4);
-    if (j > prog + 0.5) break;
-    const p = S[j]!, n = N[j]!, r = roadWidth(p[1]), side = n[0] >= 0 ? 1 : -1, [ox, oy] = P.mileLabelOffset[s * 4] ?? [0, 0];
-    const x = p[0] + n[0] * r * 0.9 * side + side * 20 + ox, y = p[1] + n[1] * r * 0.9 * side + oy;
+    if (indexAt(s * 4) > prog + 0.5) break;
+    const [x, y] = mileLabelPlacement(g, s * 4, cover);
     ctx.fillStyle = "rgba(251,250,244,.95)";
     ctx.beginPath();
-    ctx.roundRect(x - 21, y - 11, 42, 22, 5);
+    ctx.roundRect(x - MILE_LABEL_HALF_W, y - MILE_LABEL_HALF_H, MILE_LABEL_HALF_W * 2, MILE_LABEL_HALF_H * 2, 5);
     ctx.fill();
     ctx.fillStyle = "#1f2b20";
     ctx.fillText(`${s * 4}K`, x, y + 1);
