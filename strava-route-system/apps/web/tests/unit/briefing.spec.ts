@@ -125,6 +125,24 @@ test.describe("briefRoute", () => {
     expect(b.periodLabel).toBe("08:00–12:00");
   });
 
+  test("預報時段跨日：標出「明日」，不顯示成 18:00–18:00", () => {
+    // 21:50 判讀、明日 03:50 出發；0 km 落在今晚 18:00–明日 06:00，80 km（07:50）落在明日 06:00–18:00
+    const at = (iso: string) => new Date(`2026-10-${iso}:00+08:00`);
+    const overnight: RainfallBucket[] = [
+      { startTime: "2026-10-01T18:00:00+08:00", endTime: "2026-10-02T06:00:00+08:00", pop: 20, label: "18:00", endLabel: "06:00" },
+      { startTime: "2026-10-02T06:00:00+08:00", endTime: "2026-10-02T18:00:00+08:00", pop: 20, label: "06:00", endLabel: "18:00" },
+    ];
+    const route = makeRoute({ distance: 90, segments: [segment("士林區", [0, 10]), segment("北投區", [80, 90])] });
+    const lookup = lookupOf({
+      士林區: weather(20, { rainfallBuckets: overnight }),
+      北投區: weather(20, { rainfallBuckets: overnight }),
+    });
+    const now = at("01T21:50");
+    expect(briefRoute(route, lookup, { now, departure: at("02T03:50") }).periodLabel).toBe("18:00–明日 18:00");
+    // 起訖都在明日：日期只寫在開頭
+    expect(briefRoute(route, lookup, { now, departure: at("02T06:30") }).periodLabel).toBe("明日 06:00–18:00");
+  });
+
   test("指定出發時間：各段依該時間起算的 ETA 挑時段", () => {
     // 10:00 出發，0–20 km 落在 10:00–12:00 降雨 70%
     const route = makeRoute({ segments: [segment("士林區", [0, 20])] });

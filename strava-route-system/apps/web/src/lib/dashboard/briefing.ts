@@ -22,7 +22,7 @@ import {
   type VerdictLevel,
 } from "@/lib/routes/recon-geo";
 import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
-import { ACTIVITY, activityOfRouteType, paceFor, type Activity } from "@/lib/routes/trip";
+import { ACTIVITY, activityOfRouteType, formatClock, paceFor, type Activity } from "@/lib/routes/trip";
 import { summarizeRainfall, type LatLon, type StationRain } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
@@ -193,8 +193,11 @@ export function applyWeather(route: Route, lookup: WeatherLookup, options: Apply
   };
 }
 
-/** 判讀實際用到的預報時段：各路段 ETA 時段的最早開始到最晚結束；沒有時段資料時退回第一個路段的時段 */
-function usedPeriodLabel(route: Route, lookup: WeatherLookup, options: ApplyWeatherOptions): string | null {
+/**
+ * 判讀實際用到的預報時段：各路段 ETA 時段的最早開始到最晚結束；沒有時段資料時退回第一個路段的時段。
+ * 起訖不在 now 的同一天時加「明日」或日期，避免跨日時段顯示成「18:00–18:00」；迄與起同一天時只寫時分。
+ */
+function usedPeriodLabel(route: Route, lookup: WeatherLookup, options: ApplyWeatherOptions, now: Date): string | null {
   const used: RainfallBucket[] = [];
   let fallback: string | null = null;
   for (const seg of route.segments) {
@@ -207,7 +210,10 @@ function usedPeriodLabel(route: Route, lookup: WeatherLookup, options: ApplyWeat
   if (used.length === 0) return fallback;
   const first = used.reduce((a, b) => (Date.parse(b.startTime) < Date.parse(a.startTime) ? b : a));
   const last = used.reduce((a, b) => (Date.parse(b.endTime) > Date.parse(a.endTime) ? b : a));
-  return `${first.label}–${last.endLabel}`;
+  const from = formatClock(new Date(first.startTime), now), to = formatClock(new Date(last.endTime), now);
+  // formatClock 跨日時為「明日 HH:MM」或「MM/DD HH:MM」；迄與起同一天時省略日期
+  const day = (label: string) => label.slice(0, Math.max(0, label.lastIndexOf(" ")));
+  return `${from}–${day(from) === day(to) ? to.slice(to.lastIndexOf(" ") + 1) : to}`;
 }
 
 /** 只保留此路線經過的縣市（事件失敗清單是所有路線共用的） */
@@ -294,7 +300,7 @@ export function briefRoute(
     maxRain: withWeather.length ? Math.max(...withWeather.map((s) => s.rainProbability)) : null,
     maxWindKmh: withWeather.length ? Math.max(...withWeather.map((s) => s.windSpeed)) : null,
     temperature: temps.length ? { min: Math.min(...temps), max: Math.max(...temps) } : null,
-    periodLabel: usedPeriodLabel(route, lookup, weatherOptions),
+    periodLabel: usedPeriodLabel(route, lookup, weatherOptions, now),
     elevationProfile: route.elevationProfile,
     segments: enriched.segments,
     eventsFailed: routeEventsFailed === undefined ? [] : routeEventsFailed,
