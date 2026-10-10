@@ -26,8 +26,8 @@ const P = params as unknown as {
   routeKm: number;
   /** 0–20K 每 4K 一段的判定（示意） */
   levels: Level[];
-  /** TDX 示警與缺資料的位置（示意），side 為標示卡在路的哪一側，dy 為垂直位移 */
-  events: { km: number; kind: EventKind; label: string; side: 1 | -1; dy: number }[];
+  /** TDX 示警與未判定路段的位置（示意），side 為標示卡在路的哪一側，dx、dy 為水平、垂直位移 */
+  events: { km: number; kind: EventKind; label: string; side: 1 | -1; dx?: number; dy: number }[];
   /** 個別里程牌的位移 [dx, dy]，避免被登入卡蓋住 */
   mileLabelOffset: Record<string, Pt>;
   /** 山路控制點：x 為寬度比例、y 為設計稿座標 */
@@ -96,7 +96,6 @@ export function createGeometry(): DawnGeometry {
 export interface DawnImages {
   bg: CanvasImageSource;
   front: CanvasImageSource;
-  leaves: CanvasImageSource;
 }
 
 export interface DawnFonts {
@@ -269,7 +268,7 @@ export function drawDawnFrame(ctx: CanvasRenderingContext2D, img: DawnImages, g:
     const j = indexAt(e.km);
     if (j > prog) return;
     const [px, py] = lane(j, 0.22), r = roadWidth(S[j]![1]), side = e.side, appear = reduce ? 1 : clamp01((prog - j) / 12);
-    const lx = px + side * (side < 0 ? r * 0.9 + 44 : r * 1.2 + 70), ly = py + e.dy;
+    const lx = px + side * (side < 0 ? r * 0.9 + 44 : r * 1.2 + 70) + (e.dx ?? 0), ly = py + e.dy;
     ctx.globalAlpha = appear;
     ctx.strokeStyle = "rgba(251,250,244,.85)";
     ctx.lineWidth = 1.5;
@@ -291,15 +290,6 @@ export function drawDawnFrame(ctx: CanvasRenderingContext2D, img: DawnImages, g:
     ctx.fillText(text, bx + 40, ly + 1);
     ctx.globalAlpha = 1;
   });
-
-  // 右下前景葉片隨風擺動
-  const pivot: Pt = [W * 0.985, 1020], sway = Math.sin(T * 0.9) * 0.022 + Math.sin(T * 2.3) * 0.007;
-  ctx.save();
-  ctx.translate(pivot[0], pivot[1]);
-  ctx.rotate(sway);
-  ctx.translate(-pivot[0], -pivot[1]);
-  ctx.drawImage(img.leaves, 0, 0, W, H);
-  ctx.restore();
 
   // 晨光暖色微微起伏
   const warm = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * 0.8);
@@ -355,7 +345,7 @@ function drawSign(ctx: CanvasRenderingContext2D, kind: EventKind, x: number, y: 
     ctx.fillStyle = "#3b3f42";
     ctx.fillRect(x - s * 0.46, y + s * 0.36, s * 0.92, s * 0.1);
   } else {
-    // 缺資料：灰色問號
+    // 未判定：灰色問號
     ctx.fillStyle = "#fbfaf2";
     ctx.strokeStyle = "#8f948c";
     ctx.lineWidth = s * 0.1;

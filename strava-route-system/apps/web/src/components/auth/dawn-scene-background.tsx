@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { createGeometry, drawDawnFrame, DESIGN_H, DESIGN_W, type DawnImages } from "@/components/auth/dawn-scene";
 
-const SRC = { bg: "/landing/dawn-bg.webp", front: "/landing/dawn-front.webp", leaves: "/landing/dawn-leaves.webp" } as const;
+const SRC = { bg: "/landing/dawn-bg.webp", front: "/landing/dawn-front.webp" } as const;
 /** 畫面比例和設計稿不同時，垂直方向依這個比例裁切（多裁天空、保留山路） */
 const ANCHOR_Y = 0.6;
 const DESKTOP = "(min-width: 1024px)";
@@ -62,10 +62,10 @@ export function DawnSceneBackground() {
     });
     ro.observe(canvas);
 
-    Promise.all([loadImage(SRC.bg), loadImage(SRC.front), loadImage(SRC.leaves)])
-      .then(([bg, front, leaves]) => {
+    Promise.all([loadImage(SRC.bg), loadImage(SRC.front)])
+      .then(([bg, front]) => {
         if (cancelled) return;
-        images = { bg, front, leaves };
+        images = { bg, front };
         canvas.style.opacity = "1";
         if (reduce) draw(0);
         else {
