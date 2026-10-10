@@ -17,7 +17,7 @@ import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader, statusOfVerdict } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
 import { TripSettings } from "@/components/trip/trip-settings";
-import type { Activity } from "@/lib/routes/trip";
+import { formatClock, type Activity } from "@/lib/routes/trip";
 
 type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
 
@@ -217,7 +217,11 @@ export function RoutesClient({
                 route={selectedRoute}
                 verdict={verdict}
                 loading={briefing.loading}
-                bestTimeToRide={briefing.briefing?.bestTimeToRide}
+                departureLabel={(() => {
+                  const s = briefing.briefing?.departureSuggestion;
+                  if (!s) return null;
+                  return s.nowIsBest ? "現在" : formatClock(new Date(s.from), new Date());
+                })()}
               />
               {briefing.briefing && (
                 <TripSettings
