@@ -220,9 +220,10 @@
     c.fillStyle = shade(c); c.fillRect(0, 600, W, 400);
     fc.globalCompositeOperation = "source-atop"; fc.fillStyle = shade(fc); fc.fillRect(0, 600, W, 400); fc.globalCompositeOperation = "source-over";
     st.front = fl;
-    const lit = c.createRadialGradient(cx0, 200, 50, cx0, 200, W * 0.6);
-    lit.addColorStop(0, "rgba(255,232,170,.2)"); lit.addColorStop(1, "rgba(255,232,170,0)");
-    c.fillStyle = lit; c.fillRect(0, 0, W, 1000);
+    const lit = (g2) => { const l = g2.createRadialGradient(cx0, 200, 50, cx0, 200, W * 0.6); l.addColorStop(0, "rgba(255,232,170,.2)"); l.addColorStop(1, "rgba(255,232,170,0)"); return l; };
+    c.fillStyle = lit(c); c.fillRect(0, 0, W, 1000);
+    // 遮擋層的樹也要打同一道光，否則比旁邊背景的樹暗，路兩側會出現一塊深色區域
+    fc.globalCompositeOperation = "source-atop"; fc.fillStyle = lit(fc); fc.fillRect(0, 0, W, 1000); fc.globalCompositeOperation = "source-over";
     st.bg = off; st.S = S; st.N = N; st.rw = rw; st.W = W; st.cx0 = cx0; st.road = road;
   }
 
