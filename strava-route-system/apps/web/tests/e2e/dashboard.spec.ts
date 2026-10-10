@@ -40,7 +40,11 @@ test.describe("Dashboard 今日判讀", () => {
     await expect(
       page.getByRole("navigation", { name: "主要導覽" }).getByRole("link", { name: "今日判讀" }).first()
     ).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("link", { name: "個人資料" }).first()).toBeVisible();
+    // 桌機：個人資料不在分頁裡，改在右側帳號選單
+    await expect(page.getByRole("navigation", { name: "主要導覽" }).first().getByRole("link", { name: "個人資料" })).toHaveCount(0);
+    await page.getByRole("button", { name: /^帳號選單/ }).click();
+    await expect(page.getByRole("menuitem", { name: "個人資料" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "登出" })).toBeVisible();
   });
 
   test("「看逐段示警與 CCTV」帶著目前路線前往 /routes", async ({ page }) => {
