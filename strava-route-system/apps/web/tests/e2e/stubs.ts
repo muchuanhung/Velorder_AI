@@ -1,19 +1,78 @@
 import type { Page } from "@playwright/test";
 import type { CCTVFeed, Route } from "@/lib/routes/route-data";
 import type { RoadEvent } from "@/lib/routes/road-events";
+import { briefRoute, districtKey, type DistrictWeather } from "@/lib/dashboard/briefing";
 
 /**
- * 以假資料攔截瀏覽器端 API，測試不打真的 CWB／TDX，結果固定且不需要金鑰
+ * 以假資料攔截瀏覽器端 API，測試不打真的 CWB／TDX，結果固定且不需要金鑰。
+ *
+ * 路線頁的判讀由伺服器算好，瀏覽器向 /api/routes/briefing 取；伺服器端對 CWB／TDX 的請求攔不到，
+ * 所以在這一層攔截：用與伺服器相同的純函式 briefRoute，拿這裡設定的假天氣、假路況算出判讀回給頁面。
+ * 判定規則是真的在跑，只有資料來源是假的。
  */
 
+type Weather = Record<string, number> | "error";
+type Events = RoadEvent[] | "error";
+
+interface StubState {
+  routes: Route[];
+  weather: Weather;
+  events: Events;
+}
+
+const states = new WeakMap<Page, StubState>();
+
+/** 依目前設定算出某條路線的判讀（與 get-briefing.server 同一個 briefRoute） */
+function briefingFor(state: StubState, routeId: string) {
+  const route = state.routes.find((r) => r.id === routeId);
+  if (!route) return null;
+  const lookup = new Map<string, DistrictWeather>();
+  if (state.weather !== "error") {
+    for (const seg of route.segments) {
+      if (!seg.county || !seg.districtZh || !(seg.districtZh in state.weather)) continue;
+      const pop = state.weather[seg.districtZh]!;
+      lookup.set(districtKey(seg.county, seg.districtZh), {
+        rainProbability: pop,
+        windSpeedKmh: 8,
+        temperature: 25,
+        condition: pop >= 60 ? "rainy" : "cloudy",
+        periodLabel: "今天 06:00–18:00",
+      });
+    }
+  }
+  return briefRoute(route, lookup, {
+    events: state.events === "error" ? [] : state.events,
+    eventsFailed: state.events === "error" ? null : [],
+    suggest: true,
+  });
+}
+
+/** 第一次設定時註冊判讀攔截；之後只改設定，請求當下才讀，順序不拘 */
+function stateOf(page: Page): StubState {
+  let state = states.get(page);
+  if (!state) {
+    const created: StubState = { routes: [], weather: {}, events: [] };
+    states.set(page, created);
+    state = created;
+    void page.route("**/api/routes/briefing?**", (r) => {
+      const id = new URL(r.request().url()).searchParams.get("route") ?? "";
+      const briefing = briefingFor(created, id);
+      return briefing ? r.fulfill({ json: briefing }) : r.fulfill({ status: 404, json: { error: "找不到路線" } });
+    });
+  }
+  return state;
+}
+
 export async function stubRoutes(page: Page, routes: Route[]) {
+  stateOf(page).routes = routes;
   await page.route("**/api/routes/gpx", (r) => r.fulfill({ json: routes }));
-  // 測試路線位於台北，不攔截會打到真的 TDX，附近剛好有事件就會改變判定；預設沒有事件
+  // 預設沒有路況事件
   await stubEvents(page, []);
 }
 
-/** 路況事件；"error" 模擬 TDX 失敗。後註冊的攔截優先，可在 stubRoutes 之後覆寫 */
-export async function stubEvents(page: Page, events: RoadEvent[] | "error") {
+/** 路況事件；"error" 模擬 TDX 失敗（判讀端 eventsFailed 為 null） */
+export async function stubEvents(page: Page, events: Events) {
+  stateOf(page).events = events;
   await page.route("**/api/road-events?**", (r) =>
     events === "error"
       ? r.fulfill({ status: 500, json: { error: "TDX 請求失敗" } })
@@ -21,8 +80,10 @@ export async function stubEvents(page: Page, events: RoadEvent[] | "error") {
   );
 }
 
-/** 依行政區回傳降雨機率；"error" 模擬 CWB 失敗 */
-export async function stubWeather(page: Page, rainByDistrict: Record<string, number> | "error") {
+/** 依行政區設定降雨機率；"error" 模擬 CWB 失敗（判讀端沒有任何天氣） */
+export async function stubWeather(page: Page, rainByDistrict: Weather) {
+  stateOf(page).weather = rainByDistrict;
+  // 仍在瀏覽器端直接查天氣的頁面（例：/lab）用這個
   await page.route("**/api/weather/cwb?**", (r) => {
     if (rainByDistrict === "error") {
       return r.fulfill({ status: 500, json: { error: "CWB 請求失敗" } });
