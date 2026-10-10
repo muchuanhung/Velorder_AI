@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
 import type { ReconVerdict } from "@/lib/routes/recon-geo";
 import type { RouteEvent } from "@/lib/routes/road-events";
+import { withTrip, type TripParams } from "@/lib/routes/trip";
 
 export interface RouteEventsState {
   events: RouteEvent[];
@@ -20,8 +21,9 @@ export interface RouteBriefingState {
   error: boolean;
 }
 
-/** 單一路線的伺服器端判讀；換路線時先清空，避免顯示上一條的判定 */
-export function useRouteBriefing(routeId: string | null | undefined): RouteBriefingState {
+/** 單一路線的伺服器端判讀；換路線或行程設定時先清空，避免顯示上一次的判定 */
+export function useRouteBriefing(routeId: string | null | undefined, trip: TripParams = {}): RouteBriefingState {
+  const { depart, activity } = trip;
   const [state, setState] = useState<RouteBriefingState>({ briefing: null, loading: false, error: false });
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export function useRouteBriefing(routeId: string | null | undefined): RouteBrief
     }
     let cancelled = false;
     setState({ briefing: null, loading: true, error: false });
-    fetch(`/api/routes/briefing?route=${encodeURIComponent(routeId)}`)
+    fetch(withTrip(`/api/routes/briefing?route=${encodeURIComponent(routeId)}`, { depart, activity }))
       .then((res) => {
         if (!res.ok) throw new Error(`路線判讀 ${res.status}`);
         return res.json() as Promise<RouteBriefing>;
@@ -45,7 +47,7 @@ export function useRouteBriefing(routeId: string | null | undefined): RouteBrief
     return () => {
       cancelled = true;
     };
-  }, [routeId]);
+  }, [routeId, depart, activity]);
 
   return state;
 }

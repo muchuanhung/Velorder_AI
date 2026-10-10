@@ -125,6 +125,38 @@ test.describe("briefRoute", () => {
     expect(b.periodLabel).toBe("08:00–12:00");
   });
 
+  test("指定出發時間：各段依該時間起算的 ETA 挑時段", () => {
+    // 10:00 出發，0–20 km 落在 10:00–12:00 降雨 70%
+    const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
+    const lookup = lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) });
+    const depart10 = new Date("2026-10-01T10:00:00+08:00");
+    expect(briefRoute(route, lookup, { now: AT_8AM }).verdict.level).toBe("clear");
+    const b = briefRoute(route, lookup, { now: AT_8AM, departure: depart10 });
+    expect(b.verdict.level).toBe("risky");
+    expect(b.departure).toBe(depart10.toISOString());
+  });
+
+  test("運動類型改變均速：健行較慢，遠端路段 ETA 落到下雨時段", () => {
+    // 北投區 8–10 km：自行車 08:24–08:30 仍在 10%；健行 4 km/h → 10:00–10:30 落在 70%
+    const route = makeRoute({ distance: 10, segments: [segment("士林區", [0, 2]), segment("北投區", [8, 10])] });
+    const lookup = lookupOf({
+      士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+      北投區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }),
+    });
+    const cycling = briefRoute(route, lookup, { now: AT_8AM });
+    expect(cycling.activity).toBe("cycling");
+    expect(cycling.speedKmh).toBe(20);
+    expect(cycling.verdict.level).toBe("clear");
+    const hiking = briefRoute(route, lookup, { now: AT_8AM, activity: "hiking" });
+    expect(hiking.speedKmh).toBe(4);
+    expect(hiking.verdict.level).toBe("risky");
+  });
+
+  test("未指定運動類型時依路線類型", () => {
+    const route = { ...makeRoute({ segments: [segment("士林區", [0, 20])] }), type: "跑步" as const };
+    expect(briefRoute(route, lookupOf({ 士林區: weather(10) }), { now: AT_8AM }).activity).toBe("running");
+  });
+
   test("預報過期時為未判定，原因 stale", () => {
     const route = makeRoute({ segments: [segment("士林區", [0, 20])] });
     const b = briefRoute(route, lookupOf({ 士林區: weather(10, { stale: true }) }), { now: AT_8AM });

@@ -1,0 +1,66 @@
+import { test, expect } from "@playwright/test";
+import {
+  ACTIVITY,
+  activityOfRouteType,
+  departureAfter,
+  etaLabel,
+  formatClock,
+  parseActivity,
+  parseDeparture,
+  withTrip,
+} from "@/lib/routes/trip";
+
+const NOW = new Date("2026-10-01T08:03:00+08:00");
+
+test.describe("行程設定", () => {
+  test("運動類型依路線類型決定預設均速", () => {
+    expect(activityOfRouteType("自行車")).toBe("cycling");
+    expect(activityOfRouteType("跑步")).toBe("running");
+    expect(activityOfRouteType("健行")).toBe("hiking");
+    expect(activityOfRouteType("雪巴運動")).toBe("hiking");
+    expect(activityOfRouteType("混合")).toBe("cycling");
+    expect(activityOfRouteType(undefined)).toBe("cycling");
+    expect(ACTIVITY.running.speedKmh).toBeLessThan(ACTIVITY.cycling.speedKmh);
+    expect(ACTIVITY.hiking.speedKmh).toBeLessThan(ACTIVITY.running.speedKmh);
+  });
+
+  test("運動類型參數只接受已知值", () => {
+    expect(parseActivity("hiking")).toBe("hiking");
+    expect(parseActivity("swimming")).toBeNull();
+    expect(parseActivity(null)).toBeNull();
+  });
+
+  test("出發時間：無效、太舊或太遠一律視為現在（null）", () => {
+    expect(parseDeparture("2026-10-01T10:00:00+08:00", NOW)?.toISOString()).toBe("2026-10-01T02:00:00.000Z");
+    expect(parseDeparture("2026-10-01T07:55:00+08:00", NOW)).not.toBeNull(); // 15 分鐘內的過去仍可
+    expect(parseDeparture("2026-10-01T07:00:00+08:00", NOW)).toBeNull();
+    expect(parseDeparture("2026-10-09T08:00:00+08:00", NOW)).toBeNull();
+    expect(parseDeparture("明天早上", NOW)).toBeNull();
+    expect(parseDeparture(undefined, NOW)).toBeNull();
+  });
+
+  test("幾小時後出發取整 10 分鐘；0 小時為現在", () => {
+    expect(departureAfter(NOW, 0)).toBe(NOW);
+    expect(departureAfter(NOW, 2).toISOString()).toBe("2026-10-01T02:00:00.000Z");
+  });
+
+  test("時間以台灣時間顯示，跨日標示明日", () => {
+    expect(formatClock(new Date("2026-10-01T09:40:00+08:00"), NOW)).toBe("09:40");
+    expect(formatClock(new Date("2026-10-02T06:05:00+08:00"), NOW)).toBe("明日 06:05");
+    expect(formatClock(new Date("2026-10-04T06:05:00+08:00"), NOW)).toBe("10/04 06:05");
+  });
+
+  test("預估到達時間＝出發時間＋里程÷均速", () => {
+    const trip = { departure: "2026-10-01T00:00:00.000Z", speedKmh: 20 }; // 08:00 出發
+    expect(etaLabel(30, trip, NOW)).toBe("09:30");
+    expect(etaLabel(30, { ...trip, speedKmh: 4 }, NOW)).toBe("15:30");
+  });
+
+  test("連結帶著行程設定", () => {
+    expect(withTrip("/routes?route=a", { depart: "2026-10-01T02:00:00.000Z", activity: "hiking" })).toBe(
+      "/routes?route=a&depart=2026-10-01T02%3A00%3A00.000Z&activity=hiking"
+    );
+    expect(withTrip("/routes", { activity: "running" })).toBe("/routes?activity=running");
+    expect(withTrip("/routes?route=a", {})).toBe("/routes?route=a");
+  });
+});

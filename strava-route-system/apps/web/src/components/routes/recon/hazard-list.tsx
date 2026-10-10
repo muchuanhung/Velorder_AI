@@ -1,36 +1,34 @@
 "use client";
 
-import { CloudRain, Wind, CloudLightning, TriangleAlert, Construction } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Hazard, HazardKind } from "@/lib/routes/recon-geo";
-import { CATEGORY_LABEL, groupRouteEvents, type RouteEvent } from "@/lib/routes/road-events";
+import type { Hazard } from "@/lib/routes/recon-geo";
+import { groupRouteEvents, type RouteEvent } from "@/lib/routes/road-events";
 import type { RouteEventsState } from "@/hooks/useRouteBriefing";
+import { HAZARD_ROW_GRID, HazardRowContent, NoticeRowContent } from "@/components/verdict/hazard-row";
 
-const KIND_ICON: Record<HazardKind, React.ComponentType<{ className?: string }>> = {
-  rain: CloudRain,
-  wind: Wind,
-  storm: CloudLightning,
-  event: TriangleAlert,
-};
+const ROW = cn(
+  HAZARD_ROW_GRID,
+  "cursor-pointer transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+);
 
-const ROW =
-  "grid w-full grid-cols-[4px_4.5rem_1fr] items-center gap-3 py-2.5 pr-2 text-left transition-colors cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+/** 里程 → 預估到達時間；沒有行程設定（例如沙盤頁）時不顯示 */
+type EtaOf = ((km: number) => string) | undefined;
 
 function HazardRows({
   hazards,
   positionKm,
   onJump,
+  etaOf,
 }: {
   hazards: Hazard[];
   positionKm: number;
   onJump: (km: number) => void;
+  etaOf: EtaOf;
 }) {
   return (
     <ul className="divide-y divide-border/60 border-y border-border/60">
       {hazards.map((h) => {
-        const Icon = KIND_ICON[h.kind];
         const isHere = positionKm >= h.startKm && positionKm <= h.endKm;
-        const risky = h.level === "risky";
         return (
           <li key={h.id}>
             <button
@@ -39,20 +37,7 @@ function HazardRows({
               aria-current={isHere ? "location" : undefined}
               className={cn(ROW, isHere && "bg-muted/60")}
             >
-              <span
-                className={cn("h-full min-h-6 rounded-full", risky ? "bg-destructive" : "bg-warning")}
-                aria-hidden
-              />
-              <span className="font-mono text-sm tabular-nums text-muted-foreground">
-                {h.startKm.toFixed(1)} km
-              </span>
-              <span className="flex min-w-0 items-center gap-2">
-                <Icon className={cn("h-4 w-4 shrink-0", risky ? "text-destructive" : "text-warning-strong")} />
-                <span className={cn("truncate text-sm font-medium", risky ? "text-destructive" : "text-foreground")}>
-                  {h.label}
-                </span>
-                <span className="sr-only">{risky ? "危險" : "注意"}</span>
-              </span>
+              <HazardRowContent hazard={h} eta={etaOf?.(h.startKm)} />
             </button>
           </li>
         );
@@ -62,20 +47,13 @@ function HazardRows({
 }
 
 /** 不影響判定的路況（施工、壅塞、活動）：中性色，點擊一樣跳到該處 */
-function NoticeRows({ events, onJump }: { events: RouteEvent[]; onJump: (km: number) => void }) {
+function NoticeRows({ events, onJump, etaOf }: { events: RouteEvent[]; onJump: (km: number) => void; etaOf: EtaOf }) {
   return (
     <ul className="divide-y divide-border/60 border-y border-border/60">
       {events.map((e) => (
         <li key={e.id}>
           <button type="button" onClick={() => onJump(e.km)} className={ROW}>
-            <span className="h-full min-h-6 rounded-full bg-border" aria-hidden />
-            <span className="font-mono text-sm tabular-nums text-muted-foreground">{e.km.toFixed(1)} km</span>
-            <span className="flex min-w-0 items-center gap-2">
-              <Construction className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span className="truncate text-sm">
-                {CATEGORY_LABEL[e.category]}：{e.description || e.title}
-              </span>
-            </span>
+            <NoticeRowContent event={e} eta={etaOf?.(e.km)} />
           </button>
         </li>
       ))}
@@ -103,11 +81,13 @@ export function HazardList({
   roadEvents,
   positionKm,
   onJump,
+  etaOf,
 }: {
   hazards: Hazard[];
   roadEvents?: RouteEventsState;
   positionKm: number;
   onJump: (km: number) => void;
+  etaOf?: EtaOf;
 }) {
   const { notices, routine } = groupRouteEvents(roadEvents?.events ?? []);
 
@@ -123,7 +103,7 @@ export function HazardList({
       {hazards.length === 0 ? (
         <p className="text-sm text-muted-foreground">沿途沒有示警</p>
       ) : (
-        <HazardRows hazards={hazards} positionKm={positionKm} onJump={onJump} />
+        <HazardRows hazards={hazards} positionKm={positionKm} onJump={onJump} etaOf={etaOf} />
       )}
 
       {notices.length > 0 && (
@@ -132,7 +112,7 @@ export function HazardList({
             沿線路況
             <span className="ml-1.5 font-normal tabular-nums text-muted-foreground">{notices.length}</span>
           </h4>
-          <NoticeRows events={notices} onJump={onJump} />
+          <NoticeRows events={notices} onJump={onJump} etaOf={etaOf} />
         </div>
       )}
 
@@ -142,7 +122,7 @@ export function HazardList({
             沿線 {routine.length} 處其他施工（多為道路維護）
             <span className="ml-1 text-primary group-open:hidden">展開</span>
           </summary>
-          <NoticeRows events={routine} onJump={onJump} />
+          <NoticeRows events={routine} onJump={onJump} etaOf={etaOf} />
         </details>
       )}
 

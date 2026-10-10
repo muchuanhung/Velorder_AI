@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { VerdictLevel } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
 import { UnknownReasons } from "@/components/verdict/unknown-reasons";
+import { withTrip, type TripParams } from "@/lib/routes/trip";
 
 /** 判定牌的顏色跟著狀態走：危險紅、注意琥珀；安全與未判定用中性底，絕不用品牌綠表示危險 */
 const LEVEL: Record<
@@ -52,7 +53,15 @@ const tempRange = ({ min, max }: { min: number; max: number }) => (min === max ?
  * 今日判讀主卡：路線名 → 判定牌 → 天氣列 → 替代路線與詳情入口。
  * 做決定需要的資訊集中在同一張卡，替代路線緊接在判定下方。
  */
-export function BriefingCard({ featured, alternative }: { featured: RouteBriefing; alternative: RouteBriefing | null }) {
+export function BriefingCard({
+  featured,
+  alternative,
+  trip,
+}: {
+  featured: RouteBriefing;
+  alternative: RouteBriefing | null;
+  trip: TripParams;
+}) {
   const { verdict } = featured;
   const s = LEVEL[verdict.level];
   const Icon = s.icon;
@@ -117,7 +126,7 @@ export function BriefingCard({ featured, alternative }: { featured: RouteBriefin
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-dashed border-border pt-4 text-sm">
         {alternative && (
           <Link
-            href={`/dashboard?route=${encodeURIComponent(alternative.id)}`}
+            href={withTrip(`/dashboard?route=${encodeURIComponent(alternative.id)}`, trip)}
             className="group flex min-w-0 items-center gap-2"
           >
             <span
@@ -135,10 +144,10 @@ export function BriefingCard({ featured, alternative }: { featured: RouteBriefin
           </Link>
         )}
         <Link
-          href={`/routes?route=${encodeURIComponent(featured.id)}`}
+          href={withTrip(`/routes?route=${encodeURIComponent(featured.id)}`, trip)}
           className="ml-auto inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 font-bold text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          查看路線示警
+          看逐段示警與 CCTV
           <ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>

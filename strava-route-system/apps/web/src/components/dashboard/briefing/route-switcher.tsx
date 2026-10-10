@@ -1,21 +1,46 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { withTrip, type TripParams } from "@/lib/routes/trip";
+
+/** 今日判讀只做快速切換；找路線、搜尋、篩選在路線頁 */
+const MAX_CHIPS = 5;
+
+/** 前 MAX_CHIPS 條；目前路線不在其中時換掉最後一個，確保看得到正在看哪一條 */
+function visibleRoutes<T extends { id: string }>(routes: T[], currentId: string): T[] {
+  const head = routes.slice(0, MAX_CHIPS);
+  if (head.some((r) => r.id === currentId)) return head;
+  const current = routes.find((r) => r.id === currentId);
+  return current ? [...head.slice(0, MAX_CHIPS - 1), current] : head;
+}
+
+const CHIP =
+  "inline-flex min-h-10 max-w-64 items-center rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors";
 
 /** 路線切換：純連結（?route=），可分享、可上一頁，不需客戶端狀態 */
-export function RouteSwitcher({ routes, currentId }: { routes: { id: string; name: string }[]; currentId: string }) {
+export function RouteSwitcher({
+  routes,
+  currentId,
+  trip,
+}: {
+  routes: { id: string; name: string }[];
+  currentId: string;
+  trip: TripParams;
+}) {
   if (routes.length < 2) return null;
+  const shown = visibleRoutes(routes, currentId);
   return (
     <nav aria-label="切換路線" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <ul className="flex w-max gap-2 pb-1">
-        {routes.map((r) => {
+        {shown.map((r) => {
           const active = r.id === currentId;
           return (
             <li key={r.id}>
               <Link
-                href={`/dashboard?route=${encodeURIComponent(r.id)}`}
+                href={withTrip(`/dashboard?route=${encodeURIComponent(r.id)}`, trip)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-10 max-w-64 items-center rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors",
+                  CHIP,
                   active
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-card text-muted-foreground hover:text-foreground"
@@ -26,6 +51,14 @@ export function RouteSwitcher({ routes, currentId }: { routes: { id: string; nam
             </li>
           );
         })}
+        {routes.length > shown.length && (
+          <li>
+            <Link href={withTrip("/routes", trip)} className={cn(CHIP, "gap-1 border-dashed border-border text-primary hover:bg-muted/50")}>
+              全部 {routes.length} 條路線
+              <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+          </li>
+        )}
       </ul>
     </nav>
   );

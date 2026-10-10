@@ -5,12 +5,17 @@
 
 import { NextResponse } from "next/server";
 import { getRouteBriefing } from "@/lib/dashboard/get-briefing.server";
+import { parseActivity, parseDeparture } from "@/lib/routes/trip";
 
 export async function GET(request: Request) {
-  const routeId = new URL(request.url).searchParams.get("route");
+  const params = new URL(request.url).searchParams;
+  const routeId = params.get("route");
   if (!routeId) return NextResponse.json({ error: "缺少 route 參數" }, { status: 400 });
   try {
-    const briefing = await getRouteBriefing(routeId);
+    const briefing = await getRouteBriefing(routeId, {
+      departure: parseDeparture(params.get("depart"), new Date()) ?? undefined,
+      activity: parseActivity(params.get("activity")) ?? undefined,
+    });
     if (!briefing) return NextResponse.json({ error: "找不到路線" }, { status: 404 });
     return NextResponse.json(briefing, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {

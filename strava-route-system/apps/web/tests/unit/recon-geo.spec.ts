@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import {
+  windLevel,
   computeHazards,
   deriveStages,
   isWeatherHazard,
@@ -8,6 +9,16 @@ import {
   summarizeVerdict,
 } from "@/lib/routes/recon-geo";
 import { makeRoute, segment, slopeProfile, withWeather } from "../fixtures/route";
+
+test.describe("風速門檻（蒲福風級）", () => {
+  test("5 級起注意、7 級起危險；沿海常見的 36 km/h 為注意", () => {
+    expect(windLevel(28)).toBeNull();
+    expect(windLevel(29)).toBe("caution");
+    expect(windLevel(36)).toBe("caution");
+    expect(windLevel(49)).toBe("caution");
+    expect(windLevel(50)).toBe("risky");
+  });
+});
 
 test.describe("computeHazards 只計算天氣", () => {
   test("陡坡路線也只產生降雨、風、雷雨示警", () => {

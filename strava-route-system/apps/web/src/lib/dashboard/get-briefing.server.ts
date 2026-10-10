@@ -5,6 +5,7 @@
 
 import { loadRoutes } from "@/lib/routes/load-routes.server";
 import type { Route } from "@/lib/routes/route-data";
+import type { Activity } from "@/lib/routes/trip";
 import { getCountyRainfallStations, getDistrictWeather } from "@/lib/cwb/district-weather.server";
 import { getRoadEvents } from "@/lib/tdx/road-events.server";
 import {
@@ -30,10 +31,16 @@ export type DashboardBriefing =
       eventsFailed: string[] | null;
     };
 
-export async function getDashboardBriefing(routeId?: string): Promise<DashboardBriefing> {
+/** 行程設定：出發時間與運動類型；未指定為現在、依路線類型 */
+export interface TripOptions {
+  departure?: Date;
+  activity?: Activity;
+}
+
+export async function getDashboardBriefing(routeId?: string, trip: TripOptions = {}): Promise<DashboardBriefing> {
   const routes = await loadRoutes();
   if (routes.length === 0) return { status: "no-routes" };
-  const { briefings, weatherCoverage, eventsFailed } = await briefRoutes(routes);
+  const { briefings, weatherCoverage, eventsFailed } = await briefRoutes(routes, trip);
   const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 
   return {
@@ -54,13 +61,13 @@ export async function getPublicBriefings(limit = 3): Promise<RouteBriefing[]> {
 }
 
 /** 單一路線判讀（/routes 與 lab 頁用）；與 Dashboard 同一條流程，前端不再自行判定 */
-export async function getRouteBriefing(routeId: string): Promise<RouteBriefing | null> {
+export async function getRouteBriefing(routeId: string, trip: TripOptions = {}): Promise<RouteBriefing | null> {
   const route = (await loadRoutes()).find((r) => r.id === routeId);
   if (!route) return null;
-  return (await briefRoutes([route])).briefings[0] ?? null;
+  return (await briefRoutes([route], trip)).briefings[0] ?? null;
 }
 
-async function briefRoutes(routes: Route[]) {
+async function briefRoutes(routes: Route[], trip: TripOptions = {}) {
   const keys = routeDistrictKeys(routes);
   const counties = [...new Set(routes.flatMap((r) => r.segments.map((s) => s.county).filter((c): c is string => !!c)))];
   // 天氣與路況事件平行取得；事件失敗不影響天氣判讀
@@ -103,6 +110,8 @@ async function briefRoutes(routes: Route[]) {
     briefRoute(route, withRouteObservedRain(route, lookup, stationsByCounty), {
       events: eventsResult?.events ?? [],
       now,
+      departure: trip.departure ?? now,
+      activity: trip.activity,
       eventsFailed,
     })
   );
