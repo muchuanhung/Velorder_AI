@@ -102,7 +102,9 @@ export function TripSettings({
       </label>
       <p className="w-full text-xs text-muted-foreground">
         依 <span className="font-mono">{formatClock(new Date(departure), now)}</span> 出發、{ACTIVITY[activity].label}均速{" "}
-        {speedKmh} km/h 估算各段抵達時間，再對照該時段的預報。
+        {speedKmh} km/h
+        {ACTIVITY[activity].climbMinPer100m > 0 && `、每爬升 100 m 加 ${ACTIVITY[activity].climbMinPer100m} 分鐘`}{" "}
+        估算各段抵達時間，再對照該時段的預報。
       </p>
     </div>
   );
