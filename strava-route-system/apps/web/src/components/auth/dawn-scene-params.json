@@ -3,7 +3,7 @@
   "levels": ["go", "go", "slow", "slow", "stop"],
   "events": [
     { "km": 9.6, "kind": "work", "label": "TDX 施工・單線通行", "side": -1, "dy": 125 },
-    { "km": 14, "kind": "rain", "label": "氣象署 大雨・慢行", "side": -1, "dx": -5, "dy": -113 },
+    { "km": 14, "kind": "rain", "label": "氣象署 大雨・慢行", "side": -1, "dx": -20, "dy": -68 },
     { "km": 17.8, "kind": "rock", "label": "TDX 落石・封閉", "side": -1, "dy": -86 }
   ],
   "mileLabelOffset": { "12": [-30, 20], "16": [55, -12] },
