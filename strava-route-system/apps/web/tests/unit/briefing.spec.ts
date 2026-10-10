@@ -278,27 +278,42 @@ test.describe("建議出發時段", () => {
 
   test("現在出發天氣最好：區間從現在開始，到會碰上下雨時段前為止", () => {
     // 08:00–10:00 降雨 10%、10:00–12:00 降雨 70%；09:00 出發會在 10:00 進入下雨時段
-    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }), { now: AT_8AM });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }), { now: AT_8AM, suggest: true });
     expect(b.departureSuggestion).toEqual({ from: at("08:00"), to: at("08:30"), level: null, nowIsBest: true });
   });
 
   test("現在出發會淋雨：建議較晚、沿途無天氣示警的時段", () => {
     const rainThenClear = [bucket("08:00", "10:00", 70), bucket("10:00", "12:00", 10)];
-    const b = briefRoute(route, lookupOf({ 士林區: weather(70, { rainfallBuckets: rainThenClear }) }), { now: AT_8AM });
+    const b = briefRoute(route, lookupOf({ 士林區: weather(70, { rainfallBuckets: rainThenClear }) }), { now: AT_8AM, suggest: true });
     expect(b.verdict.level).toBe("risky");
     expect(b.departureSuggestion).toMatchObject({ from: at("10:00"), level: null, nowIsBest: false });
   });
 
+  test("沒開啟時不試算（只有畫面會顯示的路線才算）", () => {
+    const b = briefRoute(route, lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }), { now: AT_8AM });
+    expect(b.departureSuggestion).toBeNull();
+  });
+
+  test("即時雨量只影響一小時內出發，較晚出發只看預報", () => {
+    // 現在路線旁測站實測中雨；預報整天降雨 10%
+    const clear = [bucket("08:00", "14:00", 10), bucket("14:00", "20:00", 10)];
+    const lookup = lookupOf({ 士林區: weather(10, { rainfallBuckets: clear, observedRainMmPerHr: 3 }) });
+    const b = briefRoute(route, lookup, { now: AT_8AM, suggest: true });
+    expect(b.verdict.level).toBe("risky");
+    expect(b.departureSuggestion).toMatchObject({ from: at("09:30"), level: null, nowIsBest: false });
+  });
+
   test("天氣資料不足或過期時不建議（未判定不可拿來推薦）", () => {
-    expect(briefRoute(route, new Map(), { now: AT_8AM }).departureSuggestion).toBeNull();
+    expect(briefRoute(route, new Map(), { now: AT_8AM, suggest: true }).departureSuggestion).toBeNull();
     const stale = lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN, stale: true }) });
-    expect(briefRoute(route, stale, { now: AT_8AM }).departureSuggestion).toBeNull();
+    expect(briefRoute(route, stale, { now: AT_8AM, suggest: true }).departureSuggestion).toBeNull();
   });
 
   test("路況事件取不到不影響天氣建議，但判定仍為未判定", () => {
     const b = briefRoute(route, lookupOf({ 士林區: weather(10, { rainfallBuckets: MORNING_THEN_RAIN }) }), {
       now: AT_8AM,
       eventsFailed: null,
+      suggest: true,
     });
     expect(b.verdict.level).toBe("unknown");
     expect(b.departureSuggestion?.nowIsBest).toBe(true);

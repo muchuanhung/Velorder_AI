@@ -241,14 +241,14 @@ export interface BriefRouteOptions {
   activity?: Activity;
   /** 路況事件取不到的縣市；null 代表整個事件服務失敗 */
   eventsFailed?: string[] | null;
-  /** 是否試算建議出發時段（內部試算時關閉，避免遞迴） */
+  /** 是否試算建議出發時段；只有畫面會顯示的路線才開（今日判讀目前路線、路線頁） */
   suggest?: boolean;
 }
 
 export function briefRoute(
   route: Route,
   lookup: WeatherLookup,
-  { events = [], now = new Date(), departure = now, activity, eventsFailed, suggest = true }: BriefRouteOptions = {}
+  { events = [], now = new Date(), departure = now, activity, eventsFailed, suggest = false }: BriefRouteOptions = {}
 ): RouteBriefing {
   const defaultActivity = activityOfRouteType(route.type);
   const tripActivity = activity ?? defaultActivity;
@@ -281,7 +281,7 @@ export function briefRoute(
     elevationProfile: route.elevationProfile,
     segments: enriched.segments,
     eventsFailed: routeEventsFailed === undefined ? [] : routeEventsFailed,
-    departureSuggestion: suggest ? suggestDeparture(route, lookup, { now, activity: tripActivity }) : null,
+    departureSuggestion: suggest ? suggestDeparture(route, lookup, { now, speedKmh }) : null,
     departure: departure.toISOString(),
     activity: tripActivity,
     speedKmh,
@@ -302,31 +302,63 @@ export interface DepartureSuggestion {
 /** 建議出發時段的試算範圍：現在起 12 小時、每 30 分鐘一個出發時間 */
 export const SUGGEST_HORIZON_H = 12;
 export const SUGGEST_STEP_MIN = 30;
+/** 出發時間在現在起幾分鐘內才參考即時雨量 */
+const OBSERVED_RAIN_RELEVANT_MIN = 60;
 
 const WEATHER_RANK = (hazards: Hazard[]) =>
   hazards.reduce((worst, h) => Math.max(worst, h.level === "risky" ? 2 : 1), 0);
 
 /**
- * 建議出發時段：對未來每個出發時間各跑一次同樣的判讀（依 ETA 挑時段），取天氣示警最輕的最早連續區間。
+ * 某個出發時間的天氣等級：0 無天氣示警、1 注意、2 危險；天氣資料不足以比較時為 null。
+ * 只做天氣這一段（套天氣 → 分段 → 天氣示警），不比對路況事件、不組整份判讀，試算很多次也不貴。
+ */
+function weatherRankAt(
+  route: Route,
+  lookup: WeatherLookup,
+  options: ApplyWeatherOptions,
+  useObservedRain: boolean
+): number | null {
+  const applied = applyWeather(route, lookup, options);
+  // 即時雨量是「現在」的實測，只對近期出發有意義；較晚出發只看預報
+  const enriched = useObservedRain
+    ? applied
+    : { ...applied, segments: applied.segments.map((s) => ({ ...s, observedRainMmPerHr: undefined })) };
+  const comparable =
+    enriched.segments.length > 0 && enriched.segments.every((s) => s.hasWeather && !s.weatherStale && !s.outOfCoverage);
+  if (!comparable) return null;
+  return WEATHER_RANK(computeHazards(enriched, deriveStages(enriched)).filter(isWeatherHazard));
+}
+
+/**
+ * 建議出發時段：對未來每 30 分鐘的出發時間，用與判讀相同的天氣規則（依 ETA 挑時段）試算，取天氣示警最輕的最早連續區間。
  * 只比天氣：路況事件以「現在」為準、對每個出發時間都一樣，不影響排序；因此建議只代表天氣，不代表安全。
  * 任一路段沒有天氣、預報過期或超出預報時段的出發時間不列入比較（未判定不可拿來推薦）。
+ * 找到「無天氣示警」的區間後即停止，不必試算後面的時間。
  */
 export function suggestDeparture(
   route: Route,
   lookup: WeatherLookup,
-  { now, activity }: { now: Date; activity: Activity }
+  { now, speedKmh }: { now: Date; speedKmh: number }
 ): DepartureSuggestion | null {
   const steps = (SUGGEST_HORIZON_H * 60) / SUGGEST_STEP_MIN;
-  const ranked = Array.from({ length: steps + 1 }, (_, i) => {
+  const ranked: { departure: Date; rank: number | null }[] = [];
+  for (let i = 0; i <= steps; i++) {
     const departure = new Date(now.getTime() + i * SUGGEST_STEP_MIN * 60_000);
-    const b = briefRoute(route, lookup, { now, departure, activity, suggest: false });
-    const comparable = b.segments.length > 0 && b.segments.every((s) => s.hasWeather && !s.weatherStale && !s.outOfCoverage);
-    return { departure, rank: comparable ? WEATHER_RANK(b.hazards) : null };
-  });
+    const rank = weatherRankAt(
+      route,
+      lookup,
+      { departureTime: departure, speedKmh },
+      i * SUGGEST_STEP_MIN <= OBSERVED_RAIN_RELEVANT_MIN
+    );
+    ranked.push({ departure, rank });
+    // 最好的等級就是 0：第一段 0 的區間結束後，後面不可能更好也不會更早
+    const firstZero = ranked.findIndex((r) => r.rank === 0);
+    if (firstZero !== -1 && rank !== 0) break;
+  }
 
-  const usable = ranked.filter((r): r is { departure: Date; rank: number } => r.rank !== null);
+  const usable = ranked.flatMap((r) => (r.rank === null ? [] : [r.rank]));
   if (usable.length === 0) return null;
-  const best = Math.min(...usable.map((r) => r.rank));
+  const best = Math.min(...usable);
   const start = ranked.findIndex((r) => r.rank === best);
   let end = start;
   while (ranked[end + 1]?.rank === best) end++;

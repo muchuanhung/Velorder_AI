@@ -36,12 +36,12 @@ interface RouteHeaderProps {
   verdict: ReconVerdict;
   loading?: boolean;
   /** 伺服器試算未來 12 小時天氣最佳的出發時間（已格式化）；null 不顯示 */
-  bestTimeToRide?: string | null;
+  departureLabel?: string | null;
 }
 
-export function RouteHeader({ route, verdict, loading = false, bestTimeToRide }: RouteHeaderProps) {
+export function RouteHeader({ route, verdict, loading = false, departureLabel }: RouteHeaderProps) {
   const status = statusOfVerdict(verdict.level);
-  const suggestTime = bestTimeToRide ?? null;
+  const suggestTime = departureLabel ?? null;
   const svgPath = getSvgPath(route.gpxPreviewPath);
   const ends = pathEndpoints(svgPath);
   const TypeIcon = ROUTE_TYPE_ICONS[route.type];

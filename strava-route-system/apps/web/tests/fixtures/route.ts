@@ -59,7 +59,6 @@ export function makeRoute(overrides: Partial<Route> = {}): Route {
     gpxPreviewPath: encodePolyline(points),
     elevationProfile,
     estimatedTime: "1 小時",
-    bestTimeToRide: "",
     ...overrides,
   };
 }

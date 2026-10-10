@@ -217,7 +217,7 @@ export function RoutesClient({
                 route={selectedRoute}
                 verdict={verdict}
                 loading={briefing.loading}
-                bestTimeToRide={(() => {
+                departureLabel={(() => {
                   const s = briefing.briefing?.departureSuggestion;
                   if (!s) return null;
                   return s.nowIsBest ? "現在" : formatClock(new Date(s.from), new Date());

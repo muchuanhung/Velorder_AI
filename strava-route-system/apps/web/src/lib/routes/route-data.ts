@@ -56,7 +56,6 @@ export interface CCTVFeed {
     gpxPreviewPath: string;
     elevationProfile: [number, number][];
     estimatedTime: string;
-    bestTimeToRide: string;
   }
 
 export function getStatusColor(status: Route["status"]): string {
@@ -106,39 +105,3 @@ export function getStatusColor(status: Route["status"]): string {
         return "cloud-lightning";
     }
   }
-
-/** 降雨時段（來自 CWB rainfall12h） */
-export interface RainfallPeriod {
-  pop: number;
-  label: string;
-  endLabel?: string;
-}
-
-/**
- * 依各區段降雨機率，計算建議出發時間
- * 取平均降雨機率最低時段的起始時間
- */
-export function computeBestTimeToRide(
-  segments: (RouteSegment & { rainfall12h?: RainfallPeriod[] })[]
-): string {
-  const withRainfall = segments.filter((s) => s.rainfall12h && s.rainfall12h.length > 0);
-  if (withRainfall.length === 0) return "";
-
-  const len = Math.min(...withRainfall.map((s) => s.rainfall12h!.length));
-  if (len === 0) return "";
-
-  let bestIdx = 0;
-  let bestAvg = Infinity;
-  for (let i = 0; i < len; i++) {
-    const avg =
-      withRainfall.reduce((s, seg) => s + (seg.rainfall12h![i]?.pop ?? 0), 0) /
-      withRainfall.length;
-    if (avg < bestAvg) {
-      bestAvg = avg;
-      bestIdx = i;
-    }
-  }
-
-  const first = withRainfall[0]!.rainfall12h![bestIdx];
-  return first?.label ?? "";
-}  

@@ -44,7 +44,8 @@ export async function getDashboardBriefing(routeId?: string, trip: TripOptions =
   const current = routes.find((r) => r.id === routeId) ?? routes[0]!;
   const { briefings, weatherCoverage, eventsFailed } = await briefRoutes(
     [current, ...routes.filter((r) => r !== current)],
-    trip
+    trip,
+    current.id
   );
   const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 
@@ -70,10 +71,11 @@ export async function getPublicBriefings(limit = 3): Promise<RouteBriefing[]> {
 export async function getRouteBriefing(routeId: string, trip: TripOptions = {}): Promise<RouteBriefing | null> {
   const route = (await loadRoutes()).find((r) => r.id === routeId);
   if (!route) return null;
-  return (await briefRoutes([route], trip)).briefings[0] ?? null;
+  return (await briefRoutes([route], trip, route.id)).briefings[0] ?? null;
 }
 
-async function briefRoutes(routes: Route[], trip: TripOptions = {}) {
+/** suggestFor：只替這條路線試算建議出發時段（畫面只顯示目前路線的建議） */
+async function briefRoutes(routes: Route[], trip: TripOptions = {}, suggestFor?: string) {
   const keys = routeDistrictKeys(routes);
   const counties = [...new Set(routes.flatMap((r) => r.segments.map((s) => s.county).filter((c): c is string => !!c)))];
   // 天氣與路況事件平行取得；事件失敗不影響天氣判讀
@@ -119,6 +121,7 @@ async function briefRoutes(routes: Route[], trip: TripOptions = {}) {
       departure: trip.departure ?? now,
       activity: trip.activity,
       eventsFailed,
+      suggest: route.id === suggestFor,
     })
   );
   return { briefings, weatherCoverage: { ok: lookup.size, total: keys.length }, eventsFailed };

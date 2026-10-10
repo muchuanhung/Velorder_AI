@@ -186,6 +186,5 @@ export function parseGpxToRoute(
     gpxPreviewPath: polyline,
     elevationProfile,
     estimatedTime: estimateTime(distanceKm, elevationGain),
-    bestTimeToRide: "",
   };
 }
