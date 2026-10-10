@@ -104,54 +104,185 @@ export interface DawnFonts {
 }
 
 const MILE_LABEL_HALF_W = 21, MILE_LABEL_HALF_H = 11;
+const CARD_H = 34;
 
-/** 畫面上被 HTML 蓋住的區域（設計稿座標），例如右側登入卡；右側一律視為延伸到畫面右緣 */
-export interface DawnCover {
+/** 設計稿座標的矩形 */
+export interface DawnRect {
   left: number;
   top: number;
+  right: number;
   bottom: number;
 }
 
 /**
- * 里程牌中心點（設計稿座標）：預設放在路的外側並套 mileLabelOffset；flip 時改放到路的另一側（不套位移），
- * 給會被登入卡蓋住的里程牌用。
+ * 標示要避開的區域（設計稿座標）：covers 為蓋在畫布上的 HTML（登入卡、左欄文字與精選路線），
+ * view 為畫面實際看得到的範圍（裁切後）。
+ */
+export interface DawnAvoid {
+  covers: DawnRect[];
+  view: DawnRect;
+}
+
+const roadIndexAt = (g: DawnGeometry, km: number) => {
+  const last = g.road.length - 1;
+  return Math.min(last, Math.round((km / ROUTE_KM) * last));
+};
+
+/** 路面上判定色帶那條線的位置（示警點、車友都畫在這條線上） */
+const laneAt = (g: DawnGeometry, i: number, off: number): Pt => {
+  const p = g.road[i]!, n = g.normals[i]!, r = roadWidth(p[1]);
+  return [p[0] + n[0] * r * off, p[1] + n[1] * r * off];
+};
+
+/**
+ * 里程牌中心點（設計稿座標）：預設放在路的外側並套 mileLabelOffset；flip 時改放到路的另一側（不套位移）。
  */
 function mileLabelCenter(g: DawnGeometry, km: number, flip = false): Pt {
-  const last = g.road.length - 1, j = Math.min(last, Math.round((km / ROUTE_KM) * last));
+  const j = roadIndexAt(g, km);
   const p = g.road[j]!, n = g.normals[j]!, r = roadWidth(p[1]), side = (n[0] >= 0 ? 1 : -1) * (flip ? -1 : 1);
   const [ox, oy] = flip ? [0, 0] : (P.mileLabelOffset[km] ?? [0, 0]);
   return [p[0] + n[0] * r * 0.9 * side + side * 20 + ox, p[1] + n[1] * r * 0.9 * side + oy];
 }
 
-const covered = ([x, y]: Pt, c: DawnCover | undefined) =>
-  !!c && x + MILE_LABEL_HALF_W > c.left && y + MILE_LABEL_HALF_H > c.top && y - MILE_LABEL_HALF_H < c.bottom;
-
-/** 里程牌位置：外側被蓋住就改放路的另一側；兩側都被蓋住時留在外側，往左推到 cover 左緣外 */
-function mileLabelPlacement(g: DawnGeometry, km: number, cover: DawnCover | undefined): Pt {
-  const outer = mileLabelCenter(g, km);
-  if (!cover || !covered(outer, cover)) return outer;
-  const flipped = mileLabelCenter(g, km, true);
-  if (!covered(flipped, cover)) return flipped;
-  return [cover.left - MILE_LABEL_HALF_W, outer[1]];
-}
+const mileRect = ([x, y]: Pt): DawnRect => ({
+  left: x - MILE_LABEL_HALF_W,
+  top: y - MILE_LABEL_HALF_H,
+  right: x + MILE_LABEL_HALF_W,
+  bottom: y + MILE_LABEL_HALF_H,
+});
 
 /**
- * 和 cover 垂直範圍重疊的里程牌中，最右緣的 x（設計稿座標）；呼叫端據此把場景往左推，讓里程牌露在登入卡左側。
- * 示警卡都在路的左側，不需要算進來。沒有重疊的里程牌時回傳 null。
+ * 和 band 垂直範圍重疊的里程牌中，預設位置最右緣的 x（設計稿座標）；呼叫端據此把場景往左推，讓路線右側露在登入卡左側。
+ * 沒有重疊的里程牌時回傳 null。
  */
-export function mileLabelsRightEdge(g: DawnGeometry, cover: Omit<DawnCover, "left">): number | null {
+export function mileLabelsRightEdge(g: DawnGeometry, band: { top: number; bottom: number }): number | null {
   let right: number | null = null;
   for (let s = 0; s <= LEVELS.length; s++) {
-    const [x, y] = mileLabelCenter(g, s * 4);
-    if (covered([x, y], { ...cover, left: -Infinity })) right = Math.max(right ?? -Infinity, x + MILE_LABEL_HALF_W);
+    const r = mileRect(mileLabelCenter(g, s * 4));
+    if (r.bottom > band.top && r.top < band.bottom) right = Math.max(right ?? -Infinity, r.right);
   }
   return right;
+}
+
+const overlapArea = (a: DawnRect, b: DawnRect) =>
+  Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
+const inflate = (r: DawnRect, d: number): DawnRect => ({ left: r.left - d, top: r.top - d, right: r.right + d, bottom: r.bottom + d });
+
+/** 線段穿過矩形（取樣判斷，標示尺寸遠大於取樣間距） */
+function segmentHits(a: Pt, b: Pt, r: DawnRect) {
+  for (let i = 0; i <= 24; i++) {
+    const x = lerp(a[0], b[0], i / 24), y = lerp(a[1], b[1], i / 24);
+    if (x > r.left && x < r.right && y > r.top && y < r.bottom) return true;
+  }
+  return false;
+}
+
+interface CardPlacement {
+  /** 示警點 */
+  px: number;
+  py: number;
+  /** 引線接到卡片的那一端 */
+  lx: number;
+  ly: number;
+  /** 卡片左緣與寬度 */
+  bx: number;
+  w: number;
+  text: string;
+}
+
+interface LabelLayout {
+  cards: CardPlacement[];
+  /** null：放不下（會被蓋住或超出畫面），不畫 */
+  miles: (Pt | null)[];
+}
+
+/** 被蓋住、超出畫面或重疊時的基本罰分；最低代價仍達此值代表沒有可放的位置 */
+const HIT = 10_000;
+
+/**
+ * 示警卡與里程牌的位置：每個標示有幾個候選位置，依序挑代價最低的——
+ * 被 HTML 蓋住、超出畫面、和已放好的標示或引線重疊代價最高，蓋到路面其次，離預設位置越遠代價越高。
+ * 示警卡先放（字多），再放里程牌。
+ */
+function layoutLabels(ctx: CanvasRenderingContext2D, g: DawnGeometry, fonts: DawnFonts, avoid: DawnAvoid | undefined): LabelLayout {
+  const placed: DawnRect[] = [];
+  const leaders: [Pt, Pt][] = [];
+  const roadPts = g.road.filter((_, i) => i % 3 === 0);
+  const cost = (rect: DawnRect, leader: [Pt, Pt] | null, roadWeight: number) => {
+    // 被蓋住、超出畫面、和其他標示重疊：只要沾到一點就重罰，幾乎等同禁止
+    const hit = (area: number) => (area > 0 ? HIT + area * 50 : 0);
+    let c = 0;
+    if (avoid) {
+      for (const cv of avoid.covers) c += hit(overlapArea(inflate(rect, 6), cv));
+      const v = avoid.view, area = (rect.right - rect.left) * (rect.bottom - rect.top);
+      c += hit(area - overlapArea(rect, inflate(v, -6)));
+    }
+    for (const r of placed) c += hit(overlapArea(inflate(rect, 6), r));
+    for (const [a, b] of leaders) if (segmentHits(a, b, inflate(rect, 4))) c += 3000;
+    if (leader) for (const r of placed) if (segmentHits(leader[0], leader[1], r)) c += 3000;
+    for (const p of roadPts) if (p[0] > rect.left && p[0] < rect.right && p[1] > rect.top && p[1] < rect.bottom) c += roadWeight;
+    return c;
+  };
+
+  ctx.font = `600 13px ${fonts.sans}`;
+  const cards = EVENTS.map((e) => {
+    const j = roadIndexAt(g, e.km);
+    const [px, py] = laneAt(g, j, 0.22), r = roadWidth(g.road[j]![1]), side = e.side;
+    const baseX = px + side * (side < 0 ? r * 0.9 + 44 : r * 1.2 + 70) + (e.dx ?? 0), baseY = py + e.dy;
+    const text = `${e.label}\u3000${e.km}K`, tw = ctx.measureText(text).width, w = tw + 74;
+    let best: { c: number; card: CardPlacement; rect: DawnRect; leader: [Pt, Pt] } | null = null;
+    for (const ddy of [0, -20, 20, -40, 40, -60, 60, -80, 80, -110, 110, -140, 140]) {
+      for (const ddx of [0, 30, 60, 90, -30, -60, -90]) {
+        const lx = baseX + ddx, ly = baseY + ddy, bx = side > 0 ? lx - 22 : lx - tw - 52;
+        const rect = { left: bx, top: ly - CARD_H / 2, right: bx + w, bottom: ly + CARD_H / 2 };
+        const leader: [Pt, Pt] = [[px, py], [lx - side * 24, ly]];
+        const c = cost(rect, leader, 60) + Math.abs(ddx) * 0.5 + Math.abs(ddy) * 0.5;
+        if (!best || c < best.c) best = { c, card: { px, py, lx, ly, bx, w, text }, rect, leader };
+      }
+    }
+    placed.push(best!.rect);
+    leaders.push(best!.leader);
+    return best!.card;
+  });
+
+  const miles: (Pt | null)[] = [];
+  for (let s = 0; s <= LEVELS.length; s++) {
+    const km = s * 4, j = roadIndexAt(g, km), p = g.road[j]!, gap = roadWidth(p[1]) * 0.5 + MILE_LABEL_HALF_H + 6;
+    const bases: Pt[] = [mileLabelCenter(g, km), mileLabelCenter(g, km, true), [p[0], p[1] - gap], [p[0], p[1] + gap]];
+    let best: { c: number; pt: Pt } | null = null;
+    bases.forEach((b, bi) => {
+      for (const d of [0, -14, 14, -28, 28, -42, 42]) {
+        for (const dx of [0, -24, 24, -48, 48, -72]) {
+          const pt: Pt = [b[0] + dx, b[1] + d], c = cost(mileRect(pt), null, 15) + bi * 40 + Math.abs(d) + Math.abs(dx);
+          if (!best || c < best.c) best = { c, pt };
+        }
+      }
+    });
+    // 怎麼放都會被蓋住或超出畫面（例如起點在畫面下緣外）就不畫，避免只露出半個
+    if (best!.c >= HIT) {
+      miles.push(null);
+      continue;
+    }
+    placed.push(mileRect(best!.pt));
+    miles.push(best!.pt);
+  }
+  return { cards, miles };
+}
+
+let layoutCache: { key: string; g: DawnGeometry; layout: LabelLayout } | null = null;
+
+/** 同一組避讓區域只算一次；畫面縮放或 HTML 位置改變時才重算 */
+function cachedLayout(ctx: CanvasRenderingContext2D, g: DawnGeometry, fonts: DawnFonts, avoid: DawnAvoid | undefined) {
+  const key = JSON.stringify([fonts, avoid && [avoid.view, avoid.covers].flat().map((r) => [r.left, r.top, r.right, r.bottom].map(Math.round))]);
+  if (layoutCache?.key !== key || layoutCache.g !== g) layoutCache = { key, g, layout: layoutLabels(ctx, g, fonts, avoid) };
+  return layoutCache.layout;
 }
 
 /**
  * 畫一格。ctx 須已轉換到設計稿座標（1600×1000）。
  * t：開場後經過的秒數；reduce：減少動態效果時傳 true，畫判定與示警都完成的靜態畫面。
- * cover：被登入卡蓋住的區域；落在裡面的里程牌改畫到路的另一側或 cover 左緣外。
+ * avoid：標示要避開的 HTML 區域與畫面範圍，見 layoutLabels。
  */
 export function drawDawnFrame(
   ctx: CanvasRenderingContext2D,
@@ -160,7 +291,7 @@ export function drawDawnFrame(
   t: number,
   reduce: boolean,
   fonts: DawnFonts,
-  cover?: DawnCover
+  avoid?: DawnAvoid
 ) {
   const W = DESIGN_W, H = DESIGN_H, S = g.road, N = g.normals, T = reduce ? 6 : t;
   const [sx, sy] = SUN;
@@ -301,12 +432,15 @@ export function drawDawnFrame(
   ctx.drawImage(img.front, 0, 0, W, H);
 
   // 里程牌（固定不動）
+  const labels = cachedLayout(ctx, g, fonts, avoid);
   ctx.font = `600 14px ${fonts.mono}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (let s = 0; s <= LEVELS.length; s++) {
     if (indexAt(s * 4) > prog + 0.5) break;
-    const [x, y] = mileLabelPlacement(g, s * 4, cover);
+    const pt = labels.miles[s];
+    if (!pt) continue;
+    const [x, y] = pt;
     ctx.fillStyle = "rgba(251,250,244,.95)";
     ctx.beginPath();
     ctx.roundRect(x - MILE_LABEL_HALF_W, y - MILE_LABEL_HALF_H, MILE_LABEL_HALF_W * 2, MILE_LABEL_HALF_H * 2, 5);
@@ -316,11 +450,10 @@ export function drawDawnFrame(
   }
 
   // 示警卡（固定不動）
-  EVENTS.forEach((e) => {
+  EVENTS.forEach((e, n) => {
     const j = indexAt(e.km);
     if (j > prog) return;
-    const [px, py] = lane(j, 0.22), r = roadWidth(S[j]![1]), side = e.side, appear = reduce ? 1 : clamp01((prog - j) / 12);
-    const lx = px + side * (side < 0 ? r * 0.9 + 44 : r * 1.2 + 70) + (e.dx ?? 0), ly = py + e.dy;
+    const { px, py, lx, ly, bx, w, text } = labels.cards[n]!, side = e.side, appear = reduce ? 1 : clamp01((prog - j) / 12);
     ctx.globalAlpha = appear;
     ctx.strokeStyle = "rgba(251,250,244,.85)";
     ctx.lineWidth = 1.5;
@@ -329,11 +462,9 @@ export function drawDawnFrame(
     ctx.lineTo(lx - side * 24, ly);
     ctx.stroke();
     ctx.font = `600 13px ${fonts.sans}`;
-    const text = `${e.label}\u3000${e.km}K`, tw = ctx.measureText(text).width;
-    const bx = side > 0 ? lx - 22 : lx - tw - 52;
     ctx.fillStyle = "rgba(251,250,244,.96)";
     ctx.beginPath();
-    ctx.roundRect(bx, ly - 17, tw + 74, 34, 8);
+    ctx.roundRect(bx, ly - CARD_H / 2, w, CARD_H, 8);
     ctx.fill();
     drawSign(ctx, e.kind, bx + 20, ly, 22);
     ctx.fillStyle = "#1f2b20";

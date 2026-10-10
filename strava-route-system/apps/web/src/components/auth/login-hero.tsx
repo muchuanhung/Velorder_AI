@@ -15,7 +15,10 @@ export const loginCopy = {
 export function LoginHero({ featured }: { featured: ReactNode }) {
   return (
     <div className="flex h-full flex-col items-center justify-center px-12 py-8">
-      <div className="w-full max-w-xl [text-shadow:0_0_2px_rgb(244_246_238/0.9),0_0_16px_rgb(244_246_238/0.85),0_0_30px_rgb(244_246_238/0.6)] dark:[text-shadow:0_0_2px_rgb(8_20_12/0.9),0_0_16px_rgb(8_20_12/0.8)]">
+      <div
+        data-scene-avoid="text"
+        className="w-full max-w-xl [text-shadow:0_0_2px_rgb(244_246_238/0.9),0_0_16px_rgb(244_246_238/0.85),0_0_30px_rgb(244_246_238/0.6)] dark:[text-shadow:0_0_2px_rgb(8_20_12/0.9),0_0_16px_rgb(8_20_12/0.8)]"
+      >
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -37,6 +40,7 @@ export function LoginHero({ featured }: { featured: ReactNode }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
+          data-scene-avoid="box"
           className="[text-shadow:none]"
         >
           {featured}
