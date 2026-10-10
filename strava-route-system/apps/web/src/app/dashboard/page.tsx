@@ -5,6 +5,7 @@ import { getCurrentUserId } from "@/lib/auth/server";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { Briefing } from "@/components/dashboard/briefing/briefing";
 import { BriefingSkeleton } from "@/components/dashboard/briefing/briefing-skeleton";
+import { formatClock, parseActivity, parseDeparture } from "@/lib/routes/trip";
 
 export const metadata: Metadata = { title: "今日判讀" };
 
@@ -18,20 +19,29 @@ function greeting(now = new Date()): string {
   return "晚安";
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ route?: string }> }) {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ route?: string; depart?: string; activity?: string }>;
+}) {
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login");
 
-  const { route } = await searchParams;
+  const { route, depart, activity } = await searchParams;
+  const now = new Date();
+  const departure = parseDeparture(depart, now);
+  const trip = { departure, activity: parseActivity(activity) };
 
   return (
     <AppShell current="dashboard">
       <header className="mb-6 space-y-1">
         <p className="text-sm text-muted-foreground">{greeting()}</p>
-        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">現在出發適合嗎？</h1>
+        <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+          {departure ? `${formatClock(departure, now)} 出發適合嗎？` : "現在出發適合嗎？"}
+        </h1>
       </header>
-      <Suspense key={route ?? ""} fallback={<BriefingSkeleton />}>
-        <Briefing routeId={route} />
+      <Suspense key={[route, depart, activity].join("|")} fallback={<BriefingSkeleton />}>
+        <Briefing routeId={route} trip={trip} />
       </Suspense>
     </AppShell>
   );

@@ -4,6 +4,7 @@ import { UNKNOWN_REASON_TEXT, type Hazard } from "@/lib/routes/recon-geo";
 import type { RouteBriefing } from "@/lib/dashboard/briefing";
 import { groupRouteEvents } from "@/lib/routes/road-events";
 import { HAZARD_ROW_GRID, HazardRowContent } from "@/components/verdict/hazard-row";
+import { etaLabel, withTrip, type TripParams } from "@/lib/routes/trip";
 import { ProfileStrip } from "./profile-strip";
 
 /** 今日判讀只列最要緊的幾項，完整清單在路線頁 */
@@ -20,12 +21,13 @@ function topHazards(hazards: Hazard[]): Hazard[] {
  * 沿途示警摘要：今日判讀只回答「要不要出發」，這裡列出影響判定的前幾項與總數；
  * 逐段清單、點擊跳到該處、坡度與 CCTV 在路線頁。陡坡是路線固定特性，不列入。
  */
-export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
+export function HazardSummary({ briefing, trip }: { briefing: RouteBriefing; trip: TripParams }) {
   const { hazards } = briefing;
   const { notices, routine } = groupRouteEvents(briefing.roadEvents);
   const shown = topHazards(hazards);
   const roadNotices = notices.length + routine.length;
-  const routeHref = `/routes?route=${encodeURIComponent(briefing.id)}`;
+  const routeHref = withTrip(`/routes?route=${encodeURIComponent(briefing.id)}`, trip);
+  const now = new Date();
 
   return (
     <section aria-labelledby="hazard-title" className="space-y-4 rounded-2xl border border-border bg-card p-5 sm:p-6">
@@ -47,7 +49,7 @@ export function HazardSummary({ briefing }: { briefing: RouteBriefing }) {
         <ul className="divide-y divide-border/60 border-y border-border/60">
           {shown.map((h) => (
             <li key={h.id} className={HAZARD_ROW_GRID}>
-              <HazardRowContent hazard={h} />
+              <HazardRowContent hazard={h} eta={etaLabel(h.startKm, briefing, now)} />
             </li>
           ))}
         </ul>

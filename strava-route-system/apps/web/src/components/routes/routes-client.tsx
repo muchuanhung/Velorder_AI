@@ -16,6 +16,8 @@ import { useRouteBriefing, verdictOf } from "@/hooks/useRouteBriefing";
 import { RouteCard } from "@/components/routes/route-card";
 import { RouteHeader, statusOfVerdict } from "@/components/routes/route-header";
 import { ReconView } from "@/components/routes/recon-view";
+import { TripSettings } from "@/components/trip/trip-settings";
+import type { Activity } from "@/lib/routes/trip";
 
 type FilterType = "全部" | "自行車" | "跑步" | "健行" | "雪巴運動";
 
@@ -31,7 +33,14 @@ const FILTERS: { value: FilterType; icon?: React.ComponentType<{ className?: str
  * 路線（客戶端）：路線清單＋偵察畫面（逐段示警、坡度、CCTV）。
  * 外框由 AppShell 提供；initialRouteId 來自 ?route=，可從 Dashboard 直接連到指定路線。
  */
-export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
+export function RoutesClient({
+  initialRouteId,
+  trip,
+}: {
+  initialRouteId?: string;
+  /** 網址上的行程設定（出發時間 ISO、運動類型），未指定為 null */
+  trip: { depart: string | null; activity: Activity | null };
+}) {
   const { routes, loading, error } = useRoutesFromStorage();
   const [selectedId, setSelectedId] = useState(initialRouteId ?? "");
   const [search, setSearch] = useState("");
@@ -64,7 +73,7 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
   const selectedRoute = routes.find((r) => r.id === selectedId) || routes[0];
   const { feeds: cctvFeeds, loading: cctvLoading, error: cctvError } = useRouteCCTV(selectedRoute ?? null);
   // 判定、示警、建議時段全由伺服器算（與 Dashboard 同一流程），前端只顯示
-  const briefing = useRouteBriefing(selectedRoute?.id);
+  const briefing = useRouteBriefing(selectedRoute?.id, trip);
   const verdict = verdictOf(briefing);
   const routeStatus = briefing.briefing ? statusOfVerdict(verdict.level) : null;
   const filteredRoutes = routes.filter((r) => {
@@ -210,6 +219,16 @@ export function RoutesClient({ initialRouteId }: { initialRouteId?: string }) {
                 loading={briefing.loading}
                 bestTimeToRide={briefing.briefing?.bestTimeToRide}
               />
+              {briefing.briefing && (
+                <TripSettings
+                  departure={briefing.briefing.departure}
+                  activity={briefing.briefing.activity}
+                  speedKmh={briefing.briefing.speedKmh}
+                  defaultActivity={briefing.briefing.defaultActivity}
+                  explicitActivity={trip.activity}
+                  explicitDeparture={trip.depart}
+                />
+              )}
               <ReconView
                 route={selectedRoute}
                 cctvFeeds={cctvFeeds}

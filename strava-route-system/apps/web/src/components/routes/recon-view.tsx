@@ -13,6 +13,7 @@ import {
   type ChartDataPoint,
 } from "@/lib/routes/recon-geo";
 import { useReconPosition } from "@/hooks/useReconPosition";
+import { etaLabel } from "@/lib/routes/trip";
 import { roadEventsOf, verdictOf, type RouteBriefingState } from "@/hooks/useRouteBriefing";
 import { RouteVerdictBar } from "./recon/route-verdict-bar";
 import { HazardList } from "./recon/hazard-list";
@@ -61,6 +62,12 @@ export function ReconView({
   const verdictHazards = useMemo(() => briefing.briefing?.hazards ?? [], [briefing.briefing]);
   const verdict = verdictOf(briefing);
   const roadEvents = roadEventsOf(briefing);
+  const trip = briefing.briefing;
+  const etaOf = useMemo(() => {
+    if (!trip) return undefined;
+    const now = new Date();
+    return (km: number) => etaLabel(km, trip, now);
+  }, [trip]);
 
   const chartData = useMemo<ChartDataPoint[]>(
     () => (route.elevationProfile ?? []).map(([km, elevation]) => ({ km, elevation })),
@@ -83,7 +90,13 @@ export function ReconView({
     <div className="w-full min-w-0 max-w-full space-y-6">
       <RouteVerdictBar verdict={verdict} />
 
-      <HazardList hazards={verdictHazards} roadEvents={roadEvents} positionKm={positionKm} onJump={moveTo} />
+      <HazardList
+        hazards={verdictHazards}
+        roadEvents={roadEvents}
+        positionKm={positionKm}
+        onJump={moveTo}
+        etaOf={etaOf}
+      />
 
       <ElevationScrubber
         data={chartData}

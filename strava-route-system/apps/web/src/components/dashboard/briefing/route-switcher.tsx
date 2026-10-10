@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { withTrip, type TripParams } from "@/lib/routes/trip";
 
 /** 今日判讀只做快速切換；找路線、搜尋、篩選在路線頁 */
 const MAX_CHIPS = 5;
@@ -17,7 +18,15 @@ const CHIP =
   "inline-flex min-h-10 max-w-64 items-center rounded-full border px-4 text-sm font-medium whitespace-nowrap transition-colors";
 
 /** 路線切換：純連結（?route=），可分享、可上一頁，不需客戶端狀態 */
-export function RouteSwitcher({ routes, currentId }: { routes: { id: string; name: string }[]; currentId: string }) {
+export function RouteSwitcher({
+  routes,
+  currentId,
+  trip,
+}: {
+  routes: { id: string; name: string }[];
+  currentId: string;
+  trip: TripParams;
+}) {
   if (routes.length < 2) return null;
   const shown = visibleRoutes(routes, currentId);
   return (
@@ -28,7 +37,7 @@ export function RouteSwitcher({ routes, currentId }: { routes: { id: string; nam
           return (
             <li key={r.id}>
               <Link
-                href={`/dashboard?route=${encodeURIComponent(r.id)}`}
+                href={withTrip(`/dashboard?route=${encodeURIComponent(r.id)}`, trip)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   CHIP,
@@ -44,7 +53,7 @@ export function RouteSwitcher({ routes, currentId }: { routes: { id: string; nam
         })}
         {routes.length > shown.length && (
           <li>
-            <Link href="/routes" className={cn(CHIP, "gap-1 border-dashed border-border text-primary hover:bg-muted/50")}>
+            <Link href={withTrip("/routes", trip)} className={cn(CHIP, "gap-1 border-dashed border-border text-primary hover:bg-muted/50")}>
               全部 {routes.length} 條路線
               <ArrowRight className="size-3.5" aria-hidden />
             </Link>

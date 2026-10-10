@@ -21,6 +21,7 @@ import {
   type VerdictLevel,
 } from "@/lib/routes/recon-geo";
 import { normalizeCountyForCWB } from "@/lib/cwb/county-map";
+import { ACTIVITY, activityOfRouteType, type Activity } from "@/lib/routes/trip";
 import { summarizeRainfall, type LatLon, type StationRain } from "@/lib/cwb/rainfall-stations";
 import {
   DEFAULT_CYCLING_SPEED_KMH,
@@ -221,12 +222,22 @@ export interface RouteBriefing {
   eventsFailed: string[] | null;
   /** 沿線各區平均降雨機率最低的預報時段起點，例「14:00」；無時段資料為 null */
   bestTimeToRide: string | null;
+  /** 估算各段 ETA 用的出發時間（ISO）與運動類型、均速；畫面用同一組數字顯示預估到達時間 */
+  departure: string;
+  activity: Activity;
+  speedKmh: number;
+  /** 這條路線依類型的預設運動類型（未指定 activity 時採用） */
+  defaultActivity: Activity;
 }
 
 export interface BriefRouteOptions {
   events?: RoadEvent[];
-  /** 判讀時間，也是估算 ETA 的出發時間 */
+  /** 判讀時間（路況事件以此為準）；未指定 departure 時也是估算 ETA 的出發時間 */
   now?: Date;
+  /** 出發時間；各路段依 ETA 挑預報時段 */
+  departure?: Date;
+  /** 運動類型；未指定時依路線類型 */
+  activity?: Activity;
   /** 路況事件取不到的縣市；null 代表整個事件服務失敗 */
   eventsFailed?: string[] | null;
 }
@@ -234,9 +245,12 @@ export interface BriefRouteOptions {
 export function briefRoute(
   route: Route,
   lookup: WeatherLookup,
-  { events = [], now = new Date(), eventsFailed }: BriefRouteOptions = {}
+  { events = [], now = new Date(), departure = now, activity, eventsFailed }: BriefRouteOptions = {}
 ): RouteBriefing {
-  const weatherOptions: ApplyWeatherOptions = { departureTime: now };
+  const defaultActivity = activityOfRouteType(route.type);
+  const tripActivity = activity ?? defaultActivity;
+  const speedKmh = ACTIVITY[tripActivity].speedKmh;
+  const weatherOptions: ApplyWeatherOptions = { departureTime: departure, speedKmh };
   const enriched = applyWeather(route, lookup, weatherOptions);
   const stages = deriveStages(enriched);
   const roadEvents = matchEventsToRoute(events, buildRoutePolylineKm(route), { now });
@@ -265,6 +279,10 @@ export function briefRoute(
     segments: enriched.segments,
     eventsFailed: routeEventsFailed === undefined ? [] : routeEventsFailed,
     bestTimeToRide: bestTimeToRide(route, lookup),
+    departure: departure.toISOString(),
+    activity: tripActivity,
+    speedKmh,
+    defaultActivity,
   };
 }
 
