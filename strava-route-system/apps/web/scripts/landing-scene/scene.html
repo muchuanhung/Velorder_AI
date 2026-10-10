@@ -114,7 +114,6 @@
   // 路段判定、TDX 示警、山路與太陽位置：由 render.mjs 注入 src/components/auth/dawn-scene-params.json（與網頁動畫共用）
   const P = window.__DAWN_PARAMS;
   const ROUTE_KM = P.routeKm, LEVELS = P.levels, EVENTS = P.events;
-  const LEAF_LAYER = [[40, 82, 44], [70, 120, 56], [104, 150, 70], [128, 166, 84]];
 
   function buildHillside(st, w, h) {
     const dpr = Math.min(2, devicePixelRatio || 1), k = h / 1000, W = w / k;
@@ -224,21 +223,6 @@
     const lit = c.createRadialGradient(cx0, 200, 50, cx0, 200, W * 0.6);
     lit.addColorStop(0, "rgba(255,232,170,.2)"); lit.addColorStop(1, "rgba(255,232,170,0)");
     c.fillStyle = lit; c.fillRect(0, 0, W, 1000);
-    // 前景葉片（左下與右下兩叢，會擺動）
-    const leafLayer = (bx, by, dir, seed) => {
-      const L = document.createElement("canvas"); L.width = Math.round(w * dpr); L.height = Math.round(h * dpr);
-      const lc = L.getContext("2d"); lc.scale(dpr * k, dpr * k);
-      for (let i = 0; i < 11; i++) {
-        const a = (dir > 0 ? -2.25 : -0.9) + i * 0.13 * dir + (hash(i + seed) - 0.5) * 0.2, len = 140 + hash(i + seed + 1) * 110;
-        const ex = bx + Math.cos(a) * len, ey = by + Math.sin(a) * len, mx = bx + Math.cos(a) * len * 0.5, my = by + Math.sin(a) * len * 0.5;
-        const col = LEAF_LAYER[Math.floor(hash(i + seed + 2) * LEAF_LAYER.length)];
-        lc.fillStyle = `rgb(${col.join(",")})`;
-        lc.beginPath(); lc.moveTo(bx, by); lc.quadraticCurveTo(mx - 30 * Math.sin(a), my + 30 * Math.cos(a), ex, ey); lc.quadraticCurveTo(mx + 30 * Math.sin(a), my - 30 * Math.cos(a), bx, by); lc.fill();
-        lc.strokeStyle = "rgba(210,226,160,.45)"; lc.lineWidth = 1.4; lc.beginPath(); lc.moveTo(bx, by); lc.lineTo(ex, ey); lc.stroke();
-      }
-      return L;
-    };
-    st.leavesR = leafLayer(W * 0.985, 1020, 1, 11);
     st.bg = off; st.S = S; st.N = N; st.rw = rw; st.W = W; st.cx0 = cx0; st.road = road;
   }
 
@@ -252,9 +236,11 @@
       ctx.fillStyle = "#e8742c"; ctx.beginPath(); ctx.moveTo(x, y - s * 0.6); ctx.lineTo(x + s * 0.34, y + s * 0.36); ctx.lineTo(x - s * 0.34, y + s * 0.36); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#fbfaf2"; ctx.fillRect(x - s * 0.2, y - s * 0.12, s * 0.4, s * 0.12); ctx.fillRect(x - s * 0.27, y + s * 0.1, s * 0.54, s * 0.11);
       ctx.fillStyle = "#3b3f42"; ctx.fillRect(x - s * 0.46, y + s * 0.36, s * 0.92, s * 0.1);
-    } else { // 缺資料：灰色問號
-      ctx.fillStyle = "#fbfaf2"; ctx.strokeStyle = "#8f948c"; ctx.lineWidth = s * 0.1; ctx.beginPath(); ctx.arc(x, y, s * 0.46, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = "#5b6058"; ctx.font = `800 ${s * 0.62}px 'JetBrains Mono', monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("?", x, y + s * 0.03);
+    } else { // 大雨：雲朵＋雨滴
+      ctx.fillStyle = "#7d8a94"; [[-0.2, -0.08, 0.24], [0.06, -0.2, 0.3], [0.28, -0.04, 0.22]].forEach(([dx, dy, r]) => { ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); ctx.fill(); });
+      ctx.fillRect(x - s * 0.2, y - s * 0.08, s * 0.48, s * 0.22);
+      ctx.strokeStyle = "#3a78b8"; ctx.lineWidth = s * 0.09; ctx.lineCap = "round";
+      [-0.18, 0.04, 0.26].forEach((dx) => { ctx.beginPath(); ctx.moveTo(x + dx * s, y + s * 0.26); ctx.lineTo(x + (dx - 0.07) * s, y + s * 0.46); ctx.stroke(); });
     }
   }
 
@@ -315,7 +301,7 @@
     }
     ctx.globalAlpha = 1;
     const at = (km) => Math.min(S.length - 1, Math.round((km / ROUTE_KM) * (S.length - 1)));
-    const evCol = (e) => (e.kind === "rock" ? "196,72,63" : e.kind === "work" ? "232,116,44" : "143,148,140");
+    const evCol = (e) => (e.kind === "rock" ? "196,72,63" : e.kind === "work" ? "232,116,44" : "58,120,184");
     const evPos = (j) => { const p = S[j], r = rw(p[1]); return [p[0] + N[j][0] * r * 0.22, p[1] + N[j][1] * r * 0.22, r]; };
     // 示警點（在路面上，會被前景樹擋住）
     EVENTS.forEach((e, n) => {
@@ -352,7 +338,7 @@
     EVENTS.forEach((e) => {
       const j = at(e.km); if (j > prog) return;
       const [px, py, r] = evPos(j), side = e.side, appear = REDUCE ? 1 : clamp01((prog - j) / 12);
-      const lx = px + side * (side < 0 ? r * 0.9 + 44 : r * 1.2 + 70), ly = py + (e.dy ?? -26);
+      const lx = px + side * (side < 0 ? r * 0.9 + 44 : r * 1.2 + 70) + (e.dx ?? 0), ly = py + (e.dy ?? -26);
       ctx.globalAlpha = appear;
       ctx.strokeStyle = "rgba(251,250,244,.85)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(lx - side * 24, ly); ctx.stroke();
       ctx.font = "600 13px 'Noto Sans TC', sans-serif"; const text = `${e.label}　${e.km}K`, tw = ctx.measureText(text).width;
@@ -361,11 +347,6 @@
       sign(ctx, e.kind, bx + 20, ly, 22);
       ctx.fillStyle = "#1f2b20"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(text, bx + 40, ly + 1);
       ctx.globalAlpha = 1;
-    });
-    // 前景葉片擺動
-    [[st.leavesR, W * 0.985, 1020, 0]].forEach(([img, pxv, pyv, ph]) => {
-      const sw = Math.sin(T * 0.9 + ph) * 0.022 + Math.sin(T * 2.3 + ph) * 0.007;
-      ctx.save(); ctx.translate(pxv, pyv); ctx.rotate(sw); ctx.translate(-pxv, -pyv); ctx.drawImage(img, 0, 0, W, 1000); ctx.restore();
     });
     // 晨光暖色隨時間微微起伏
     const warm = ctx.createRadialGradient(sx, sy, 0, sx, sy, W * 0.8); warm.addColorStop(0, `rgba(255,222,160,${0.12 + 0.05 * Math.sin(T * 0.25)})`); warm.addColorStop(1, "rgba(255,222,160,0)");
@@ -399,7 +380,7 @@
     const k = h / 1000, sw = 1600 * 0.46 * k, sh = sw * (350 / 390), sx = 1600 * 0.29 * k, sy = h - sh - 6 * k;
     const m = document.createElement("canvas"); m.width = 780; m.height = 700; // 上方多留一段森林給頁面上的淡入漸層
     m.getContext("2d").drawImage(full, sx, sy, sw, sh, 0, 0, 780, 700);
-    return { bg: webp(st.bg, 0.84), front: webp(st.front, 0.86), leaves: webp(st.leavesR, 0.86), mobile: webp(m, 0.84) };
+    return { bg: webp(st.bg, 0.84), front: webp(st.front, 0.86), mobile: webp(m, 0.84) };
   };
 })();
 </script>

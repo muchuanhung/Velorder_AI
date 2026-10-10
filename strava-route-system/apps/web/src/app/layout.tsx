@@ -27,7 +27,7 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://dawnline-tw.vercel.a
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: { default: "曉行", template: "%s｜曉行" },
-  description: "騎車、跑步、健行出發前，上傳 GPX，整合氣象署預報、TDX 路況與沿線 CCTV，逐公里標出走、慢、停、未判定。缺資料，不說安全。",
+  description: "騎車、跑步、健行出發前，上傳 GPX，整合氣象署預報、TDX 路況與沿線 CCTV，逐公里標出走、慢、停、未判定。",
   manifest: "/manifest.json",
   appleWebApp: {
     title: "曉行",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "曉行 Dawnline｜好天氣出發，壞路況繞開",
-    description: "騎車、跑步、健行出發前，上傳 GPX，整合氣象署預報、TDX 路況與沿線 CCTV，逐公里標出走、慢、停、未判定。缺資料，不說安全。",
+    description: "騎車、跑步、健行出發前，上傳 GPX，整合氣象署預報、TDX 路況與沿線 CCTV，逐公里標出走、慢、停、未判定。",
   },
 };
 
