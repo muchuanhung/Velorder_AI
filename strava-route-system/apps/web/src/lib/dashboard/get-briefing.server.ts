@@ -40,14 +40,20 @@ export interface TripOptions {
 export async function getDashboardBriefing(routeId?: string, trip: TripOptions = {}): Promise<DashboardBriefing> {
   const routes = await loadRoutes();
   if (routes.length === 0) return { status: "no-routes" };
-  const { briefings, weatherCoverage, eventsFailed } = await briefRoutes(routes, trip);
+  // 目前要看的路線排最前面：TDX 限流時優先抓到它經過縣市的路況事件
+  const current = routes.find((r) => r.id === routeId) ?? routes[0]!;
+  const { briefings, weatherCoverage, eventsFailed } = await briefRoutes(
+    [current, ...routes.filter((r) => r !== current)],
+    trip
+  );
   const featured = briefings.find((b) => b.id === routeId) ?? briefings[0]!;
 
   return {
     status: "ok",
     featured,
     alternative: pickAlternative(featured, briefings),
-    routes: briefings.map((b) => ({ id: b.id, name: b.name })),
+    // 切換列維持原本路線順序（判讀時為了抓取優先順序重排過）
+    routes: routes.flatMap((r) => briefings.filter((b) => b.id === r.id).map((b) => ({ id: b.id, name: b.name }))),
     weatherCoverage,
     eventsFailed,
   };
